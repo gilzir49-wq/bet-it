@@ -1,7 +1,7 @@
 # בדיקת עשן בדפדפן אמיתי (Chromium) מול סביבת הבדיקה:
 # משתמש חדש נכנס → מהמר → מרענן → ההימור עדיין שם (בשרת ובמסך) → מבטל → הז'יטונים חוזרים.
 # אם משהו מזה נכשל – העדכון לא עולה לאתר.
-import os, sys, json, time, importlib.util, threading, http.server, functools, secrets, string, urllib.request
+import os, sys, json, time, importlib.util, threading, http.server, functools, secrets, string, urllib.request, urllib.parse
 from playwright.sync_api import sync_playwright
 
 DB = os.environ['DB_URL']
@@ -59,6 +59,15 @@ try:
         pg.wait_for_function('() => A && A.wallet.bal === 500 && Object.keys(A.bets||{}).length === 0', timeout=20000)
         check(True, 'ביטול החזיר את הז\'יטונים (500)')
         sec, a = acct(); check(a and a['wallet']['bal'] == 500, 'הביטול נשמר בשרת')
+        # תור הימורים: היחס השתנה בזמן שלא הייתה קליטה → לא שולחים ביחס אחר
+        pg.evaluate(f"async () => {{ QUEUE=[{{bid:'bqaodds'+Date.now().toString(36), e:'{E}', m:'W', p:'1', s:10, o:1.55, j:false}}]; saveQ(); await flushQueue(); }}")
+        check(pg.evaluate('() => QUEUE.length === 0 && Object.keys(A.bets||{}).length === 0 && A.wallet.bal === 500'), 'הימור מהתור לא נשלח כשהיחס השתנה')
+        # לינק זדוני שמנסה להשתיל הימור בתור / מפתח מזויף דרך #mig=
+        ctx3 = b.new_context(); pg3 = ctx3.new_page(); pg3.on('pageerror', lambda e: errs.append(str(e)))
+        evil = urllib.parse.quote(urllib.parse.urlencode({'bb_q': json.dumps([{'bid': 'bevil0001', 'e': E, 'm': 'W', 'p': '2', 's': 500}]), 'bb_sec': 'not-a-key"<x>', 'bb_tab': 'x'}))
+        pg3.goto('http://127.0.0.1:8765/index.html#mig=' + evil); pg3.wait_for_selector('#nameIn', timeout=20000)
+        check(pg3.evaluate("() => !localStorage.getItem('bb_q') && !localStorage.getItem('bb_sec') && !localStorage.getItem('bb_tab')"), 'לינק זדוני (#mig) לא משתיל הימורים או מפתחות')
+        ctx3.close()
         pg.evaluate("() => { go('table'); leagueMenu(); }"); pg.fill('#lgName', 'smoke league'); pg.click("button[onclick='createLeague()']")
         pg.wait_for_function('() => A && A.leagues && Object.values(A.leagues).some(l => l.own)', timeout=20000)
         check(True, 'פתיחת ליגת חברים מהאפליקציה'); pg.wait_for_selector('#sheet a[href^="https://wa.me/"]', timeout=10000)
