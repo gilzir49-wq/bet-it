@@ -116,6 +116,10 @@ print('--- הזרקת קוד דרך שמות')
 for bad in ['x"onclick', "a`b", 'a&quot;b', 'a;b', 'a{b}', 'a\\b', '<b>x']:
     check(f'שם שחקן עם תווים מסוכנים: {bad}', new_acct('pt' + RUN + bad)[0], 401)
 check('שם ליגה עם תווים מסוכנים', req('PATCH', '', {f'lgdef/{rs(6, RCA)}': {'n': 'a"onclick=x', 'at': SV}})[0], 401)
+for nm, bad in [('היפוך כיוון RLO', '\u202e'), ('סימן כיוון בלתי נראה RLM', '\u200f'), ('רווח באורך אפס', '\u200b'), ('BOM', '\ufeff')]:
+    check(f'התחזות עם תו בלתי נראה בשם ({nm})', new_acct('pentest_a' + RUN + bad)[0], 401)
+check('שם ליגה עם תו בלתי נראה', req('PATCH', '', {f'lgdef/{rs(6, RCA)}': {'n': 'league\u200f', 'at': SV}})[0], 401)
+st, G, Gpid, Gnk = new_acct('גל ' + RUN); check('שם תקין בעברית עם רווח עדיין עובד', st, 200)
 
 print('--- קוד כניסה אישי')
 check('קריאת כל הקודים (rc)', req('GET', 'rc')[0], 401)
@@ -154,7 +158,7 @@ st, a = req('GET', f'acct/{A}')
 check('יתרה סופית של A נכונה (500−50−10 = 440)', (a or {}).get('wallet', {}).get('bal'), 440)
 
 # ניקוי
-R.fb('', 'PATCH', {f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None, f'lgdef/{LID}': None,
+R.fb('', 'PATCH', {f'acct/{G}': None, f'names/{Gnk}': None, f'rc/{CODES[G]}': None, f'pub/profiles/{Gpid}': None, f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None, f'lgdef/{LID}': None,
                    f'fixtures/{OPEN}': None, f'fixtures/{LOCKED}': None, f'pub/profiles/{Apid}': None, f'pub/profiles/{Bpid}': None, f'pub/revealed/{OPEN}': None})
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)
