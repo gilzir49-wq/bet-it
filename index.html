@@ -187,6 +187,57 @@ input.name:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(198,244,50,.
 .feat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .feat div{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12.5px;font-weight:700;text-align:right;color:#d9dff2}
 .feat div b{display:block;font-size:18px;margin-bottom:2px}
+/* כניסה: פתיחה / ברוכים הבאים / שם תפוס / קוד כניסה – לפי העיצוב */
+body.anon .appbar{display:none}body.anon{padding-bottom:0}
+#splash{position:fixed;inset:0;z-index:100;background:radial-gradient(90% 60% at 50% 42%,#18214A 0%,#070A14 70%);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(59px + env(safe-area-inset-top)) 24px calc(34px + env(safe-area-inset-bottom));transition:opacity .35s}
+#splash.out{opacity:0;pointer-events:none}
+#splash:before{content:"";position:absolute;inset:0 0 auto 0;height:59px;background:repeating-linear-gradient(135deg,rgba(198,244,50,.05) 0 6px,transparent 6px 12px)}
+.sp-logo{display:flex;align-items:center;gap:8px;direction:ltr}
+.sp-b{position:relative;width:82px;height:94px;background:var(--gold);border-radius:16px;display:grid;place-items:center;transform:rotate(-6deg);animation:tagdrop .7s cubic-bezier(.2,.8,.2,1) both;box-shadow:0 18px 50px rgba(198,244,50,.3)}
+.sp-b span{font-weight:900;font-size:78px;line-height:1;color:var(--on-accent);margin-top:-4px}
+.sp-b i{position:absolute;top:38px;width:16px;height:16px;border-radius:50%;background:#101839}.sp-b i:first-of-type{left:-8px}.sp-b i:last-of-type{right:-8px}
+.sp-et{font-weight:900;font-size:74px;line-height:1;letter-spacing:-3px}
+.sp-load{width:120px;height:4px;border-radius:999px;background:var(--line);overflow:hidden}.sp-load div{height:100%;background:var(--gold);border-radius:999px;animation:load 1.4s ease-out both}
+@keyframes tagdrop{0%{transform:translateY(-40px) rotate(-20deg);opacity:0}60%{transform:translateY(4px) rotate(-3deg);opacity:1}100%{transform:rotate(-6deg)}}
+@keyframes load{0%{width:8%}100%{width:100%}}
+.wel{position:relative;display:flex;flex-direction:column;gap:28px;padding:calc(12px + env(safe-area-inset-top)) 6px 20px;min-height:calc(100vh - 20px)}
+.wel:before{content:"";position:absolute;top:-120px;left:-130px;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(198,244,50,.16) 0%,rgba(198,244,50,0) 65%);pointer-events:none}
+.wel>*{position:relative}
+.wel .top{display:flex;align-items:center;justify-content:space-between;padding-top:12px}.wel .top .logo .lb{width:26px;height:30px;font-size:24px}.wel .top .logo .lt{font-size:24px}
+.wel .top>span{font-size:12px;color:var(--mut);font-weight:500}
+.wel h1{margin:0;font-size:76px;line-height:.82}.wel p{margin:0;font-size:16px;line-height:1.55;color:var(--txt2)}
+.wel .fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.wel .fg>div{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.wel .fg .n{font-weight:900;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.wel .fg .d{font-size:13px;line-height:1.4;color:#C9CFE3;font-weight:500}
+.wel .fg .jk2{background:linear-gradient(160deg,rgba(169,123,255,.22),var(--card) 70%);border-color:rgba(169,123,255,.35)}
+.wel .lgs{display:flex;gap:4px}.wel .lgs span{width:22px;height:22px;border-radius:6px;background:var(--card3);display:grid;place-items:center;font-size:9px;font-weight:900}
+.wel label{font-size:15px;font-weight:700}
+.wel input.name{height:58px;margin:0;border:1.5px solid var(--line3);border-radius:14px;background:var(--card);font-size:17px;text-align:right;padding:0 16px}
+.wel input.name.bad{border-color:var(--red)}
+.wel .go{height:58px;border-radius:14px;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px;padding:0}
+.wel .codel{display:block;text-align:center;font-size:15px;font-weight:700;padding:12px;color:var(--gold);text-decoration:none}
+.wel .fine{margin-top:auto;font-size:12px;color:var(--mut);text-align:center;line-height:1.5}
+.optc{display:flex;align-items:center;gap:14px;width:100%;background:#1A2140;border:1px solid var(--line3);border-radius:18px;padding:16px;color:var(--txt);text-align:right;text-decoration:none;cursor:pointer;margin-top:10px}
+.optc .ic2{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--card3)}.optc .ic2.lime{background:var(--gold)}
+.optc .tx{display:flex;flex-direction:column;gap:2px;flex:1}.optc b{font-size:16px}.optc .tx span{font-size:13px;color:var(--mut)}
+#final.key{display:none;align-items:stretch;justify-content:flex-start;text-align:right;background:var(--bg);padding:calc(40px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));gap:22px;overflow-y:auto}
+#final.key.show{display:flex}
+#final.key .kh{display:flex;flex-direction:column;gap:8px;max-width:520px;width:100%;margin:0 auto}
+#final.key .kh>span{font-size:13px;font-weight:700;color:var(--em)}#final.key h1{margin:0;color:var(--txt);font-size:58px;line-height:.9}
+#final.key p{margin:0;font-size:15px;line-height:1.55;color:var(--txt2)}
+.kbox{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:24px 18px;display:flex;flex-direction:column;align-items:center;gap:18px;max-width:520px;width:100%;margin:0 auto}
+.kbox:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(198,244,50,.03) 0 10px,transparent 10px 20px)}
+.kcode{position:relative;direction:ltr;text-align:center;white-space:nowrap}
+.kcode span{display:inline-block;background:var(--bg);border:1px solid var(--line3);border-radius:12px;padding:10px 11px;margin:0 4px;font-weight:900;font-size:clamp(20px,6.6vw,26px);font-variant-numeric:tabular-nums;color:var(--gold)}
+.kcode i{font-size:0}
+.kbtns{position:relative;display:flex;gap:10px;width:100%}.kbtns button{flex:1;height:48px;border-radius:14px;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.kbtns .cp{border:0;background:var(--gold);color:var(--on-accent)}.kbtns .img{border:1px solid var(--line3);background:var(--card3);color:var(--txt);font-weight:700}
+.kwarn{display:flex;gap:12px;align-items:flex-start;background:rgba(255,90,106,.08);border:1px solid rgba(255,90,106,.3);border-radius:18px;padding:14px 16px;font-size:14px;line-height:1.5;color:#F2C5CB;max-width:520px;width:100%;margin:0 auto}.kwarn b{color:var(--red2)}
+.kfoot{margin-top:auto;display:flex;flex-direction:column;gap:10px;max-width:520px;width:100%;margin-inline:auto}
+.kfoot label{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:500;min-height:44px;cursor:pointer}.kfoot input{width:22px;height:22px;accent-color:var(--gold);margin:0}
+#final.key .btn.sec{background:linear-gradient(180deg,#D9FF5C,var(--gold2));color:var(--on-accent);border:0;font-size:18px;font-weight:900;height:58px;padding:0;box-shadow:0 8px 24px rgba(198,244,50,.25)}
+#final.key .btn.sec:disabled{opacity:.4}
 .prow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line);gap:8px}
 .x{background:none;border:1px solid var(--red);color:var(--red);border-radius:9px;padding:5px 10px;cursor:pointer;font-weight:700}
 #goalbar{position:fixed;top:0;left:0;right:0;z-index:80;background:linear-gradient(180deg,#D9FF5C,var(--gold2));color:#0A0E1C;font-weight:900;font-size:16px;text-align:center;padding:14px;padding-top:calc(14px + env(safe-area-inset-top));box-shadow:0 10px 30px rgba(0,0,0,.6);transform:translateY(-110%);transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
@@ -325,6 +376,9 @@ const DB = 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app';
   <div class="brand"><span class="logo"><span class="lb">B</span><span class="lt">ET-IT</span></span><i id="cdot" class="cdot"></i></div>
   <div class="topr" id="top"></div>
 </div></header>
+<div id="splash" aria-hidden="true"><div></div><div style="display:flex;flex-direction:column;align-items:center;gap:22px;position:relative"><div class="sp-logo"><div class="sp-b"><span>B</span><i></i><i></i></div><span class="sp-et">ET-IT</span></div>
+  <div style="font-size:17px;font-weight:700;color:var(--txt2)">משחק הניחושים של החבר׳ה</div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;position:relative"><div class="sp-load"><div></div></div><div style="font-size:12px;color:var(--mut);font-weight:500">ז׳יטונים וירטואליים בלבד · אין כסף ואין פרסים</div></div></div>
 <div class="wrap" id="app"></div>
 <nav id="nav"></nav>
 <div id="sheetBg" onclick="closeSheet()"></div><div id="sheet"></div>
@@ -740,33 +794,44 @@ function viewLogin(){ setTimeout(fillInvName,50);
   if(PENDING) return `<div class="card" style="text-align:center;margin-top:20px"><div style="font-size:48px">⏳</div><h2>ממתין לאישור המנהל</h2>
     <div class="muted">ביקשת לשחזר את החשבון שלך. ברגע שהמנהל יאשר – תיכנס אוטומטית.</div>
     <button class="btn sec" style="margin-top:14px" onclick="PENDING=null;lsSet('bb_pending',null);render()">ביטול</button></div>`;
-  return `<div class="card hero" style="margin-top:18px">
-    <div class="mk">⚽</div><h2>ברוכים הבאים ל-BET-IT</h2>
-    <div class="muted">משחק הניחושים של החבר׳ה: מהמרים בז'יטונים וירטואליים על הכדורגל. בלי כסף אמיתי – רק כבוד ועקיצות.</div>
-    <div class="feat"><div><b>🪙 ${START_COINS}</b>ז'יטונים במתנה</div><div><b>🎁 +${WEEKLY_BONUS}</b>כל שבוע מהבנק</div><div><b>🇮🇱 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🇮🇹</b>4 ליגות, שבוע קדימה</div><div><b>🃏 ×2</b>ג'וקר יומי</div></div>
-    ${lsGet('bb_join')?`<div class="invcta" style="cursor:default"><span style="font-size:26px">🎉</span><div><b>הוזמנת לליגת חברים!</b><span>כתוב שם ותצטרף אוטומטית לליגה <b id="invName" style="display:inline;font-size:13px"></b></span></div></div>`:''}
-    <div style="font-weight:900;font-size:17px;margin-top:18px">איך קוראים לך?</div>
-    <input class="name" id="nameIn" placeholder="השם שלך" maxlength="20" autocomplete="off" enterkeyhint="go" onkeydown="if(event.key==='Enter')login()">
-    <div id="loginErr" style="color:#ff8080;font-weight:900;min-height:22px;margin-bottom:6px"></div>
-    <button class="btn" id="loginBtn" onclick="login()">יאללה 🔥</button>
-    <div style="margin-top:14px"><a href="#" style="color:var(--gold);font-weight:700" onclick="loginWithCode();return false">🔑 כבר יש לי חשבון – כניסה עם קוד</a></div></div>${ad()}`;
+  return `<div class="wel">
+    <div class="top"><span class="logo"><span class="lb">B</span><span class="lt">ET-IT</span></span><span>בלי כסף אמיתי</span></div>
+    <div style="display:flex;flex-direction:column;gap:12px"><h1 class="display">כל ההתרגשות.<br><span style="color:var(--gold)">אפס סיכון.</span></h1>
+      <p>מנחשים משחקים עם החבר׳ה, צוברים ז׳יטונים, ומי שמסיים אחרון — קונה קפה לכולם.</p></div>
+    ${lsGet('bb_join')?`<div class="invcta" style="cursor:default;margin:0"><span style="font-size:26px">🎉</span><div><b>הוזמנת לליגת חברים!</b><span>כתוב שם ותצטרף אוטומטית לליגה <b id="invName" style="display:inline;font-size:13px"></b></span></div></div>`:''}
+    <div class="fg"><div><div class="n" style="color:var(--gold)">${fmt(START_COINS)}</div><div class="d">ז׳יטונים במתנה כשנכנסים</div></div>
+      <div><div class="n" style="color:var(--em);direction:ltr;text-align:right">+${WEEKLY_BONUS}</div><div class="d">כל יום שלישי מקופת הבנק</div></div>
+      <div><div class="lgs"><span>IL</span><span>IL2</span><span>EN</span><span>IT</span></div><div class="d">4 ליגות, מתעדכן לבד</div></div>
+      <div class="jk2"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#A97BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M12 8l1.2 2.6 2.8.3-2.1 1.9.6 2.8-2.5-1.4-2.5 1.4.6-2.8-2.1-1.9 2.8-.3z"/></svg><div class="d">ג׳וקר יומי — רווח כפול</div></div></div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px"><label for="nameIn">איך קוראים לך?</label>
+      <input class="name" id="nameIn" placeholder="השם שהחבר׳ה מכירים" maxlength="20" autocomplete="off" enterkeyhint="go" onkeydown="if(event.key==='Enter')login()" oninput="this.classList.remove('bad');document.getElementById('loginErr').textContent=''">
+      <div id="loginErr" style="color:var(--red);font-weight:700;font-size:13px;min-height:18px;margin-top:-6px"></div>
+      <button class="btn go" id="loginBtn" onclick="login()">יאללה, מתחילים <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <a href="#" class="codel" onclick="loginWithCode();return false">כבר יש לי חשבון — כניסה עם קוד</a></div>
+    <div class="fine">ז׳יטונים וירטואליים בלבד. אי אפשר לקנות, אי אפשר לפדות.<br>בלי סיסמה ובלי הרשמה.</div></div>`;
 }
 let lastTakenNk=null;
+function resetLoginBtn(){ const b=document.getElementById('loginBtn'); if(!b) return; b.disabled=false; b.innerHTML='יאללה, מתחילים <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>'; }
+const CHEV='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8E97B5" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>';
+function nameTaken(v){
+  sheet(`<div style="display:flex;flex-direction:column;gap:8px;padding-top:4px"><div style="width:52px;height:52px;border-radius:16px;background:var(--card3);display:grid;place-items:center;font-weight:900;font-size:22px">${esc([...v][0])}</div>
+    <h2 style="margin:0;font-size:24px">"${esc(v)}" כבר משחק פה</h2><p style="margin:0;font-size:15px;line-height:1.55;color:var(--txt2)">אם זה אתה — תיכנס עם הקוד האישי. אם לא, תבחר שם אחר (${esc(v)} ב׳ זה גם שם).</p></div>
+    <a href="#" class="optc" onclick="closeSheet();loginWithCode();return false"><span class="ic2 lime"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0A0F00" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg></span><span class="tx"><b>יש לי קוד כניסה</b><span>12 תווים, קיבלת כשנרשמת</span></span>${CHEV}</a>
+    <button class="optc" onclick="closeSheet();askRecover()"><span class="ic2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2F4FA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"/></svg></span><span class="tx"><b>איבדתי את הקוד</b><span>נשלח בקשת שחזור למנהל</span></span>${CHEV}</button>
+    <button class="btn sec" style="margin-top:14px;background:transparent;border:0;color:var(--gold)" onclick="closeSheet();const i=document.getElementById('nameIn');if(i){i.focus();i.select()}">אבחר שם אחר</button>`);
+}
 async function login(){
   const v=(document.getElementById('nameIn').value||'').trim().replace(/\s+/g,' '), err=document.getElementById('loginErr');
   if(v.length<2) return err.textContent='צריך לפחות 2 אותיות 🙂';
   if(/[.#$\[\]\/<>"`\\&;{}]/.test(v)) return err.textContent='בלי סימנים מיוחדים בשם 🙂';
   const nk=nkOf(v), btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='בודק...';
-  let taken=null; try{ taken=await readOnce(`names/${nk}`); }catch(e){ btn.disabled=false; btn.textContent='יאללה 🔥'; return err.textContent='אין חיבור – נסה שוב'; }
-  if(taken){ btn.disabled=false; btn.textContent='יאללה 🔥'; lastTakenNk=nk;
-    return err.innerHTML=`השם הזה כבר תפוס, נסה כינוי אחר<div style="margin-top:10px;font-weight:700;color:#fff">זה החשבון שלך ממכשיר אחר?</div>
-      <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px"><a href="#" style="color:var(--y)" onclick="loginWithCode();return false">🔑 כניסה עם קוד הכניסה שלך</a>
-      <a href="#" style="color:var(--mut)" onclick="askRecover();return false">אין לי קוד – בקש שחזור מהמנהל</a></div>`; }
+  let taken=null; try{ taken=await readOnce(`names/${nk}`); }catch(e){ resetLoginBtn(); return err.textContent='אין חיבור – נסה שוב'; }
+  if(taken){ resetLoginBtn(); lastTakenNk=nk; err.textContent='השם הזה כבר בפנים'; document.getElementById('nameIn').classList.add('bad'); return nameTaken(v); }
   const sec='s'+rnd(48,AZM), pid='p'+rnd(16,AZ), rc=rnd(12,RCA);
   const res=await write('PATCH','',{[`names/${nk}`]:pid, [`rc/${rc}`]:sec, [`acct/${sec}`]:{name:v,nk,pid,rc,joined:SV,wallet:{bal:START_COINS,op:'init'}}});
-  if(res!=='ok'){ btn.disabled=false; btn.textContent='יאללה 🔥'; return err.textContent= res==='denied'?'השם הזה נתפס הרגע או לא תקין – נסה כינוי אחר':'אין חיבור – נסה שוב'; }
+  if(res!=='ok'){ resetLoginBtn(); return err.textContent= res==='denied'?'השם הזה נתפס הרגע או לא תקין – נסה כינוי אחר':'אין חיבור – נסה שוב'; }
   SEC=sec; lsSet('bb_sec',sec); tab='games'; lsSet('bb_tab','games'); listenMine();
-  confetti(); setTimeout(()=>showCode(rc,true),600);
+  confetti(); setTimeout(()=>showCode(rc,true,v),600);
 }
 async function askRecover(){
   if(!lastTakenNk) return; const s2='s'+rnd(48,AZM);
@@ -778,15 +843,32 @@ async function askRecover(){
 // ================= קוד כניסה אישי (לכניסה מטלפון/מחשב נוסף) =================
 async function ensureRc(){ ensureRc.busy=true; const rc=rnd(12,RCA);
   await write('PATCH','',{[`rc/${rc}`]:SEC,[`acct/${SEC}/rc`]:rc},true); ensureRc.busy=false; }
-function showCode(rc, first){
-  const el=document.getElementById('final');
-  el.innerHTML=`<div style="font-size:52px">🔑</div><h1 style="font-size:24px">${first?`ברוך הבא! קיבלת ${START_COINS} ז'יטונים`:'קוד הכניסה שלך'}</h1>
-    <div class="muted" style="max-width:340px;margin:6px auto 14px">זה הקוד האישי שלך. איתו נכנסים לחשבון מכל טלפון או מחשב אחר.<br><b style="color:#fff">שמור אותו ואל תשתף – מי שיש לו את הקוד נכנס בשמך.</b></div>
-    <div style="font-size:30px;font-weight:900;letter-spacing:3px;direction:ltr;background:var(--card2);border:1px solid var(--gold);border-radius:14px;padding:14px 18px;color:var(--gold)">${fmtRc(rc)}</div>
-    <div style="display:flex;gap:8px;margin-top:16px;width:100%;max-width:340px">
-      <button class="btn" onclick="navigator.clipboard&&navigator.clipboard.writeText('${fmtRc(rc)}').then(()=>toast('הקוד הועתק 📋',true))">📋 העתק</button>
-      <button class="btn sec" onclick="document.getElementById('final').classList.remove('show')">${first?'שמרתי, יאללה! 🔥':'סגור'}</button></div>`;
+function showCode(rc, first, name){
+  if(!rc) return; const el=document.getElementById('final'), parts=fmtRc(rc).split('-');
+  el.className='key';
+  el.innerHTML=`<div class="kh">${first?`<span>ברוך הבא${name?', '+esc(name):''} · ${fmt(START_COINS)} ז׳יטונים בפנים</span>`:''}
+      <h1 class="display">זה המפתח שלך.</h1><p>עם הקוד הזה נכנסים מטלפון חדש או מהמחשב.${first?' שמור אותו עכשיו.':''}</p></div>
+    <div class="kbox"><div class="kcode" style="letter-spacing:3px">${parts.map(x=>`<span>${esc(x)}</span>`).join('<i>-</i>')}</div>
+      <div class="kbtns"><button class="cp" data-c="${esc(fmtRc(rc))}" onclick="copyTxt(this.dataset.c,'הקוד הועתק 📋')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>העתק</button>
+        <button class="img" data-c="${esc(fmtRc(rc))}" onclick="saveCodeImg(this.dataset.c)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>שמור כתמונה</button></div></div>
+    <div class="kwarn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF5A6A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.01"/></svg><div><b>שמור ואל תשתף.</b> מי שיש לו את הקוד משחק בשמך — כולל לבזבז לך את כל הז׳יטונים.</div></div>
+    <div class="kfoot">${first?`<label><input type="checkbox" checked onchange="document.getElementById('keyGo').disabled=!this.checked">שמרתי את הקוד במקום בטוח</label>`:''}
+      <button class="btn sec" id="keyGo" onclick="document.getElementById('final').classList.remove('show')">${first?'יאללה למשחקים':'סגור'}</button></div>`;
   el.classList.add('show');
+}
+// הקוד כתמונה – לשמירה בגלריה (נשאר רק בטלפון)
+async function saveCodeImg(code){
+  const c=document.createElement('canvas'); c.width=1080; c.height=1080; const x=c.getContext('2d');
+  try{ await document.fonts.load('900 80px Heebo'); }catch(e){}
+  x.fillStyle='#070A14'; x.fillRect(0,0,1080,1080); x.fillStyle='#C6F432'; x.beginPath(); x.roundRect?x.roundRect(90,90,120,138,24):x.rect(90,90,120,138); x.fill();
+  x.fillStyle='#0A0F00'; x.font='900 110px Heebo, Arial'; x.textAlign='center'; x.fillText('B',150,200);
+  x.fillStyle='#F2F4FA'; x.textAlign='left'; x.fillText('ET-IT',225,200);
+  x.direction='rtl'; x.textAlign='right'; x.fillStyle='#B9C0D8'; x.font='700 54px Heebo, Arial'; x.fillText('קוד הכניסה שלי ל-BET-IT',990,420);
+  x.direction='ltr'; x.textAlign='center'; x.fillStyle='#C6F432'; x.font='900 120px Heebo, Arial'; x.fillText(code,540,600);
+  x.direction='rtl'; x.textAlign='right'; x.fillStyle='#FF8A96'; x.font='700 44px Heebo, Arial'; x.fillText('לא לשתף! מי שיש לו את הקוד משחק בשמך',990,800);
+  x.fillStyle='#8E97B5'; x.font='700 40px Heebo, Arial'; x.fillText('bet-it.web.app',990,980);
+  const blob=await new Promise(r=>c.toBlob(r,'image/png')), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bet-it-code.png'; a.click();
+  toast('התמונה נשמרה 📸 – שמור אותה במקום פרטי',true,null,3000);
 }
 async function loginWithCode(){
   const raw=prompt('הקלד את קוד הכניסה האישי (12 תווים):'); if(!raw) return;
@@ -971,11 +1053,17 @@ function renderNav(){
 }
 function go(k){ tab=k; lsSet('bb_tab',k); render(); window.scrollTo(0,0); }
 function render(){
-  renderTop(); const app=document.getElementById('app');
+  renderTop(); const app=document.getElementById('app'); document.body.classList.toggle('anon',!A&&!AK); hideSplash();
   if(!A && !AK){ app.innerHTML=(SEC&&!loaded.me)?'<div class="empty"><div class="e">⏳</div>מתחבר…</div>':viewLogin()+footer(); renderNav(); return; }
   if(!A && tab==='mine') tab='games'; if(tab==='admin'&&!AK) tab='games';
   app.innerHTML=({games:viewGames,mine:viewMine,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
 }
+// מסך פתיחה: לפחות 0.6 שניות, נעלם כשהנתונים הראשונים הגיעו (ולכל היותר אחרי 2.5 שניות)
+const SPLASH_T0=Date.now();
+function hideSplash(force){ const sp=document.getElementById('splash'); if(!sp||sp.classList.contains('out')) return;
+  if(!force && SEC && !loaded.me) return;
+  const wait=Math.max(0,600-(Date.now()-SPLASH_T0)); setTimeout(()=>{ sp.classList.add('out'); setTimeout(()=>sp.remove(),400); },wait); }
+setTimeout(()=>hideSplash(true),2500);
 const footer=()=>`<footer>BET-IT · משחק הניחושים של החבר׳ה<br>לשם הכיף בלבד · אין כסף אמיתי ואין אפשרות לקנות ז'יטונים</footer>`;
 
 // ================= באנר גול =================
