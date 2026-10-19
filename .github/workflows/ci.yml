@@ -1,0 +1,42 @@
+name: בדיקות ועלייה לאוויר
+# כל שינוי עולה לאתר האמיתי רק אם כל הבדיקות עברו בסביבת הבדיקה
+on:
+  push: { branches: [master] }
+  workflow_dispatch:
+concurrency: { group: ci, cancel-in-progress: false }
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DB_URL: https://betit-staging-default-rtdb.europe-west1.firebasedatabase.app
+      FIREBASE_SA: ${{ secrets.STAGING_SA }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q google-auth requests playwright && python3 -m playwright install --with-deps chromium > /dev/null
+      - name: חוקי אבטחה לסביבת הבדיקה
+        run: python3 ops/deploy_rules.py
+      - name: בדיקת חדירה (ניסיונות רמאות)
+        run: python3 tests/security_test.py
+      - name: סגירת הימורים, טבלאות ושחזור חשבון
+        run: python3 tests/settlement_test.py
+      - name: דפדפן אמיתי – כניסה, הימור, רענון, ביטול
+        run: python3 tests/smoke_test.py
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions: { pages: write, id-token: write, contents: read }
+    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q google-auth requests
+      - name: חוקי אבטחה לאתר האמיתי
+        run: python3 ops/deploy_rules.py
+        env:
+          DB_URL: https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+      - run: mkdir _site && cp -r index.html admin _site/
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: d
+        uses: actions/deploy-pages@v4

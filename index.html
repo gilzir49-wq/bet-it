@@ -26,7 +26,7 @@ b,.big,.score,.v,.val{font-variant-numeric:tabular-nums}
 .appbar{position:sticky;top:0;z-index:20;background:rgba(5,12,8,.82);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;height:60px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.mark{position:relative;width:38px;height:38px;border-radius:12px;letter-spacing:-1px;font-style:italic;background:linear-gradient(145deg,var(--gold),var(--gold2));color:#0A0E1C;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:0 4px 14px rgba(198,244,50,.25);flex:0 0 auto}
+.mark{position:relative;width:38px;height:38px;border-radius:12px;letter-spacing:-1px;font-style:italic;direction:ltr;background:linear-gradient(145deg,var(--gold),var(--gold2));color:#0A0E1C;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:0 4px 14px rgba(198,244,50,.25);flex:0 0 auto}
 .mark i{position:absolute;bottom:-2px;left:-2px;width:11px;height:11px;border-radius:50%;background:var(--mut);border:2px solid var(--bg)}
 .mark i.on{background:var(--em);box-shadow:0 0 8px var(--em)}
 .brand b{display:block;font-size:17px;font-weight:900;letter-spacing:.3px;line-height:1}
@@ -287,15 +287,15 @@ function listenMine(){
 }
 
 // ================= כתיבה (עם ניסיון חוזר; דחייה של חוקי האבטחה לא חוזרת) =================
-async function write(method, path, body){
+async function write(method, path, body, quiet){
   for(let i=1;i<=4;i++){
     const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),8000);
     try{ const r=await fetch(`${DB}/${path}.json`,{method,body:body===undefined?undefined:JSON.stringify(body),signal:ctl.signal});
       if(r.ok) return 'ok'; if(r.status===401||r.status===403||r.status===400) return 'denied'; }
     catch(e){} finally{ clearTimeout(t); }
-    if(i<4){ toast(`אין קליטה 📶 מנסה שוב… (${i+1}/4)`,false,'err'); await new Promise(r=>setTimeout(r,1200*i)); }
+    if(i<4){ if(!quiet) toast(`אין קליטה 📶 מנסה שוב… (${i+1}/4)`,false,'err'); await new Promise(r=>setTimeout(r,1200*i)); }
   }
-  toast('❌ לא נשמר – בדוק קליטה ונסה שוב',false,'err',5000); return 'fail';
+  return 'fail';
 }
 const SV = {'.sv':'timestamp'};
 
@@ -376,6 +376,7 @@ function fxCard(f){
     <div class="teams"><div class="tm">${logo(f.hi)}${esc(he(f.home))}</div><div class="mid">${mid}</div><div class="tm">${logo(f.ai)}${esc(he(f.away))}</div></div>`;
   if(f.st==='none') h+=`<div class="odds">${ob('1',esc(he(f.home)))}${ob('X','תיקו')}${ob('2',esc(he(f.away)))}</div>
     <button class="csb" ${L||!o.cs||!A?'disabled':''} onclick="openBet('${f.id}','CS','1-0')">${mine.length?'➕ הוסף הימור על תוצאה מדויקת':'🎯 הימור על תוצאה מדויקת'}</button>`;
+  QUEUE.filter(q=>q.e===f.id).forEach(q=>{ h+=`<div class="mybet"><span>${q.j?'🃏 ':''}${esc(pickLabel(f,q))} · ${fmt(q.s)} 🪙</span><span>⏳ ממתין לקליטה</span></div>`; });
   mine.forEach(([id,b])=>{ const st=betState(id,b), cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
     h+=`<div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)}</span><span>${stText(st,b,f)}</span></div>`;
     if(!L) h+=`<div style="text-align:left;margin-top:2px"><a href="#" class="muted" onclick="cancelBet('${id}');return false">בטל הימור</a></div>`; });
@@ -526,18 +527,55 @@ function renderSheet(){
 function updWin(){ const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)); document.getElementById('winTxt').innerHTML=`זכייה אפשרית: <b>${fmt(o?(sheetSt.j?s+2*(s*o-s):s*o):0)} 🪙</b>`; }
 function setStake(v){ sheetSt.s=Math.max(0,v); renderSheet(); }
 function csB(k,d){ sheetSt[k]=Math.max(0,Math.min(4,sheetSt[k]+d)); renderSheet(); }
+// ===== תור הימורים: בלי קליטה ההימור נשמר בטלפון ונשלח אוטומטית כשהקליטה חוזרת =====
+let QUEUE=[]; try{ QUEUE=JSON.parse(lsGet('bb_q')||'[]'); }catch(e){ QUEUE=[]; }
+const saveQ=()=>lsSet('bb_q', QUEUE.length?JSON.stringify(QUEUE):null);
+function buildBet(it){   // בונה את העדכון לפי היתרה העדכנית מהשרת
+  const f=S.fixtures[it.e]; const o=f&&f.odds?(it.m==='CS'?(f.odds.cs||{})[it.p]:f.odds[it.p]):null;
+  const bet={e:it.e,m:it.m,p:it.p,s:it.s,o:o,at:SV}, dk=f?(f.day||dayKey(f.ko)):null;
+  const upd={[`acct/${SEC}/bets/${it.bid}`]:bet, [`acct/${SEC}/wallet/bal`]:A.wallet.bal-it.s, [`acct/${SEC}/wallet/op`]:'b:'+it.bid};
+  if(it.j && dk && !jokerUsed(dk)){ bet.j=true; upd[`acct/${SEC}/jokers/${dk}`]=it.bid; }
+  return {upd, f, o};
+}
+async function sendBet(it, quiet){
+  for(let attempt=0; attempt<3; attempt++){
+    if(!A||!A.wallet) return 'fail';
+    if(A.bets&&A.bets[it.bid]) return 'ok';                       // כבר נשמר
+    const {upd,f,o}=buildBet(it);
+    if(!f||isLocked(f)) return 'locked';
+    if(!o) return 'noodds';
+    if(it.s>A.wallet.bal) return 'nofunds';
+    const r=await write('PATCH','',upd, quiet);
+    if(r==='ok') return 'ok';
+    if(r==='fail') return 'fail';
+    await new Promise(x=>setTimeout(x,1500));                    // נדחה (למשל הרובוט עדכן יתרה באותו רגע) – מנסה שוב עם נתונים עדכניים
+  }
+  return 'denied';
+}
+async function flushQueue(){
+  if(!QUEUE.length||!A) return;
+  for(const it of [...QUEUE]){
+    const r=await sendBet(it,true);
+    if(r==='fail') break;                                         // עדיין אין קליטה
+    QUEUE=QUEUE.filter(x=>x.bid!==it.bid); saveQ();
+    if(r==='ok') toast('ההימור שחיכה לקליטה נשמר! ✅',true);
+    else toast(r==='locked'?"המשחק ננעל לפני שחזרה הקליטה – ההימור לא נשלח והז'יטונים נשארו אצלך":"הימור שחיכה לקליטה לא נשלח – הז'יטונים נשארו אצלך",false,'err',5000);
+  }
+  render();
+}
+addEventListener('online', flushQueue); setInterval(flushQueue, 10000);
 async function placeBet(){
   const f=S.fixtures[sheetSt.eid]; if(!f||isLocked(f)) return toast('המשחק ננעל 🔒',false,'err');
   const s=Math.floor(sheetSt.s||0), o=sheetOdds(), bal=A.wallet.bal, dk=f.day||dayKey(f.ko);
   if(!o) return toast('אין יחס לבחירה הזו',false,'err'); if(s<1) return toast("כמה ז'יטונים? 🙂",false,'err');
   if(s>bal) return toast(`אין מספיק ז'יטונים – יתרה ${fmt(bal)}`,false,'err');
-  const bid='b'+Date.now().toString(36)+rnd(4,AZ), bet={e:sheetSt.eid,m:sheetSt.m,p:sheetSt.p,s,o,at:SV};
-  const upd={[`acct/${SEC}/bets/${bid}`]:bet, [`acct/${SEC}/wallet/bal`]:bal-s, [`acct/${SEC}/wallet/op`]:'b:'+bid};
-  if(sheetSt.j && !jokerUsed(dk)){ bet.j=true; upd[`acct/${SEC}/jokers/${dk}`]=bid; }
+  const it={bid:'b'+Date.now().toString(36)+rnd(4,AZ), e:sheetSt.eid, m:sheetSt.m, p:sheetSt.p, s, j:!!(sheetSt.j&&!jokerUsed(dk)), at:Date.now()};
   const btn=document.getElementById('betBtn'); btn.disabled=true; btn.textContent='שולח...';
-  const r=await write('PATCH','',upd);
-  if(r==='ok'){ closeSheet(); toast('ההימור נקלט! ✅ בהצלחה 🍀',true); confetti(60); }
-  else { btn.disabled=false; btn.textContent='הימור! 🎰'; if(r==='denied') toast('ההימור נדחה – ייתכן שהיחס התעדכן או שהמשחק ננעל. נסה שוב',false,'err',4000); }
+  const r=await sendBet(it,false);
+  if(r==='ok'){ closeSheet(); toast('ההימור נשמר בשרת ✅ בהצלחה 🍀',true); confetti(60); }
+  else if(r==='fail'){ QUEUE.push(it); saveQ(); closeSheet(); toast('אין קליטה – ההימור נשמר בטלפון ⏳ יישלח אוטומטית כשהקליטה תחזור',true,null,5000); render(); }
+  else { btn.disabled=false; btn.textContent='הימור! 🎰';
+    toast(r==='locked'?'המשחק ננעל 🔒':r==='nofunds'?"אין מספיק ז'יטונים":'ההימור נדחה – היחס התעדכן. בדוק ונסה שוב',false,'err',4000); renderSheet(); }
 }
 async function cancelBet(bid){
   const b=A&&A.bets&&A.bets[bid]; if(!b) return; const f=S.fixtures[b.e];
@@ -546,7 +584,7 @@ async function cancelBet(bid){
   const upd={[`acct/${SEC}/bets/${bid}`]:null, [`acct/${SEC}/wallet/bal`]:A.wallet.bal+b.s, [`acct/${SEC}/wallet/op`]:'c:'+bid};
   if(b.j) upd[`acct/${SEC}/jokers/${f.day||dayKey(f.ko)}`]=null;
   const r=await write('PATCH','',upd);
-  if(r==='ok') toast('ההימור בוטל ↩️',true); else if(r==='denied') toast('לא ניתן לבטל כרגע',false,'err');
+  if(r==='ok') toast('ההימור בוטל ↩️',true); else toast(r==='denied'?'לא ניתן לבטל כרגע':'אין קליטה – הביטול לא נשלח, נסה שוב',false,'err',4000);
 }
 
 // ================= מנהל (רק עם המפתח האישי של המנהל) =================

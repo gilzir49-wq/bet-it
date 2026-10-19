@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 
-DB = 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app'
+DB = os.environ.get('DB_URL', 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app')
 IL = ZoneInfo('Asia/Jerusalem')
 LS = 'https://prod-public-api.livescore.com/v1/api/app'
 LEAGUES = {'isr1': ('israel', 'premier-league'), 'isr2': ('israel', 'liga-leumit'),
