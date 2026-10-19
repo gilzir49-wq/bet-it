@@ -36,7 +36,8 @@ b,.big,.score,.v,.val{font-variant-numeric:tabular-nums}
 .appbar{position:sticky;top:0;z-index:20;background:rgba(5,12,8,.82);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;height:60px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.mark{position:relative;width:38px;height:38px;border-radius:12px;letter-spacing:-1px;font-style:italic;direction:ltr;background:linear-gradient(145deg,var(--gold),var(--gold2));color:#0A0E1C;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:0 4px 14px rgba(198,244,50,.25);flex:0 0 auto}
+.mark{position:relative;height:36px;padding:0 11px;border-radius:12px;letter-spacing:.5px;direction:ltr;font-size:14px !important;white-space:nowrap;background:linear-gradient(145deg,var(--gold),var(--gold2));color:#0A0E1C;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;box-shadow:0 4px 14px rgba(198,244,50,.25);flex:0 0 auto}
+.mark .sep{display:inline;font-size:14px;margin:0 5px;opacity:.45;font-weight:900}
 .mark i{position:absolute;bottom:-2px;left:-2px;width:11px;height:11px;border-radius:50%;background:var(--mut);border:2px solid var(--bg)}
 .mark i.on{background:var(--em);box-shadow:0 0 8px var(--em)}
 .brand b{display:block;font-size:17px;font-weight:900;letter-spacing:.3px;line-height:1}
@@ -224,7 +225,7 @@ const DB = 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app';
 </script>
 
 <header class="appbar"><div class="wrap bar">
-  <div class="brand"><span class="mark">B!<i id="cdot"></i></span><div><b>BET-IT</b><small>משחק הניחושים של החבר׳ה</small></div></div>
+  <div class="brand"><span class="mark">LET&nbsp;IT<b class="sep">|</b>B<i id="cdot"></i></span><div><b>BET-IT</b><small>משחק הניחושים של החבר׳ה</small></div></div>
   <div class="topr" id="top"></div>
 </div></header>
 <div class="wrap" id="app"></div>
@@ -651,7 +652,7 @@ async function cancelBet(bid){
 async function adminOp(t, extra){ if(!AK) return; const id='o'+Date.now().toString(36)+rnd(4,AZ);
   const r=await write('PUT',`adminOps/${AK}/${id}`,{t,at:SV,...extra}); toast(r==='ok'?'נשלח לרובוט – יבוצע תוך כ-20 שניות ⏳':'הפעולה נדחתה',r==='ok',r==='ok'?null:'err',3000); }
 function viewAdmin(){
-  if(!AK) return `<div class="card" style="text-align:center;margin-top:20px"><div style="font-size:44px">🔐</div><h2>כניסת מנהל</h2><div class="muted">הכניסה למנהל רק דרך הלינק האישי והסודי של המנהל. אין כאן סיסמה.</div></div>`;
+  if(!AK) return viewGames();
   if(!AV) return `<div class="empty"><div class="e">⏳</div>טוען… (אם זה לא נטען – המפתח לא תקף)</div>`;
   const ra=AV.robot||S.meta.robotAt, users=(AV.users||[]).slice().sort((a,b)=>b.bal-a.bal), reqs=AV.reqs||[];
   let h=`<h2>⚙️ מסך מנהל</h2><div class="card"><b>🤖 הרובוט</b><div class="muted" style="margin-top:4px">${ra?`בדק לאחרונה ב-${new Date(ra).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem'})} ${Date.now()-ra>120000?'⚠️ לא פעיל כרגע (מופעל מחדש אוטומטית תוך כמה דקות)':'✅ פעיל'}`:'עוד לא התחבר'} · ${fxList().length} משחקים</div></div>`;
@@ -687,7 +688,7 @@ function go(k){ tab=k; lsSet('bb_tab',k); render(); window.scrollTo(0,0); }
 function render(){
   renderTop(); const app=document.getElementById('app');
   if(!A && !AK){ app.innerHTML=(SEC&&!loaded.me)?'<div class="empty"><div class="e">⏳</div>מתחבר…</div>':viewLogin()+footer(); renderNav(); return; }
-  if(!A && tab==='mine') tab='games'; if(tab==='admin'&&!AK) tab='table';
+  if(!A && tab==='mine') tab='games'; if(tab==='admin'&&!AK) tab='games';
   app.innerHTML=({games:viewGames,mine:viewMine,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
 }
 const footer=()=>`<footer>BET-IT · משחק הניחושים של החבר׳ה<br>לשם הכיף בלבד · אין כסף אמיתי ואין אפשרות לקנות ז'יטונים</footer>`;
