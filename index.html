@@ -358,13 +358,15 @@ const nkOf = name => name.toLowerCase().replace(/ /g,'');
 (function migrateHost(){
   const NEW='https://bet-it.web.app';
   if(location.hostname.endsWith('github.io')){
-    const p=new URLSearchParams(); ['bb_sec','bb_ak','bb_pending','bb_q','bb_tab'].forEach(k=>{ const v=lsGet(k); if(v) p.set(k,v); });
+    const p=new URLSearchParams(); ['bb_sec','bb_ak','bb_pending','bb_tab'].forEach(k=>{ const v=lsGet(k); if(v) p.set(k,v); });
     const adm=/\/admin\/?$/.test(location.pathname)||/[?&]admin=1/.test(location.search);
     const h=location.hash.replace(/^#/,''); location.replace(NEW+(adm?'/?admin=1':'/')+'#'+(h?h+'&':'')+'mig='+encodeURIComponent(p.toString()));
     throw new Error('moving to '+NEW);
   }
   const m=location.hash.match(/mig=([^&]*)/);
-  if(m){ new URLSearchParams(decodeURIComponent(m[1])).forEach((v,k)=>{ if(!lsGet(k)) lsSet(k,v); });
+  // רק מפתחות מוכרים ובפורמט תקין – לינק זדוני לא יכול להשתיל הימורים בתור (bb_q) או ערכים מוזרים
+  const OK={bb_sec:/^s[A-Za-z0-9]{40,64}$/, bb_pending:/^s[A-Za-z0-9]{40,64}$/, bb_ak:/^k[A-Za-z0-9]{40}$/, bb_tab:/^(games|mine|table|leagues|admin)$/};
+  if(m){ new URLSearchParams(decodeURIComponent(m[1])).forEach((v,k)=>{ if(OK[k]&&OK[k].test(v)&&!lsGet(k)) lsSet(k,v); });
     const rest=location.hash.replace(/^#/,'').split('&').filter(x=>x&&!x.startsWith('mig=')).join('&');
     history.replaceState(null,'',location.pathname+location.search+(rest?'#'+rest:'')); }
 })();
@@ -888,6 +890,7 @@ async function sendBet(it, quiet){
     const {upd,f,o}=buildBet(it);
     if(!f||isLocked(f)) return 'locked';
     if(!o) return 'noodds';
+    if(it.o && o!==it.o) return 'oddschg';                       // היחס השתנה מאז שהשחקן לחץ – לא שולחים ביחס אחר בלי לשאול
     if(it.s>A.wallet.bal) return 'nofunds';
     pendingBids.add(it.bid); const r=await write('PATCH','',upd, true); if(r!=='fail') pendingBids.delete(it.bid);
     if(r==='ok') return 'ok';
@@ -904,7 +907,7 @@ async function flushQueue(){
     if(r==='fail') break;                                         // עדיין אין קליטה
     QUEUE=QUEUE.filter(x=>x.bid!==it.bid); saveQ();
     if(r==='ok') toast('ההימור שחיכה לקליטה נשמר! ✅',true);
-    else toast(r==='locked'?"המשחק ננעל לפני שחזרה הקליטה – ההימור לא נשלח והז'יטונים נשארו אצלך":"הימור שחיכה לקליטה לא נשלח – הז'יטונים נשארו אצלך",false,'err',5000);
+    else toast(r==='locked'?"המשחק ננעל לפני שחזרה הקליטה – ההימור לא נשלח והז'יטונים נשארו אצלך":r==='oddschg'?"היחס השתנה בזמן שלא הייתה קליטה – ההימור לא נשלח, אפשר להמר שוב ביחס החדש":"הימור שחיכה לקליטה לא נשלח – הז'יטונים נשארו אצלך",false,'err',5000);
   }
   render();
 }
@@ -914,7 +917,7 @@ async function placeBet(){
   const s=Math.floor(sheetSt.s||0), o=sheetOdds(), bal=A.wallet.bal, dk=f.day||dayKey(f.ko);
   if(!o) return toast('אין יחס לבחירה הזו',false,'err'); if(s<1) return toast("כמה ז'יטונים? 🙂",false,'err');
   if(s>bal) return toast(`אין מספיק ז'יטונים – יתרה ${fmt(bal)}`,false,'err');
-  const it={bid:'b'+Date.now().toString(36)+rnd(4,AZ), e:sheetSt.eid, m:sheetSt.m, p:sheetSt.p, s, j:!!(sheetSt.j&&!jokerUsed(dk)), at:Date.now()};
+  const it={bid:'b'+Date.now().toString(36)+rnd(4,AZ), e:sheetSt.eid, m:sheetSt.m, p:sheetSt.p, s, o, j:!!(sheetSt.j&&!jokerUsed(dk)), at:Date.now()};
   const btn=document.getElementById('betBtn'); btn.disabled=true; btn.textContent='שולח...';
   const r=await sendBet(it,false);
   if(r==='ok'){ closeSheet(); toast('ההימור נשמר בשרת ✅ בהצלחה 🍀',true); confetti(60); }
