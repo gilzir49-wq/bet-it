@@ -493,6 +493,11 @@ const nkOf = name => name.toLowerCase().replace(/ /g,'');
 let SEC = lsGet('bb_sec');
 let PENDING = lsGet('bb_pending');      // בקשת שחזור שממתינה לאישור מנהל
 let AK = lsGet('bb_ak');
+// לינק כניסה אישי bet-it.web.app/#code=XXXX – החלק אחרי # לא נשלח לשום שרת ולא ב-Referer; מוחקים אותו מהכתובת מיד
+function grabCode(){ const m=location.hash.match(/(?:^#|&)code=([^&]*)/); if(!m) return null;
+  const rest=location.hash.replace(/^#/,'').split('&').filter(x=>x&&!x.startsWith('code=')).join('&');
+  history.replaceState(null,'',location.pathname+location.search+(rest?'#'+rest:'')); try{ return decodeURIComponent(m[1]); }catch(e){ return m[1]; } }
+const CODE_IN_LINK=grabCode();
 (function grabJoin(){ const m=location.hash.match(/join=([A-Za-z0-9]{6})/); if(m){ lsSet('bb_join',m[1].toUpperCase()); history.replaceState(null,'',location.pathname+location.search); } })();
 (function grabAdminKey(){ const m=location.hash.match(/k=(k[A-Za-z0-9]{40})/); if(m){ AK=m[1]; lsSet('bb_ak',AK); history.replaceState(null,'',location.pathname+location.search); tab='admin'; } })();
 
@@ -749,7 +754,7 @@ function viewMine(){
   h+=`<div class="muted" style="margin-top:16px">🎁 כל יום שלישי מקבלים ${WEEKLY_BONUS} ז'יטונים מקופת הבנק – גם מי שהפסיד הכול חוזר למשחק</div>`;
   h+=`<div class="modeT ${POKER?'on':''}" onclick="togglePoker()"><span>🎰 מצב פוקר – ז'יטונים, ערימות וזריקה לקופה</span><span class="sw"></span></div>
     ${POKER?`<div class="card" style="text-align:center"><div class="muted" style="margin-bottom:8px">הקופה שלך על השולחן</div>${stacksHTML(a.avail,true)}<div class="muted" style="margin-top:6px">כל 1,000 ז'יטונים = מטיל זהב 🥇</div></div>`:''}`;
-  h+=`<div class="codec"><span class="ki">${IC.key}</span><span class="tx"><b>קוד הכניסה שלך</b><span>${esc(fmtRc(A.rc||'').slice(0,4))}${A.rc?'-••••-••••':'…'}</span></span><button onclick="showCode(A.rc)" ${A.rc?'':'disabled'}>הצג</button></div>
+  h+=`<div class="codec"><span class="ki">${IC.key}</span><span class="tx"><b>קוד הכניסה שלך</b><span>${esc(fmtRc(A.rc||'').slice(0,4))}${A.rc?'-••••-••••':'…'}</span></span><button onclick="showCode(A.rc)" ${A.rc?'':'disabled'}>הצג</button><button aria-label="שלח לעצמי בוואטסאפ" data-c="${esc(A.rc||'')}" data-n="${esc(A.name)}" onclick="sendSelfWA(this.dataset.c,this.dataset.n)" ${A.rc?'':'disabled'}>📲</button></div>
     <div class="muted" style="margin:6px 4px 0;font-size:12px">לכניסה מטלפון או מחשב נוסף. אל תשתף.</div>`;
   return h+`<footer>מחובר כ-${esc(A.name)} 🔐</footer>`;
 }
@@ -963,22 +968,22 @@ function viewLogin(){ setTimeout(fillInvName,50);
     <button class="btn" id="loginBtn" onclick="login()">יאללה 🔥</button>
     <div style="margin-top:14px"><a href="#" style="color:var(--gold);font-weight:700" onclick="loginWithCode();return false">🔑 כבר יש לי חשבון – כניסה עם קוד</a></div></div>${ad()}`;
 }
-let lastTakenNk=null;
+let lastTakenNk=null, lastTakenName='';
 async function login(){
   const v=(document.getElementById('nameIn').value||'').trim().replace(/\s+/g,' '), err=document.getElementById('loginErr');
   if(v.length<2) return err.textContent='צריך לפחות 2 אותיות 🙂';
   if(/[.#$\[\]\/<>"`\\&;{}]/.test(v)) return err.textContent='בלי סימנים מיוחדים בשם 🙂';
   const nk=nkOf(v), btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='בודק...';
   let taken=null; try{ taken=await readOnce(`names/${nk}`); }catch(e){ btn.disabled=false; btn.textContent='יאללה 🔥'; return err.textContent='אין חיבור – נסה שוב'; }
-  if(taken){ btn.disabled=false; btn.textContent='יאללה 🔥'; lastTakenNk=nk;
-    return err.innerHTML=`השם הזה כבר תפוס, נסה כינוי אחר<div style="margin-top:10px;font-weight:700;color:#fff">זה החשבון שלך ממכשיר אחר?</div>
+  if(taken){ btn.disabled=false; btn.textContent='יאללה 🔥'; lastTakenNk=nk; lastTakenName=v;
+    return err.innerHTML=`השם הזה כבר תפוס, נסה כינוי אחר<div style="margin-top:10px;font-weight:700;color:#fff">זה אתה? חפש בוואטסאפ "הכניסה שלי ל-BET-IT" ולחץ על הלינק – או הקלד את הקוד</div>
       <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px"><a href="#" style="color:var(--y)" onclick="loginWithCode();return false">🔑 כניסה עם קוד הכניסה שלך</a>
       <a href="#" style="color:var(--mut)" onclick="askRecover();return false">אין לי קוד – בקש שחזור מהמנהל</a></div>`; }
   const sec='s'+rnd(48,AZM), pid='p'+rnd(16,AZ), rc=rnd(12,RCA);
   const res=await write('PATCH','',{[`names/${nk}`]:pid, [`rc/${rc}`]:sec, [`acct/${sec}`]:{name:v,nk,pid,rc,joined:SV,wallet:{bal:START_COINS,op:'init'}}});
   if(res!=='ok'){ btn.disabled=false; btn.textContent='יאללה 🔥'; return err.textContent= res==='denied'?'השם הזה נתפס הרגע או לא תקין – נסה כינוי אחר':'אין חיבור – נסה שוב'; }
   SEC=sec; lsSet('bb_sec',sec); tab='games'; lsSet('bb_tab','games'); listenMine();
-  confetti(); setTimeout(()=>showCode(rc,true),600);
+  confetti(); setTimeout(()=>showCode(rc,true,v),600);
 }
 async function askRecover(){
   if(!lastTakenNk) return; const s2='s'+rnd(48,AZM);
@@ -990,24 +995,58 @@ async function askRecover(){
 // ================= קוד כניסה אישי (לכניסה מטלפון/מחשב נוסף) =================
 async function ensureRc(){ ensureRc.busy=true; const rc=rnd(12,RCA);
   await write('PATCH','',{[`rc/${rc}`]:SEC,[`acct/${SEC}/rc`]:rc},true); ensureRc.busy=false; }
-function showCode(rc, first){
-  const el=document.getElementById('final');
+function showCode(rc, first, name){
+  if(!rc) return; name=name||(A&&A.name)||''; const el=document.getElementById('final');
   el.innerHTML=`<div style="font-size:52px">🔑</div><h1 style="font-size:24px">${first?`ברוך הבא! קיבלת ${START_COINS} ז'יטונים`:'קוד הכניסה שלך'}</h1>
     <div class="muted" style="max-width:340px;margin:6px auto 14px">זה הקוד האישי שלך. איתו נכנסים לחשבון מכל טלפון או מחשב אחר.<br><b style="color:#fff">שמור אותו ואל תשתף – מי שיש לו את הקוד נכנס בשמך.</b></div>
     <div style="font-size:30px;font-weight:900;letter-spacing:3px;direction:ltr;background:var(--card2);border:1px solid var(--gold);border-radius:14px;padding:14px 18px;color:var(--gold)">${fmtRc(rc)}</div>
     <div style="display:flex;gap:8px;margin-top:16px;width:100%;max-width:340px">
       <button class="btn" onclick="navigator.clipboard&&navigator.clipboard.writeText('${fmtRc(rc)}').then(()=>toast('הקוד הועתק 📋',true))">📋 העתק</button>
-      <button class="btn sec" onclick="document.getElementById('final').classList.remove('show')">${first?'שמרתי, יאללה! 🔥':'סגור'}</button></div>`;
+      <button class="btn sec" onclick="document.getElementById('final').classList.remove('show')">${first?'שמרתי, יאללה! 🔥':'סגור'}</button></div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;width:100%;max-width:340px">${first?'<b style="color:#fff">שמור לעצמך כדי לא לאבד את החשבון 👇</b>':''}
+      <button class="btn ${first?'':'sec'}" id="waSelf" data-c="${esc(rc)}" data-n="${esc(name)}" onclick="sendSelfWA(this.dataset.c,this.dataset.n)">📲 שלח לעצמי בוואטסאפ</button>
+      <button class="btn sec" id="pmSave" data-c="${esc(rc)}" data-n="${esc(name)}" onclick="savePM(this.dataset.n,this.dataset.c)">🔑 שמור במנהל הסיסמאות</button></div>${pmForm(name,rc)}`;
   el.classList.add('show');
 }
-async function loginWithCode(){
-  const raw=prompt('הקלד את קוד הכניסה האישי (12 תווים):'); if(!raw) return;
-  const c=raw.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  if(!/^[A-HJ-NP-Z2-9]{12}$/.test(c)) return toast('קוד לא תקין – 12 תווים, אותיות ומספרים',false,'err',3500);
-  let sec=null; try{ sec=await readOnce(`rc/${c}`); }catch(e){ return toast('אין חיבור – נסה שוב',false,'err'); }
-  if(!sec) return toast('הקוד לא נמצא 🤔 בדוק שהקלדת נכון',false,'err',3500);
-  SEC=sec; lsSet('bb_sec',sec); PENDING=null; lsSet('bb_pending',null); tab='games'; listenMine(); toast('נכנסת לחשבון שלך ✅',true);
+function loginWithCode(){
+  sheet(`<h2 style="margin-top:0">🔑 כניסה עם קוד</h2><div class="muted">הקוד האישי (12 תווים) שקיבלת כשנרשמת.<br>שלחת אותו לעצמך? חפש בוואטסאפ <b>"הכניסה שלי ל-BET-IT"</b> ולחץ שם על הלינק – זה הכי קל.</div>
+    <form id="codeForm" autocomplete="on" onsubmit="event.preventDefault();codeSubmit();return false">
+      <input class="name" id="codeUser" name="username" autocomplete="username" placeholder="השם שלך (לא חובה)" value="${esc(lastTakenName||'')}" maxlength="20">
+      <div style="display:flex;gap:8px;align-items:center"><input class="name" id="codeIn" name="password" type="password" autocomplete="current-password" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" maxlength="16" style="direction:ltr;letter-spacing:2px;flex:1">
+        <button type="button" class="x" style="border-color:#555;color:#ccc" onclick="const i=document.getElementById('codeIn');i.type=i.type==='password'?'text':'password'" aria-label="הצג קוד">👁</button></div>
+      <button class="btn" id="codeGo" type="submit">כניסה</button></form>`);
+  try{ if(window.PasswordCredential&&navigator.credentials) navigator.credentials.get({password:true,mediation:'optional'}).then(c=>{ const i=document.getElementById('codeIn'); if(c&&c.password&&i&&!i.value) i.value=c.password; }).catch(()=>{}); }catch(e){}
+  setTimeout(()=>{ const i=document.getElementById('codeIn'); if(i) i.focus(); },50);
 }
+async function codeSubmit(){ const b=document.getElementById('codeGo'); if(b) b.disabled=true;
+  const ok=await useCode((document.getElementById('codeIn')||{}).value); if(ok) closeSheet(); else if(b) b.disabled=false; }
+
+// ================= שחזור עצמי: לינק אישי, וואטסאפ לעצמי, מנהל הסיסמאות (בלי מנהל ובלי מייל) =================
+const normCode = raw => String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const selfLink = rc => `${APP_URL}/#code=${rc}`;            // הלינק = הקוד = סיסמה. רק אחרי # – לא מגיע לשרת
+const selfMsg = (rc,name) => `🔐 הכניסה שלי ל-BET-IT – לא לשתף!\n${name?`שם: ${name}\n`:''}קוד: ${fmtRc(rc)}\nלכניסה מטלפון חדש: ${selfLink(rc)}`;
+async function useCode(raw, viaLink){
+  const c=normCode(raw);
+  if(!/^[A-HJ-NP-Z2-9]{12}$/.test(c)){ toast(viaLink?'הלינק לא שלם – בדוק שהעתקת את כולו':'קוד לא תקין – 12 תווים, אותיות ומספרים',false,'err',3500); return false; }
+  let sec=null; try{ sec=await readOnce(`rc/${c}`); }catch(e){ toast('אין חיבור – נסה שוב',false,'err'); return false; }
+  if(!sec){ toast(viaLink?'הלינק לא תקף 🤔 אולי החשבון נמחק':'הקוד לא נמצא 🤔 בדוק שהקלדת נכון',false,'err',3500); return false; }
+  if(sec===SEC){ toast('אתה כבר מחובר לחשבון הזה ✅',true); return true; }
+  if(SEC){ let nm=''; try{ nm=(await readOnce(`acct/${sec}/name`))||''; }catch(e){}
+    if(!confirm(`להחליף לחשבון "${nm||'אחר'}"?\n\nהחשבון שמחובר עכשיו${A&&A.name?` ("${A.name}")`:''} יתנתק מהמכשיר הזה – ודא ששמרת את הקוד שלו.`)) return false; }
+  QUEUE=[]; saveQ();                                            // הימורים שחיכו לקליטה שייכים לחשבון הקודם – לא שולחים אותם מהחדש
+  SEC=sec; lsSet('bb_sec',sec); PENDING=null; lsSet('bb_pending',null); A=null; loaded.me=false; tab='games'; lsSet('bb_tab','games');
+  listenMine(); render(); toast('נכנסת לחשבון שלך ✅',true); return true;
+}
+function sendSelfWA(rc,name){ if(!rc) return;
+  window.open(`https://wa.me/?text=${encodeURIComponent(selfMsg(rc,name))}`,'_blank');
+  toast('בוואטסאפ בחר את עצמך ("את/ה") ושלח 📲',true,null,4500); }
+// טופס נסתר שמנהל הסיסמאות של הטלפון מזהה (שם = משתמש, קוד = סיסמה)
+const pmForm = (name,rc) => `<form id="pmForm" onsubmit="return false" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none" aria-hidden="true">
+  <input name="username" autocomplete="username" value="${esc(name||'')}" readonly tabindex="-1"><input type="password" name="password" autocomplete="new-password" value="${esc(rc||'')}" readonly tabindex="-1"></form>`;
+async function savePM(name,rc){
+  try{ if(window.PasswordCredential&&navigator.credentials){ await navigator.credentials.store(new PasswordCredential({id:name||'BET-IT',password:rc,name:'BET-IT · '+(name||'')})); toast('נשמר במנהל הסיסמאות 🔑',true); return; } }catch(e){}
+  const f=document.getElementById('pmForm'); try{ if(f&&f.requestSubmit) f.requestSubmit(); }catch(e){}   // אייפון: מציע "לשמור סיסמה" אחרי שליחת טופס
+  toast('אם הטלפון שואל "לשמור סיסמה?" – אשר 🔑',true,null,3500); }
 
 // ================= ז'יטונים כמו בפוקר =================
 const DEN=[{v:1,c:'#e9edf5',t:'#0A0E1C'},{v:5,c:'#e23b3b',t:'#fff'},{v:10,c:'#2f6fe0',t:'#fff'},{v:25,c:'#1fa855',t:'#fff'},{v:100,c:'#1b1b22',t:'#F1C93B'}];
@@ -1245,6 +1284,8 @@ function toast(msg,big,kind,ms=2400){ document.querySelectorAll('.toast').forEac
 // ================= הפעלה =================
 setInterval(()=>{ if(tab==='games'&&!sheetSt&&!document.querySelector('details[open]')) render(); },30000);
 render(); listenAll();
+if(CODE_IN_LINK) useCode(CODE_IN_LINK,true);
+addEventListener('hashchange',()=>{ const c=grabCode(); if(c) useCode(c,true); });   // לחיצה על הלינק כשהאתר כבר פתוח
 if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('/sw.js').catch(()=>{});
 </script>
 </body>

@@ -54,6 +54,11 @@ SCORE_JS = r"""async () => {
   lgF='isr1'; go('leagues'); judge('טבלת ליגה לייב', find('tr',H), false);
   delete A.bets.bqascore01; delete S.revealed[E2]; go('games');
   return out; }"""
+OTHER_NAME = 'smokeother' + ''.join(secrets.choice(string.ascii_lowercase) for _ in range(5))
+OTHER_SEC, OTHER_PID = 's' + ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(48)), 'p' + ''.join(secrets.choice(string.ascii_lowercase) for _ in range(16))
+OTHER_RC = ''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(12))
+R.fb('', 'PATCH', {f'names/{OTHER_NAME}': OTHER_PID, f'rc/{OTHER_RC}': OTHER_SEC, f'acct/{OTHER_SEC}': {'name': OTHER_NAME, 'nk': OTHER_NAME, 'pid': OTHER_PID, 'rc': OTHER_RC, 'joined': now, 'wallet': {'bal': 500, 'op': 'init'}}})
+dlg = []
 fails = []
 def check(cond, msg):
     print(('✅ ' if cond else '❌ ') + msg, flush=True)
@@ -68,7 +73,12 @@ try:
         pg.wait_for_function('() => (typeof A!=="undefined" && A) && A.wallet && A.wallet.bal === 500', timeout=20000)
         check(True, 'משתמש חדש נכנס וקיבל 500')
         pg.wait_for_selector('#final.show', timeout=10000); code = pg.locator('#final div[style*="letter-spacing"]').inner_text().replace('-', '').strip()
-        check(len(code) == 12, 'הוצג קוד כניסה אישי'); pg.click('#final .btn.sec')
+        check(len(code) == 12, 'הוצג קוד כניסה אישי')
+        pg.evaluate("() => { window.__wa=null; window.open=u=>{ window.__wa=u; return null; }; }"); pg.click('#waSelf')
+        wa = urllib.parse.unquote(pg.evaluate('() => window.__wa') or '')
+        check(wa.startswith('https://wa.me/?text=') and 'הכניסה שלי ל-BET-IT' in wa and '/#code=' + code in wa and 'לא לשתף' in wa, 'שלח לעצמי בוואטסאפ – הודעה עם קוד ולינק אישי')
+        check(pg.evaluate("() => { const f=document.getElementById('pmForm'); return !!f && f.querySelector('[autocomplete=username]').value===A.name && f.querySelector('[autocomplete=new-password]').value===A.rc; }"), 'טופס למנהל הסיסמאות (שם + קוד)')
+        pg.click('#final .btn.sec')
         extra = [ctx.new_page() for _ in range(3)]                 # עוד 3 לשוניות פתוחות – השמירה חייבת לעבוד
         for x in extra: x.goto('http://127.0.0.1:8765/index.html')
         pg.bring_to_front()
@@ -110,10 +120,27 @@ try:
         check(pg.locator('#sheet a[href^="https://wa.me/"]').count() == 1, 'מסך הזמנה עם כפתור וואטסאפ'); pg.evaluate('() => closeSheet()')
         ctx2 = b.new_context(viewport={'width': 390, 'height': 844}); pg2 = ctx2.new_page()
         pg2.goto('http://127.0.0.1:8765/index.html'); pg2.wait_for_selector('#nameIn', timeout=20000)
-        pg2.once('dialog', lambda d: d.accept(code))
-        pg2.click("a[onclick^=\"loginWithCode\"]")
+        pg2.click("a[onclick^=\"loginWithCode\"]"); pg2.wait_for_selector('#codeIn', timeout=5000)
+        check(pg2.get_attribute('#codeIn', 'autocomplete') == 'current-password' and pg2.get_attribute('#codeUser', 'autocomplete') == 'username', 'מסך כניסה עם קוד – שדה שמנהל הסיסמאות מציע')
+        pg2.fill('#codeIn', code); pg2.click('#codeGo')
         pg2.wait_for_function(f'() => (typeof A!=="undefined" && A) && A.name === "{name}"', timeout=20000)
         check(True, 'כניסה ממכשיר אחר עם הקוד – אותו חשבון'); ctx2.close()
+        # --- שחזור עצמי: לינק אישי #code=
+        ctx4 = b.new_context(viewport={'width': 390, 'height': 844}); pg4 = ctx4.new_page(); pg4.on('pageerror', lambda e: errs.append(str(e)))
+        pg4.goto(f'http://127.0.0.1:8765/index.html#code={code}')
+        check(pg4.evaluate('() => !location.hash.includes("code") && !location.href.includes("' + code + '")'), 'הלינק האישי נמחק מהכתובת מיד בטעינה')
+        pg4.wait_for_function(f'() => (typeof A!=="undefined" && A) && A.name === "{name}"', timeout=20000)
+        check(pg4.evaluate("() => !!localStorage.getItem('bb_sec')"), 'כניסה דרך הלינק האישי בטלפון חדש – אותו חשבון')
+        # מחובר לחשבון אחד ופותח לינק של חשבון אחר → שואל, ולא מחליף בשקט
+        pg4.once('dialog', lambda d: (dlg.append(d.message), d.dismiss()))
+        pg4.goto(f'http://127.0.0.1:8765/index.html#code={OTHER_RC}'); pg4.wait_for_timeout(4000)
+        check(dlg and OTHER_NAME in dlg[-1] and pg4.evaluate(f'() => A && A.name === "{name}"'), 'לינק של חשבון אחר – שואל "להחליף?" וביטול משאיר את החשבון הנוכחי')
+        pg4.once('dialog', lambda d: d.accept())
+        pg4.goto(f'http://127.0.0.1:8765/index.html#code={OTHER_RC}')
+        pg4.wait_for_function(f'() => A && A.name === "{OTHER_NAME}"', timeout=20000); check(True, 'אישור – עובר לחשבון השני')
+        pg4.goto('http://127.0.0.1:8765/index.html#code=ZZZZ<img src=x onerror=alert(1)>'); pg4.wait_for_timeout(2500)
+        check(pg4.evaluate(f'() => !location.hash && A && A.name === "{OTHER_NAME}"'), 'לינק שבור/זדוני – לא קורס, לא מחליף חשבון, הכתובת נוקתה')
+        ctx4.close()
         check(not errs, 'אין שגיאות JavaScript בדף' + (f': {errs[:2]}' if errs else ''))
         b.close()
 except Exception as ex:
@@ -122,5 +149,6 @@ finally:
     s, a = acct()
     upd = {f'fixtures/{E}': None, f'fixtures/{E2}': None}
     if s: upd.update({f'acct/{s}': None, f"names/{a['nk']}": None}); upd.update({f"rc/{a['rc']}": None} if a.get('rc') else {}); upd.update({f'lgdef/{l}': None for l in (a.get('leagues') or {})})
+    upd.update({f'acct/{OTHER_SEC}': None, f'names/{OTHER_NAME}': None, f'rc/{OTHER_RC}': None, f'pub/profiles/{OTHER_PID}': None})
     R.fb('', 'PATCH', upd); srv.shutdown()
 sys.exit(1 if fails else 0)

@@ -1,5 +1,5 @@
 # בדיקת חדירה ל-BUX BET: תוקף בלי הרשאות (REST ישיר), מנסה לרמות.
-import json, time, secrets, string, urllib.request, urllib.error, sys, os, importlib.util
+import json, time, secrets, string, urllib.request, urllib.error, urllib.parse, sys, os, importlib.util
 DB = os.environ['DB_URL']
 spec = importlib.util.spec_from_file_location('r', os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py')); R = importlib.util.module_from_spec(spec)
 sys.argv = ['x']; spec.loader.exec_module(R)   # רק בשביל fb() עם הרשאות מנהל להכנת נתוני בדיקה
@@ -125,6 +125,15 @@ print('--- קוד כניסה אישי')
 check('קריאת כל הקודים (rc)', req('GET', 'rc')[0], 401)
 st, got = req('GET', f'rc/{CODES[A]}'); check('כניסה עם הקוד הנכון מחזירה את החשבון', got == A, True)
 check('ניחוש קוד אקראי לא מחזיר חשבון', req('GET', f'rc/{rs(12, RCA)}')[1], None)
+# הקוד = הלינק האישי = סיסמה: אסור שתהיה דרך לרשום/לחפש קודים בלי לדעת קוד מלא
+for q in ['shallow=true', 'orderBy="$key"&limitToFirst=1', 'orderBy="$value"&equalTo="' + A + '"', 'orderBy="$key"&startAt="' + CODES[A][:6] + '"&limitToFirst=1']:
+    try:
+        with urllib.request.urlopen(f'{DB}/rc.json?{urllib.parse.quote(q, safe="=&$")}', timeout=20) as x: st = x.status
+    except urllib.error.HTTPError as e: st = e.code
+    check(f'חיפוש קודים בשאילתה ({q.split("=")[0]}…)', st, 401)
+check('קוד חלקי (11 תווים)', req('GET', f'rc/{CODES[A][:11]}')[0], 401)
+check('קוד באותיות קטנות לא עוקף את התבנית', req('GET', f'rc/{CODES[A].lower()}')[0], 401)
+check('קוד עם נתיב (rc/<קוד>/..)', req('GET', f'rc/{CODES[A]}/x')[1], None)
 check('דריסת קוד קיים כך שיצביע לחשבון אחר', req('PUT', f'rc/{CODES[A]}', B)[0], 401)
 check('קוד חדש שמצביע לחשבון של מישהו אחר', req('PUT', f'rc/{rs(12, RCA)}', B)[0], 401)
 check('החלפת הקוד של חשבון קיים', req('PATCH', '', {f'acct/{A}/rc': (c2 := rs(12, RCA)), f'rc/{c2}': A})[0], 401)
