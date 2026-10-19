@@ -12,4 +12,7 @@ jobs:
     timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
-      - run: python3 robot.py bux-bet
+      - run: pip install -q google-auth requests
+      - run: python3 robot.py
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}

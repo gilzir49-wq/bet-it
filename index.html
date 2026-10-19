@@ -148,7 +148,6 @@ const START_COINS = 500;      // ז'יטונים לכל משתתף חדש
 const WEEKLY_BONUS = 50;      // מענק שבועי מקופת הבנק (כל יום שלישי)
 const BANK_START = 10000;     // קופת הבנק בפתיחה
 const LOCK_BEFORE_MS = 2*60*1000;   // נעילה 2 דקות לפני שריקת הפתיחה
-const ADMIN_PIN = '1234';
 const PENALTIES = ['חייב 20 ברפיז ב-BUX 😅','חייב 50 סקוואטים ב-BUX 🦵','חייב 30 שכיבות סמיכה ב-BUX 💪']; // אחרון, לפני אחרון, שלישי מהסוף
 const LEAGUES = {
   isr1:{ n:'ליגת העל',     f:'🇮🇱' },
@@ -183,9 +182,7 @@ const ADS = [
   'הבנק לא ישן. גם אנחנו לא – <b>WOD בשש בבוקר</b> ב-BUX 🔥',
   'אין כאן כסף אמיתי. <b>יש כאן כבוד.</b> והרבה ברפיז 😅',
 ];
-const DB = 'https://command-center-gal-default-rtdb.europe-west1.firebasedatabase.app';
-const IS_TEST = /[?&]test=1/.test(location.search);
-const NODE = 'bux-bet' + (IS_TEST ? '-test' : '');
+const DB = 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app';
 </script>
 
 <header>
@@ -200,148 +197,123 @@ const NODE = 'bux-bet' + (IS_TEST ? '-test' : '');
 
 <script>
 // ================= מצב =================
-let S = { fixtures:{}, tables:{}, players:{}, meta:{} };   // מסונכרן חי מ-Firebase
-let connected=false, firstLoad=true, seenGoals=null, goalTimer=null;
-let me = lsGet('bb_name'), tab = lsGet('bb_tab') || 'games', isAdmin = sessionGet('bb_admin')==='1';
-let dayF = null, lgF = lsGet('bb_lg') || 'isr1', tblMode = lsGet('bb_tm') || 'week', adIdx = Math.floor(Math.random()*ADS.length);
-let sheetSt = null;   // הימור בעריכה בגיליון
+// ציבורי: משחקים, טבלאות, דירוג, הימורים שנחשפו. פרטי: החשבון שלי בלבד (לפי המפתח הסודי של המכשיר).
+let S = { fixtures:{}, tables:{}, standings:null, revealed:{}, meta:{} };
+let A = null;            // החשבון שלי (acct/<secret>) – רק מי שמחזיק את המפתח יכול לקרוא/לכתוב
+let AV = null;           // תצוגת מנהל
+let connected=false, loaded={}, seenGoals=null, goalTimer=null;
+let tab = lsGet('bb_tab') || 'games', dayF=null, lgF=lsGet('bb_lg')||'isr1', tblMode=lsGet('bb_tm')||'week', adIdx=Math.floor(Math.random()*ADS.length);
+let sheetSt=null;
 function lsGet(k){ try{return localStorage.getItem(k)}catch(e){return null} }
 function lsSet(k,v){ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v) }catch(e){} }
-function sessionGet(k){ try{return sessionStorage.getItem(k)}catch(e){return null} }
-function sessionSet(k,v){ try{sessionStorage.setItem(k,v)}catch(e){} }
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const keyOf = name => name.trim().replace(/[.#$\[\]\/]/g,'_');
 const he = t => HE[t] || t;
 const fmt = n => Math.round(n).toLocaleString('he-IL');
 const sgn = n => (n>0?'+':'')+fmt(n);
 const logo = img => img ? `<img src="https://lsm-static-prod.livescore.com/medium/${esc(img)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '';
+const rnd = (n, abc) => { const a=new Uint32Array(n); crypto.getRandomValues(a); return [...a].map(x=>abc[x%abc.length]).join(''); };
+const AZ='abcdefghijklmnopqrstuvwxyz0123456789', AZM='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const nkOf = name => name.toLowerCase().replace(/ /g,'');
 
-// מזהה מכשיר – רק המכשיר שיצר שחקן יכול להמר בשמו
-let DEVICE = lsGet('bb_dev'); if(!DEVICE){ DEVICE = (crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36)); lsSet('bb_dev', DEVICE); }
-let MYHASH = null;
-(async()=>{ try{ const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode('bb:'+DEVICE)); MYHASH=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
-  catch(e){ let h=0; for(const c of 'bb:'+DEVICE) h=(h*31+c.charCodeAt(0))|0; MYHASH='h'+(h>>>0).toString(16)+DEVICE.length; } render(); })();
-const isMine = p => !p || !p.owner || p.owner===MYHASH;
-const myP = () => me ? S.players[keyOf(me)] : null;
+// מפתח המכשיר (סודי) – נשמר רק בטלפון. מפתח מנהל – רק במכשיר של המנהל.
+let SEC = lsGet('bb_sec');
+let PENDING = lsGet('bb_pending');      // בקשת שחזור שממתינה לאישור מנהל
+let AK = lsGet('bb_ak');
+(function grabAdminKey(){ const m=location.hash.match(/k=(k[A-Za-z0-9]{40})/); if(m){ AK=m[1]; lsSet('bb_ak',AK); history.replaceState(null,'',location.pathname+location.search); tab='admin'; } })();
 
-// ================= זמן ותאריכים (שעון ישראל) =================
+// ================= זמן (שעון ישראל) =================
 const dkFmt = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'});
-const dayKey = ms => dkFmt.format(new Date(ms));                        // 'YYYY-MM-DD'
+const dayKey = ms => dkFmt.format(new Date(ms));
 const hm = ms => new Date(ms).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',minute:'2-digit'});
 const dkToDate = dk => { const [y,m,d]=dk.split('-').map(Number); return new Date(Date.UTC(y,m-1,d,12)); };
 const addDays = (dk,n) => { const d=dkToDate(dk); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); };
 const DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-function dayLabel(dk){
-  const t=dayKey(Date.now()); if(dk===t) return 'היום'; if(dk===addDays(t,1)) return 'מחר'; if(dk===addDays(t,-1)) return 'אתמול';
-  const d=dkToDate(dk); return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()}.${d.getUTCMonth()+1}`;
-}
-// שבוע ההימורים: שלישי → שני (סוף שבוע כדורגל נשאר יחד)
-function weekKey(dk){ const d=dkToDate(dk); const back=(d.getUTCDay()-2+7)%7; return addDays(dk,-back); }
+function dayLabel(dk){ const t=dayKey(Date.now()); if(dk===t) return 'היום'; if(dk===addDays(t,1)) return 'מחר'; if(dk===addDays(t,-1)) return 'אתמול';
+  const d=dkToDate(dk); return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()}.${d.getUTCMonth()+1}`; }
+function weekKey(dk){ const d=dkToDate(dk); return addDays(dk,-((d.getUTCDay()-2+7)%7)); }
 const weekLabel = wk => { const a=dkToDate(wk), b=dkToDate(addDays(wk,6)); return `<bdi dir="ltr">${a.getUTCDate()}.${a.getUTCMonth()+1}–${b.getUTCDate()}.${b.getUTCMonth()+1}</bdi>`; };
-function bonusWeeks(joined){ if(!joined) return 0; let n=0, w=weekKey(dayKey(joined)); const cur=weekKey(dayKey(Date.now())); while(w<cur && n<200){ w=addDays(w,7); n++; } return n; }
 
-// ================= Firebase: האזנה חיה + כתיבה =================
-function applyAt(path, data){
-  const parts=path.split('/').filter(Boolean);
-  if(!parts.length){ S=Object.assign({fixtures:{},tables:{},players:{},meta:{}}, data||{}); return; }
-  let o=S; for(let i=0;i<parts.length-1;i++){ if(typeof o[parts[i]]!=='object'||o[parts[i]]===null) o[parts[i]]={}; o=o[parts[i]]; }
-  const last=parts[parts.length-1]; if(data===null) delete o[last]; else o[last]=data;
-  S.fixtures=S.fixtures||{}; S.tables=S.tables||{}; S.players=S.players||{}; S.meta=S.meta||{};
+// ================= האזנה חיה =================
+function applyAt(obj, path, data){
+  const parts=path.split('/').filter(Boolean); if(!parts.length) return data;
+  obj = (obj && typeof obj==='object') ? obj : {}; let o=obj;
+  for(let i=0;i<parts.length-1;i++){ if(typeof o[parts[i]]!=='object'||o[parts[i]]===null) o[parts[i]]={}; o=o[parts[i]]; }
+  const last=parts[parts.length-1]; if(data===null) delete o[last]; else o[last]=data; return obj;
 }
-function listen(){
-  const es=new EventSource(`${DB}/${NODE}.json`);
-  const on = isPatch => ev => {
-    const {path,data}=JSON.parse(ev.data);
-    if(isPatch) for(const k in data) applyAt(path.replace(/\/$/,'')+'/'+k, data[k]); else applyAt(path,data);
-    connected=true;
-    if(path==='/meta/robotAt'){ if(tab==='admin') render(); return; }      // דופק הרובוט – בלי לרנדר
-    if(firstLoad){ firstLoad=false; afterFirstLoad(); }
-    detectGoals(); render(); if(sheetSt) renderSheet();
-  };
+const streams={};
+function stream(name, url, onData){
+  if(streams[name]) streams[name].close();
+  const es=new EventSource(url); streams[name]=es; let val=null;
+  const on = isPatch => ev => { const {path,data}=JSON.parse(ev.data);
+    if(isPatch) for(const k in data) val=applyAt(val, path.replace(/\/$/,'')+'/'+k, data[k]); else val=applyAt(val,path,data);
+    connected=true; onData(val, path); };
   es.addEventListener('put',on(false)); es.addEventListener('patch',on(true));
-  es.onerror=()=>{ connected=false; renderTop(); }; es.onopen=()=>{ connected=true; renderTop(); };
+  es.onerror=()=>{ connected=false; renderTop(); };
 }
-async function api(method, path, body){
-  const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),8000);
-  try{ const r=await fetch(`${DB}/${NODE}${path?'/'+path:''}.json`,{method,body:body===undefined?undefined:JSON.stringify(body),signal:ctl.signal}); if(!r.ok) throw new Error('save'); return r; }
-  finally{ clearTimeout(t); }
+function listenAll(){
+  const since=Date.now()-3*86400e3;
+  stream('fx', `${DB}/fixtures.json?orderBy=%22ko%22&startAt=${since}`, v=>{ S.fixtures=v||{}; loaded.fx=true; detectGoals(); render(); if(sheetSt) renderSheet(); });
+  stream('tb', `${DB}/tables.json`, v=>{ S.tables=v||{}; if(tab==='leagues') render(); });
+  stream('st', `${DB}/standings.json`, v=>{ S.standings=v; if(tab!=='games'||!sheetSt) render(); });
+  stream('rv', `${DB}/revealed.json`, v=>{ S.revealed=v||{}; if(tab==='games') render(); });
+  stream('mt', `${DB}/meta.json`, v=>{ S.meta=v||{}; });
+  listenMine();
+  if(AK) stream('av', `${DB}/adminView/${AK}.json`, v=>{ AV=v||{}; if(tab==='admin') render(); });
 }
-async function save(method, path, body, okMsg='נשמר! ✅'){
-  for(let i=1;i<=4;i++){
-    try{ await api(method,path,body); if(okMsg) toast(okMsg,true); return true; }
-    catch(e){ if(i<4){ toast(`השמירה נכשלה 📶 מנסה שוב… (${i+1}/4)`,false,'err'); await new Promise(r=>setTimeout(r,1200*i)); } }
-  }
-  toast('❌ לא נשמר – בדוק קליטה ונסה שוב',false,'err',5000); return false;
+function listenMine(){
+  if(SEC) stream('me', `${DB}/acct/${SEC}.json`, v=>{ A=v; loaded.me=true; if(!A){ SEC=null; lsSet('bb_sec',null); } render(); if(sheetSt) renderSheet(); });
+  else if(PENDING) stream('me', `${DB}/acct/${PENDING}.json`, v=>{ if(v){ SEC=PENDING; PENDING=null; lsSet('bb_sec',SEC); lsSet('bb_pending',null); A=v; toast('השחזור אושר! ברוך השב 🎉',true); listenMine(); } render(); });
 }
 
-// ================= משחקים, נעילה, הימורים =================
+// ================= כתיבה (עם ניסיון חוזר; דחייה של חוקי האבטחה לא חוזרת) =================
+async function write(method, path, body){
+  for(let i=1;i<=4;i++){
+    const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),8000);
+    try{ const r=await fetch(`${DB}/${path}.json`,{method,body:body===undefined?undefined:JSON.stringify(body),signal:ctl.signal});
+      if(r.ok) return 'ok'; if(r.status===401||r.status===403||r.status===400) return 'denied'; }
+    catch(e){} finally{ clearTimeout(t); }
+    if(i<4){ toast(`אין קליטה 📶 מנסה שוב… (${i+1}/4)`,false,'err'); await new Promise(r=>setTimeout(r,1200*i)); }
+  }
+  toast('❌ לא נשמר – בדוק קליטה ונסה שוב',false,'err',5000); return 'fail';
+}
+const SV = {'.sv':'timestamp'};
+
+// ================= משחקים והימורים =================
 const isLocked = f => !f || f.st!=='none' || Date.now() >= f.ko - LOCK_BEFORE_MS;
 const fxList = () => Object.entries(S.fixtures).map(([id,f])=>({id,...f}));
-function pickLabel(f, b){
-  if(b.m==='CS'){ const [h,a]=b.p.split('-'); return `מדויק ${he(f?f.home:'')} ${h}–${a} ${he(f?f.away:'')}`; }
-  return b.p==='X' ? 'תיקו' : `ניצחון ${he(f?(b.p==='1'?f.home:f.away):'')}`;
-}
+function pickLabel(f,b){ if(b.m==='CS'){ const [h,a]=b.p.split('-'); return `מדויק ${he(f?f.home:'')} ${h}–${a} ${he(f?f.away:'')}`; }
+  return b.p==='X'?'תיקו':`ניצחון ${he(f?(b.p==='1'?f.home:f.away):'')}`; }
 const sign = n => n>0?1:n<0?-1:0;
-function legWins(f, b){
-  if(b.m==='CS') return `${f.h}-${f.a}`===b.p;
-  return ({'1':1,'X':0,'2':-1})[b.p] === sign(f.h-f.a);
-}
-const payout = b => b.j ? b.s + 2*(b.s*b.o - b.s) : b.s*b.o;           // 🃏 ג'וקר: רווח כפול
-// מצב הימור: open / live-win / live-lose / won / lost / void
-function betState(b, F=S.fixtures, live=true){
-  const f=F[b.e]; if(!f) return 'open';
+const legWins = (f,b) => b.m==='CS' ? `${f.h}-${f.a}`===b.p : ({'1':1,'X':0,'2':-1})[b.p]===sign(f.h-f.a);
+const payout = b => b.j ? Math.round(b.s + 2*(b.s*b.o - b.s)) : Math.round(b.s*b.o);
+function betState(bid, b){
+  const st = A && A.settled && A.settled[bid]; if(st) return st.st;
+  const f=S.fixtures[b.e]; if(!f) return 'open';
   if(f.st==='postp') return 'void';
   if(f.st==='finished') return legWins(f,b)?'won':'lost';
-  if(f.st==='live' && live) return legWins(f,b)?'live-win':'live-lose';
+  if(f.st==='live') return legWins(f,b)?'live-win':'live-lose';
   return 'open';
 }
-// חשבון שחקן: יתרה זמינה, שווי חי, רווח שבועי
-function account(p, F=S.fixtures, wk=null){
-  const bets=Object.values(p.bets||{});
-  let avail = START_COINS + WEEKLY_BONUS*bonusWeeks(p.joined), value, open=0, won=0, settled=0, wkProfit=0, wkBets=0;
-  value = avail;
-  bets.forEach(b=>{
-    avail -= b.s; value -= b.s;
-    const st=betState(b,F,true), stSettled=betState(b,F,false);
-    if(stSettled==='won'){ avail += payout(b); } else if(stSettled==='void'){ avail += b.s; }
-    const v = st==='won'||st==='live-win' ? payout(b) : st==='lost'||st==='live-lose' ? 0 : b.s;
-    value += v;
-    if(st==='open'||st.startsWith('live')) open++;
-    if(st==='won'||st==='lost'){ settled++; if(st==='won') won++; }
-    const f=F[b.e];
-    if(wk && f && weekKey(dayKey(f.ko))===wk){ wkBets++; wkProfit += (st==='open'||st==='void') ? 0 : v - b.s; }
-  });
-  return {avail, value, open, won, settled, wkProfit, wkBets, n:bets.length};
+const myBets = () => Object.entries((A&&A.bets)||{});
+// היתרה האמיתית מגיעה מהשרת; "לייב" = כאילו המשחקים נגמרים עכשיו (לתצוגה בלבד)
+function account(){
+  if(!A) return null;
+  const avail=(A.wallet&&A.wallet.bal)||0; let value=avail, open=0;
+  myBets().forEach(([id,b])=>{ if(A.settled&&A.settled[id]) return; const st=betState(id,b);
+    value += st==='won'||st==='live-win' ? payout(b) : st==='lost'||st==='live-lose' ? 0 : b.s; if(st==='open'||st.startsWith('live')) open++; });
+  const done=Object.values(A.settled||{}).filter(x=>x.st!=='void'), won=done.filter(x=>x.st==='won').length;
+  return {avail, value, open, won, settled:done.length};
 }
-function standings(mode, F=S.fixtures){
-  const wk = weekKey(dayKey(Date.now()));
-  const rows = Object.entries(S.players).filter(([k,p])=>p&&p.name).map(([k,p])=>({k, name:p.name, ...account(p,F,wk)}));
-  const key = r => mode==='week' ? r.wkProfit : r.value;
-  rows.sort((a,b)=> key(b)-key(a) || b.won-a.won || a.name.localeCompare(b.name,'he'));
-  rows.forEach((r,i)=>{ const p=rows[i-1]; r.rank = p && key(p)===key(r) ? p.rank : i+1; });
-  return rows;
-}
-function prevFixtures(){ const pr=S.meta.prev; if(!pr||!pr.r) return null; const F={...S.fixtures}; for(const id in pr.r) if(F[id]) F[id]={...F[id], ...pr.r[id]}; return F; }
-function rankMap(mode,F){ const m={}; standings(mode,F).forEach(r=>m[r.k]=r.rank); return m; }
-// קופת הבנק: גדלה כשמפסידים, מתרוקנת כשזוכים (כולל לייב)
-function bank(F=S.fixtures){
-  let b=BANK_START;
-  Object.values(S.players).forEach(p=>{ if(p&&p.name) b -= WEEKLY_BONUS*bonusWeeks(p.joined); });   // המענק השבועי יוצא מהקופה
-  Object.values(S.players).forEach(p=>Object.values(p.bets||{}).forEach(x=>{ const st=betState(x,F,true);
-    if(st==='lost'||st==='live-lose') b+=x.s; else if(st==='won'||st==='live-win') b-=payout(x)-x.s; }));
-  return b;
-}
-const jokerUsed = (p, dk) => Object.values((p&&p.bets)||{}).some(b=>b.j && S.fixtures[b.e] && dayKey(S.fixtures[b.e].ko)===dk);
+const jokerUsed = dk => !!(A && A.jokers && A.jokers[dk]);
 
 // ================= רינדור =================
 function ad(){ adIdx=(adIdx+1)%ADS.length; return `<div class="ad">📢 ${ADS[adIdx]}</div>`; }
 function liveTag(f){ const m=(f.min||'').trim(); const t=!m?'':m==='HT'?' · מחצית':` · <bdi dir="ltr">${esc(m.replace(/'$/,''))}'</bdi>`; return `<span class="live">חי${t}</span>`; }
-// יתרה חיה: כולל הימורים שכרגע זוכים במשחקים שרצים – עולה ויורדת עם כל גול
 let shownBal=null, balAnim=null;
 function animateBal(to){
-  if(shownBal===null || !me){ shownBal=to; return; }
-  const from=shownBal; if(Math.round(from)===Math.round(to)) { shownBal=to; return; }
-  const el=document.getElementById('bal'); const d=to-from;
+  if(shownBal===null){ shownBal=to; return; }
+  const from=shownBal; if(Math.round(from)===Math.round(to)){ shownBal=to; return; }
+  const el=document.getElementById('bal'), d=to-from;
   if(el){ el.classList.remove('up','dn'); el.classList.add(d>0?'up':'dn'); setTimeout(()=>el&&el.classList.remove('up','dn'),1600);
     const r=el.getBoundingClientRect(), f=document.createElement('div'); f.className='delta '+(d>0?'up':'dn'); f.textContent=(d>0?'+':'')+fmt(d)+' 🪙';
     f.style.left=(r.left+r.width/2)+'px'; f.style.top=(r.bottom+4)+'px'; document.body.appendChild(f); setTimeout(()=>f.remove(),1900); }
@@ -350,298 +322,266 @@ function animateBal(to){
     const n=document.getElementById('balV'); if(n) n.textContent=fmt(v); if(k<1) balAnim=requestAnimationFrame(step); else shownBal=to; })(t0);
 }
 function renderTop(){
-  const p=myP(), a=p?account(p):null;
+  const a=account(), bank=S.standings?S.standings.bank:BANK_START;
   document.getElementById('top').innerHTML = `
     <span class="pill"><span class="dot ${connected?'on':''}"></span>${connected?'חי':'מתחבר…'}</span>
     ${a?`<span class="bal ${a.value!==a.avail?'lv':''}" id="bal" onclick="go('mine')">🪙 <span id="balV">${fmt(shownBal??a.value)}</span> <small>${a.value!==a.avail?'🔴 לייב':'יתרה'}</small></span>`:''}
-    <span class="pill" onclick="go('table')">🏦 ${fmt(bank())}</span>`;
+    <span class="pill" onclick="go('table')">🏦 ${fmt(bank)}</span>`;
   if(a) animateBal(a.value); else shownBal=null;
 }
+function stText(st,b){ return st==='won'?`✅ +${fmt(payout(b)-b.s)}`:st==='lost'?'❌ הפסד':st==='live-win'?'🟢 כרגע זוכה':st==='live-lose'?'🔴 כרגע מפסיד':st==='void'?'↩️ הוחזר':'⏳ פתוח'; }
 function fxCard(f){
-  const L=isLocked(f), p=myP(), mine=Object.entries((p&&p.bets)||{}).filter(([id,b])=>b.e===f.id);
-  const o=f.odds||{}, lg=LEAGUES[f.lg]||{};
+  const L=isLocked(f), mine=myBets().filter(([id,b])=>b.e===f.id), o=f.odds||{}, lg=LEAGUES[f.lg]||{};
   const mid = f.st==='live'||f.st==='finished' ? `<div class="score">${f.h} - ${f.a}</div>${f.st==='live'?liveTag(f):'<span class="fin">הסתיים</span>'}`
             : f.st==='postp' ? '<span class="fin">נדחה</span>' : `<div class="ko">${hm(f.ko)}</div>`;
-  const cd = f.ko - LOCK_BEFORE_MS - Date.now();
-  const lockTxt = f.st!=='none' ? '' : cd<=0 ? '<span class="lock">🔒 ננעל</span>' : cd<3600e3 ? `<span class="lock">ננעל בעוד ${Math.ceil(cd/60e3)} דק'</span>` : '';
-  const ob = (k,lab) => { const has=mine.some(([id,b])=>b.m==='W'&&b.p===k);
-    return `<button class="ob ${has?'mine':''}" ${L||!o[k]?'disabled':''} onclick="openBet('${f.id}','W','${k}')"><span class="l">${lab}</span><span class="v">${o[k]?o[k].toFixed(2):'–'}</span></button>`; };
-  let h = `<div class="card fx"><div class="top"><span>${lg.f||''} ${lg.n||''}</span><span>${lockTxt}</span></div>
+  const cd=f.ko-LOCK_BEFORE_MS-Date.now();
+  const lockTxt = f.st!=='none'?'' : cd<=0?'<span class="lock">🔒 ננעל</span>' : cd<3600e3?`<span class="lock">ננעל בעוד ${Math.ceil(cd/60e3)} דק'</span>`:'';
+  const ob=(k,lab)=>{ const has=mine.some(([id,b])=>b.m==='W'&&b.p===k);
+    return `<button class="ob ${has?'mine':''}" ${L||!o[k]||!A?'disabled':''} onclick="openBet('${f.id}','W','${k}')"><span class="l">${lab}</span><span class="v">${o[k]?o[k].toFixed(2):'–'}</span></button>`; };
+  let h=`<div class="card fx"><div class="top"><span>${lg.f||''} ${lg.n||''}</span><span>${lockTxt}</span></div>
     <div class="teams"><div class="tm">${logo(f.hi)}${esc(he(f.home))}</div><div class="mid">${mid}</div><div class="tm">${logo(f.ai)}${esc(he(f.away))}</div></div>`;
-  if(f.st==='none') h += `<div class="odds">${ob('1',esc(he(f.home)))}${ob('X','תיקו')}${ob('2',esc(he(f.away)))}</div>
-      <button class="csb" ${L||!o.cs?'disabled':''} onclick="openBet('${f.id}','CS','1-0')">🎯 הימור על תוצאה מדויקת</button>`;
-  mine.forEach(([id,b])=>{ const st=betState(b); const cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
-    h += `<div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)}</span><span>${stText(st,b)}</span></div>`;
-    if(!L) h += `<div style="text-align:left;margin-top:2px"><a href="#" class="muted" onclick="cancelBet('${id}');return false">בטל הימור</a></div>`; });
-  // מי הימר מה – נחשף רק אחרי הנעילה
-  const all=[]; Object.values(S.players).forEach(pl=>Object.values(pl.bets||{}).forEach(b=>{ if(b.e===f.id) all.push({n:pl.name,b}); }));
-  if(all.length) h += L ? `<details class="who"><summary>👀 ${all.length} הימורים על המשחק – מי הימר מה</summary>${all.map(({n,b})=>{const st=betState(b);
-      return `<div class="wr"><span>${b.j?'🃏 ':''}${esc(n)}</span><span>${esc(pickLabel(f,b))} · ${fmt(b.s)} <span class="st-${st.startsWith('live')?'live':st==='void'?'open':st}">${stText(st,b)}</span></span></div>`}).join('')}</details>`
-    : `<div class="muted" style="margin-top:8px">🎰 ${all.length} הימורים על המשחק · ייחשפו בנעילה</div>`;
-  return h + `</div>`;
+  if(f.st==='none') h+=`<div class="odds">${ob('1',esc(he(f.home)))}${ob('X','תיקו')}${ob('2',esc(he(f.away)))}</div>
+    <button class="csb" ${L||!o.cs||!A?'disabled':''} onclick="openBet('${f.id}','CS','1-0')">${mine.length?'➕ הוסף הימור על תוצאה מדויקת':'🎯 הימור על תוצאה מדויקת'}</button>`;
+  mine.forEach(([id,b])=>{ const st=betState(id,b), cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
+    h+=`<div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)}</span><span>${stText(st,b)}</span></div>`;
+    if(!L) h+=`<div style="text-align:left;margin-top:2px"><a href="#" class="muted" onclick="cancelBet('${id}');return false">בטל הימור</a></div>`; });
+  const rv=Object.values(S.revealed[f.id]||{});
+  if(rv.length) h+=`<details class="who"><summary>👀 ${rv.length} הימורים על המשחק – מי הימר מה</summary>${rv.map(b=>{ const st=b.st;
+      return `<div class="wr"><span>${b.j?'🃏 ':''}${esc(b.n)}</span><span>${esc(pickLabel(f,b))} · ${fmt(b.s)} <span class="st-${st.startsWith('live')?'live':st==='void'?'open':st}">${stText(st,b)}</span></span></div>`}).join('')}</details>`;
+  else if(!L) h+=`<div class="muted" style="margin-top:8px">🔒 ההימורים של כולם ייחשפו בנעילה</div>`;
+  return h+`</div>`;
 }
-function stText(st,b){ return st==='won'?`✅ +${fmt(payout(b)-b.s)}`:st==='lost'?'❌ הפסד':st==='live-win'?'🟢 כרגע זוכה':st==='live-lose'?'🔴 כרגע מפסיד':st==='void'?'↩️ הוחזר':'⏳ פתוח'; }
-
 function viewGames(){
-  const now=Date.now(), today=dayKey(now);
-  const list=fxList().filter(f=>dayKey(f.ko)>=addDays(today,-1)).sort((a,b)=>a.ko-b.ko);
-  const days=[...new Set(list.map(f=>dayKey(f.ko)))];
-  const liveN=list.filter(f=>f.st==='live').length;
-  if(!dayF || (dayF!=='live' && !days.includes(dayF))) dayF = liveN ? 'live' : (days.find(d=>d>=today) || days[days.length-1]);
-  let h = `<div class="chips">${liveN?`<button class="chip ${dayF==='live'?'on':''}" onclick="dayF='live';render()">🔴 חי עכשיו<span class="n">${liveN}</span></button>`:''}
+  const today=dayKey(Date.now()), list=fxList().filter(f=>dayKey(f.ko)>=addDays(today,-1)).sort((a,b)=>a.ko-b.ko);
+  const days=[...new Set(list.map(f=>dayKey(f.ko)))], liveN=list.filter(f=>f.st==='live').length;
+  if(!dayF||(dayF!=='live'&&!days.includes(dayF))) dayF=liveN?'live':(days.find(d=>d>=today)||days[days.length-1]);
+  let h=`<div class="chips">${liveN?`<button class="chip ${dayF==='live'?'on':''}" onclick="dayF='live';render()">🔴 חי עכשיו<span class="n">${liveN}</span></button>`:''}
     ${days.map(d=>`<button class="chip ${dayF===d?'on':''}" onclick="dayF='${d}';render()">${dayLabel(d)}<span class="n">${list.filter(f=>dayKey(f.ko)===d).length}</span></button>`).join('')}</div>`;
-  const shown = list.filter(f=> dayF==='live' ? f.st==='live' : dayKey(f.ko)===dayF);
-  if(!shown.length) return h + `<div class="empty"><div class="e">📅</div>אין משחקים ביום הזה.<br>הרובוט מעדכן משחקים ל-3 ימים קדימה.</div>` + ad();
-  const p=myP();
-  if(dayF!=='live' && p && !jokerUsed(p,dayF) && shown.some(f=>!isLocked(f))) h += `<div class="muted" style="margin:4px 2px">🃏 הג'וקר היומי שלך פנוי – בחר הימור אחד היום עם רווח כפול</div>`;
-  const ord = f => f.st==='live'?0 : f.st==='none'?1 : 2;   // חי ← עתידי ← הסתיים
+  const shown=list.filter(f=>dayF==='live'?f.st==='live':dayKey(f.ko)===dayF);
+  if(!loaded.fx) return h+`<div class="empty"><div class="e">⏳</div>טוען משחקים…</div>`;
+  if(!shown.length) return h+`<div class="empty"><div class="e">📅</div>אין משחקים ביום הזה.<br>הרובוט מעדכן משחקים ל-3 ימים קדימה.</div>`+ad();
+  if(A && dayF!=='live' && !jokerUsed(dayF) && shown.some(f=>!isLocked(f))) h+=`<div class="muted" style="margin:4px 2px">🃏 הג'וקר היומי שלך פנוי – בחר הימור אחד היום עם רווח כפול</div>`;
+  const ord=f=>f.st==='live'?0:f.st==='none'?1:2;
   Object.keys(LEAGUES).forEach((lg,i)=>{ const g=shown.filter(f=>f.lg===lg).sort((a,b)=>ord(a)-ord(b)||a.ko-b.ko); if(!g.length) return;
-    h += `<div class="lghead">${LEAGUES[lg].f} ${LEAGUES[lg].n}</div>` + g.map(fxCard).join('');
-    if(i===1) h += ad(); });
-  return h + ad();
+    h+=`<div class="lghead">${LEAGUES[lg].f} ${LEAGUES[lg].n}</div>`+g.map(fxCard).join(''); if(i===1) h+=ad(); });
+  return h+ad();
 }
-
 function viewMine(){
-  const p=myP(); if(!p) return '';
-  const a=account(p), bets=Object.entries(p.bets||{}).map(([id,b])=>({id,...b,f:S.fixtures[b.e]})).sort((x,y)=>(y.f?y.f.ko:0)-(x.f?x.f.ko:0));
-  const open=bets.filter(b=>{const s=betState(b);return s==='open'||s.startsWith('live')}), done=bets.filter(b=>!open.includes(b));
-  let h = `<h2>🧾 ההימורים של ${esc(me)}</h2>
-    <div class="sum"><div><b>${fmt(a.avail)}</b><span>🪙 זמין להימור</span></div><div><b>${fmt(a.value)}</b><span>${a.value!==a.avail?'🔴 יתרה לייב':'💼 יתרה כוללת'}</span></div><div><b>${a.won}/${a.settled}</b><span>✅ הימורים שזכו</span></div></div>
-    ${a.value!==a.avail?`<div class="card" style="text-align:center;border-color:var(--r)">🔴 <b>יתרה לייב: ${fmt(a.value)} 🪙</b><br><span class="muted">ככה תיראה היתרה שלך אם המשחקים ייגמרו בתוצאה של עכשיו. כל גול מזיז אותה!</span></div>`:''}
+  const a=account(); if(!a) return '';
+  const bets=myBets().map(([id,b])=>({id,...b,f:S.fixtures[b.e]})).sort((x,y)=>(y.at||0)-(x.at||0));
+  const isOpen=b=>{ const s=betState(b.id,b); return s==='open'||s.startsWith('live'); };
+  const open=bets.filter(isOpen), done=bets.filter(b=>!isOpen(b));
+  const pct=a.settled?Math.round(100*a.won/a.settled):0;
+  let h=`<h2>🧾 ההימורים של ${esc(A.name)}</h2>
+    <div class="sum"><div><b>${fmt(a.avail)}</b><span>🪙 יתרה</span></div><div><b>${fmt(a.value)}</b><span>${a.value!==a.avail?'🔴 יתרה לייב':'💼 כולל פתוחים'}</span></div><div><b>${pct}%</b><span>🎯 הצלחה (${a.won}/${a.settled})</span></div></div>
+    ${a.value!==a.avail?`<div class="card" style="text-align:center;border-color:var(--r)">🔴 <b>יתרה לייב: ${fmt(a.value)} 🪙</b><br><span class="muted">ככה תיראה היתרה אם המשחקים ייגמרו בתוצאה של עכשיו. כל גול מזיז אותה!</span></div>`:''}
     <div class="muted" style="margin-top:6px">כל יום שלישי מקבלים ${WEEKLY_BONUS} ז'יטונים מקופת הבנק 🎁 – גם מי שהפסיד הכול חוזר למשחק</div>`;
-  if(a.avail<=0 && !open.length) h += `<div class="card" style="text-align:center">😵 פשטת רגל! ביום שלישי תקבל ${WEEKLY_BONUS} ז'יטונים.<br>בינתיים – <b>20 ברפיז ב-BUX</b></div>`;
-  const row = b => { const st=betState(b), f=b.f; const cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
+  if(a.avail<=0&&!open.length) h+=`<div class="card" style="text-align:center">😵 נגמרו הז'יטונים! ביום שלישי תקבל ${WEEKLY_BONUS}.<br>בינתיים – <b>20 ברפיז ב-BUX</b></div>`;
+  const row=b=>{ const st=betState(b.id,b), f=b.f, cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
     return `<div class="card" style="padding:10px"><div class="muted">${f?`${LEAGUES[f.lg]?.f||''} ${dayLabel(dayKey(f.ko))} ${hm(f.ko)} · ${esc(he(f.home))} – ${esc(he(f.away))}`:'משחק'}
-      ${f&&(f.st==='live'||f.st==='finished')?` · <b style="color:#fff;direction:ltr;unicode-bidi:isolate">${f.h}-${f.a}</b> ${f.st==='live'?liveTag(f):''}`:''}</div>
+      ${f&&(f.st==='live'||f.st==='finished')?` · <b style="color:#fff;direction:rtl;unicode-bidi:isolate">${f.h} - ${f.a}</b> ${f.st==='live'?liveTag(f):''}`:''}</div>
       <div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)} = ${fmt(payout(b))}</span><span>${stText(st,b)}</span></div>
       ${f&&!isLocked(f)?`<div style="text-align:left;margin-top:4px"><a href="#" class="muted" onclick="cancelBet('${b.id}');return false">בטל הימור</a></div>`:''}</div>`; };
-  h += `<h2>⏳ פתוחים (${open.length})</h2>` + (open.length?open.map(row).join(''):`<div class="empty"><div class="e">🎰</div>אין הימורים פתוחים. <a href="#" style="color:var(--y)" onclick="go('games');return false">ללוח המשחקים</a></div>`);
-  h += ad() + `<h2>📜 היסטוריה (${done.length})</h2>` + done.slice(0,40).map(row).join('');
-  return h + `<footer>מחובר כ-${esc(me)} · <a href="#" onclick="logout();return false">החלף משתמש</a></footer>`;
+  h+=`<h2>⏳ פתוחים (${open.length})</h2>`+(open.length?open.map(row).join(''):`<div class="empty"><div class="e">🎰</div>אין הימורים פתוחים. <a href="#" style="color:var(--y)" onclick="go('games');return false">ללוח המשחקים</a></div>`);
+  h+=ad()+`<h2>📜 היסטוריה (${done.length})</h2>`+done.slice(0,40).map(row).join('');
+  return h+`<footer>מחובר כ-${esc(A.name)} · החשבון שמור רק בטלפון הזה 🔐</footer>`;
 }
-
 function viewTable(){
-  const mode=tblMode, rows=standings(mode), F0=prevFixtures(), prev=F0?rankMap(mode,F0):{}, wk=weekKey(dayKey(Date.now()));
-  const b=bank(), bd=b-BANK_START;
-  let h = `<div class="bank"><div class="muted">🏦 קופת הבנק</div><div class="v">${fmt(b)} 🪙</div>
+  const st=S.standings, mode=tblMode, rows=(st&&st.rows?st.rows:[]).slice(), wk=weekKey(dayKey(Date.now()));
+  const key=mode==='week'?'rw':'rs', pkey=mode==='week'?'pw':'ps'; rows.sort((a,b)=>a[key]-b[key]||b.won-a.won);
+  const bank=st?st.bank:BANK_START, bd=bank-BANK_START, me=A&&A.pid;
+  let h=`<div class="bank"><div class="muted">🏦 קופת הבנק</div><div class="v">${fmt(bank)} 🪙</div>
     <div class="d ${bd>0?'neg':bd<0?'pos':''}">${bd>0?`הבנק מרוויח ${fmt(bd)} – השחקנים בהפסד 😈`:bd<0?`השחקנים לקחו לבנק ${fmt(-bd)}! 🤑`:'הבנק מחכה להימור הראשון'}</div></div>
     <div class="seg"><button class="${mode==='week'?'on':''}" onclick="setTM('week')">📅 שבועית (${weekLabel(wk)})</button><button class="${mode==='season'?'on':''}" onclick="setTM('season')">🏆 עונתית</button></div>
-    <div class="muted">${mode==='week'?'רווח/הפסד מהימורים על משחקי השבוע (כולל לייב)':'שווי כולל: יתרה + הימורים פתוחים (כולל לייב)'} · החצים = שינוי מאז הגול האחרון</div>`;
-  const fromBottom=[...new Set(rows.map(r=>r.rank))].filter(x=>x>1).sort((a,b)=>b-a);
-  h += `<div class="card" style="padding:4px 8px"><table><thead><tr><th>#</th><th style="text-align:right">שם</th><th>${mode==='week'?'רווח השבוע':'שווי 🪙'}</th><th>${mode==='week'?'הימורים':'זכיות'}</th></tr></thead><tbody>`;
-  if(!rows.length) h += `<tr><td colspan="4" class="muted">עוד אין משתתפים</td></tr>`;
-  rows.forEach(r=>{
-    const king=r.rank===1&&rows.length>1&&(mode==='season'||r.wkProfit>0), pi=fromBottom.indexOf(r.rank), pen=mode==='week'&&pi>=0&&pi<3?PENALTIES[pi]:'';
-    const d=prev[r.k]!=null?prev[r.k]-r.rank:0, arr=d>0?`<span class="arr up">▲${d}</span>`:d<0?`<span class="arr dn">▼${-d}</span>`:'';
-    const val = mode==='week' ? `<span class="${r.wkProfit>0?'pos':r.wkProfit<0?'neg':''}">${sgn(r.wkProfit)}</span>` : fmt(r.value);
-    h += `<tr class="${me&&r.k===keyOf(me)?'me':''}"><td class="big">${king?'👑':r.rank}</td>
-      <td class="n">${esc(r.name)}${arr}${king?`<span class="tag k">${mode==='week'?'👑 אלוף BUX של השבוע':"👑 מלך הז'יטונים"}</span>`:''}${pen?`<span class="tag ${pi===0?'l':'p'}">${pen}</span>`:''}</td>
-      <td class="big">${val}</td><td>${mode==='week'?r.wkBets:`${r.won}/${r.settled}`}</td></tr>`;
-  });
-  h += `</tbody></table></div>`;
-  if(mode==='week') h += `<button class="btn sec" onclick="showPodium(addDays(weekKey(dayKey(Date.now())),-7))">🏆 הפודיום של שבוע שעבר</button>`;
-  return h + ad();
+    <div class="muted">${mode==='week'?'רווח/הפסד מהימורים על משחקי השבוע (כולל לייב)':'יתרה + הימורים פתוחים (כולל לייב)'} · % = אחוז הימורים שזכו · החצים = שינוי מאז הגול האחרון</div>`;
+  const fromBottom=[...new Set(rows.map(r=>r[key]))].filter(x=>x>1).sort((a,b)=>b-a);
+  h+=`<div class="card" style="padding:4px 8px"><table><thead><tr><th>#</th><th style="text-align:right">שם</th><th>${mode==='week'?'רווח':'שווי 🪙'}</th><th>% הצלחה</th></tr></thead><tbody>`;
+  if(!rows.length) h+=`<tr><td colspan="4" class="muted">עוד אין משתתפים</td></tr>`;
+  rows.forEach(r=>{ const rank=r[key], king=rank===1&&rows.length>1&&(mode==='season'||r.wp>0), pi=fromBottom.indexOf(rank), pen=mode==='week'&&pi>=0&&pi<3?PENALTIES[pi]:'';
+    const d=(r[pkey]||rank)-rank, arr=d>0?`<span class="arr up">▲${d}</span>`:d<0?`<span class="arr dn">▼${-d}</span>`:'';
+    const val=mode==='week'?`<span class="${r.wp>0?'pos':r.wp<0?'neg':''}">${sgn(r.wp)}</span>`:fmt(r.v);
+    h+=`<tr class="${r.pid===me?'me':''}"><td class="big">${king?'👑':rank}</td><td class="n">${esc(r.n)}${arr}${king?`<span class="tag k">${mode==='week'?'👑 אלוף BUX של השבוע':"👑 מלך הז'יטונים"}</span>`:''}${pen?`<span class="tag ${pi===0?'l':'p'}">${pen}</span>`:''}</td>
+      <td class="big">${val}</td><td>${r.dn?Math.round(100*r.won/r.dn)+'%':'–'}<div class="muted" style="font-size:11px">${r.won}/${r.dn}</div></td></tr>`; });
+  return h+`</tbody></table></div>`+ad();
 }
 function setTM(m){ tblMode=m; lsSet('bb_tm',m); render(); }
-
 function liveTable(lg){
-  const base=(S.tables[lg]&&S.tables[lg].rows)||[];
-  const rows=base.map((r,i)=>({...r, base:i+1, live:null}));
-  const by=Object.fromEntries(rows.map(r=>[r.t,r]));
-  fxList().filter(f=>f.lg===lg && (f.st==='live' || (f.st==='finished' && !f.inT && f.bh!=null))).forEach(f=>{
-    const H=by[f.home], A=by[f.away]; if(!H||!A) return;
-    [[H,f.h,f.a],[A,f.a,f.h]].forEach(([t,gf,ga])=>{ t.pld++; t.gf+=gf; t.ga+=ga; if(gf>ga){t.w++;t.pts+=3} else if(gf===ga){t.d++;t.pts++} else t.l++;
-      if(f.st==='live') t.live=`${f.h}-${f.a}`; });
-  });
-  rows.sort((a,b)=>b.pts-a.pts || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf);
-  return rows;
+  const base=(S.tables[lg]&&S.tables[lg].rows)||[], rows=base.map((r,i)=>({...r,base:i+1,live:null})), by=Object.fromEntries(rows.map(r=>[r.t,r]));
+  fxList().filter(f=>f.lg===lg&&(f.st==='live'||(f.st==='finished'&&!f.inT&&f.bh!=null))).forEach(f=>{ const H=by[f.home], X=by[f.away]; if(!H||!X) return;
+    [[H,f.h,f.a],[X,f.a,f.h]].forEach(([t,gf,ga])=>{ t.pld++; t.gf+=gf; t.ga+=ga; if(gf>ga){t.w++;t.pts+=3} else if(gf===ga){t.d++;t.pts++} else t.l++; if(f.st==='live') t.live=`${f.h}-${f.a}`; }); });
+  return rows.sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);
 }
 function viewLeagues(){
-  let h = `<div class="chips">${Object.entries(LEAGUES).map(([k,l])=>`<button class="chip ${lgF===k?'on':''}" onclick="lgF='${k}';lsSet('bb_lg','${k}');render()">${l.f} ${l.n}</button>`).join('')}</div>`;
-  const rows=liveTable(lgF);
-  if(!rows.length) return h + `<div class="empty"><div class="e">📊</div>הטבלה תופיע ברגע שהרובוט יביא אותה</div>`;
-  const anyLive=rows.some(r=>r.live);
-  h += `<div class="muted">${anyLive?'🔴 טבלה חיה – כולל המשחקים שרצים עכשיו':'מתעדכן אוטומטית אחרי כל מחזור'}</div>
+  let h=`<div class="chips">${Object.entries(LEAGUES).map(([k,l])=>`<button class="chip ${lgF===k?'on':''}" onclick="lgF='${k}';lsSet('bb_lg','${k}');render()">${l.f} ${l.n}</button>`).join('')}</div>`;
+  const rows=liveTable(lgF); if(!rows.length) return h+`<div class="empty"><div class="e">📊</div>הטבלה תופיע ברגע שהרובוט יביא אותה</div>`;
+  h+=`<div class="muted">${rows.some(r=>r.live)?'🔴 טבלה חיה – כולל המשחקים שרצים עכשיו':'מתעדכן אוטומטית אחרי כל מחזור'}</div>
     <div class="card lt" style="padding:4px 6px"><table><thead><tr><th>#</th><th style="text-align:right">קבוצה</th><th>מש'</th><th>נ-ת-ה</th><th>הפרש</th><th>נק'</th></tr></thead><tbody>`;
   rows.forEach((r,i)=>{ const d=r.base-(i+1), arr=d>0?`<span class="arr up">▲${d}</span>`:d<0?`<span class="arr dn">▼${-d}</span>`:'';
-    h += `<tr class="${r.live?'lv':''}"><td>${i+1}</td><td class="n">${logo(r.img)}<span>${esc(he(r.t))}${arr}${r.live?` <span class="live" style="direction:ltr;unicode-bidi:isolate">${r.live}</span>`:''}</span></td>
+    h+=`<tr class="${r.live?'lv':''}"><td>${i+1}</td><td class="n">${logo(r.img)}<span>${esc(he(r.t))}${arr}${r.live?` <span class="live" style="direction:rtl;unicode-bidi:isolate">${r.live.replace('-',' - ')}</span>`:''}</span></td>
       <td>${r.pld}</td><td style="font-size:12px">${r.w}-${r.d}-${r.l}</td><td style="direction:ltr;unicode-bidi:isolate">${r.gf-r.ga>0?'+':''}${r.gf-r.ga}</td><td class="big">${r.pts}</td></tr>`; });
-  return h + `</tbody></table></div>` + ad();
+  return h+`</tbody></table></div>`+ad();
 }
 
+// ================= כניסה + שחזור =================
 function viewLogin(){
+  if(PENDING) return `<div class="card" style="text-align:center;margin-top:20px"><div style="font-size:48px">⏳</div><h2>ממתין לאישור המנהל</h2>
+    <div class="muted">ביקשת לשחזר את החשבון שלך. ברגע שהמנהל יאשר – תיכנס אוטומטית.</div>
+    <button class="btn sec" style="margin-top:14px" onclick="PENDING=null;lsSet('bb_pending',null);render()">ביטול</button></div>`;
   return `<div class="card" style="text-align:center;margin-top:20px">
     <div style="font-size:52px">🎰⚽</div><h2 style="margin-top:4px">איך קוראים לך?</h2>
-    <div class="muted">מקבלים ${START_COINS} ז'יטונים וירטואליים (ועוד ${WEEKLY_BONUS} כל שבוע) ומהמרים על משחקי ליגת העל, הלאומית, אנגליה ואיטליה. בלי כסף אמיתי.</div>
+    <div class="muted">מקבלים ${START_COINS} ז'יטונים וירטואליים (ועוד ${WEEKLY_BONUS} כל שבוע) ומהמרים על ליגת העל, הלאומית, אנגליה ואיטליה. בלי כסף אמיתי.</div>
     <input class="name" id="nameIn" placeholder="השם שלך" maxlength="20" autocomplete="off" enterkeyhint="go" onkeydown="if(event.key==='Enter')login()">
     <div id="loginErr" style="color:#ff8080;font-weight:900;min-height:22px;margin-bottom:6px"></div>
     <button class="btn" id="loginBtn" onclick="login()">יאללה 🔥</button></div>${ad()}`;
 }
+let lastTakenNk=null;
 async function login(){
   const v=(document.getElementById('nameIn').value||'').trim().replace(/\s+/g,' '), err=document.getElementById('loginErr');
-  if(v.length<2){ err.textContent='צריך לפחות 2 אותיות 🙂'; return; }
-  if(firstLoad||!MYHASH){ err.textContent='רגע, מתחבר… נסה שוב בעוד שנייה'; return; }
-  const k=keyOf(v), ex=S.players[k];
-  if(ex && !isMine(ex)){ err.innerHTML='השם הזה כבר תפוס, נסה כינוי אחר<div class="muted" style="font-weight:400;margin-top:4px">זה אתה מטלפון או דפדפן אחר? בקש מהמנהל ללחוץ "שחרר" ליד השם שלך</div>'; return; }
-  const btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='נכנס...';
-  if(!ex || !ex.owner){
-    const ok=await save(ex?'PATCH':'PUT','players/'+k, ex?{owner:MYHASH}:{name:v,owner:MYHASH,joined:Date.now()}, null);
-    if(!ok){ btn.disabled=false; btn.textContent='יאללה 🔥'; return; }
-  }
-  me=v; lsSet('bb_name',v); tab='games'; lsSet('bb_tab','games');
-  if(!ex){ toast(`ברוך הבא! קיבלת ${START_COINS} ז'יטונים 🪙`,true,null,3500); confetti(); }
-  render();
+  if(v.length<2) return err.textContent='צריך לפחות 2 אותיות 🙂';
+  if(/[.#$\[\]\/<>]/.test(v)) return err.textContent='בלי סימנים מיוחדים בשם 🙂';
+  const nk=nkOf(v), btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='בודק...';
+  let taken=null; try{ taken=await (await fetch(`${DB}/names/${encodeURIComponent(nk)}.json`)).json(); }catch(e){ btn.disabled=false; btn.textContent='יאללה 🔥'; return err.textContent='אין חיבור – נסה שוב'; }
+  if(taken){ btn.disabled=false; btn.textContent='יאללה 🔥'; lastTakenNk=nk;
+    return err.innerHTML=`השם הזה כבר תפוס, נסה כינוי אחר<div style="margin-top:8px"><a href="#" style="color:var(--y)" onclick="askRecover();return false">זה אני מטלפון אחר – בקש שחזור מהמנהל</a></div>`; }
+  const sec='s'+rnd(48,AZM), pid='p'+rnd(16,AZ);
+  const res=await write('PATCH','',{[`names/${nk}`]:pid, [`acct/${sec}`]:{name:v,nk,pid,joined:SV,wallet:{bal:START_COINS,op:'init'}}});
+  if(res!=='ok'){ btn.disabled=false; btn.textContent='יאללה 🔥'; return err.textContent= res==='denied'?'השם הזה נתפס הרגע או לא תקין – נסה כינוי אחר':'אין חיבור – נסה שוב'; }
+  SEC=sec; lsSet('bb_sec',sec); tab='games'; lsSet('bb_tab','games'); listenMine();
+  toast(`ברוך הבא! קיבלת ${START_COINS} ז'יטונים 🪙`,true,null,3500); confetti();
 }
-function logout(){ if(!confirm('להתנתק מהמכשיר?')) return; me=null; lsSet('bb_name',null); render(); }
+async function askRecover(){
+  if(!lastTakenNk) return; const s2='s'+rnd(48,AZM);
+  const r=await write('PUT',`recoverReq/${s2}`,{nk:lastTakenNk, at:SV});
+  if(r!=='ok') return toast('לא הצלחתי לשלוח בקשה – נסה שוב',false,'err');
+  PENDING=s2; lsSet('bb_pending',s2); listenMine(); render(); toast('הבקשה נשלחה למנהל 📨',true);
+}
 
 // ================= גיליון הימור =================
-function openBet(eid, m, p){
-  const f=S.fixtures[eid]; if(!f||isLocked(f)) return toast('המשחק ננעל 🔒',false,'err');
-  if(!me) return toast('קודם נכנסים עם שם 🙂');
-  const pl=myP(), a=account(pl);
-  sheetSt={eid, m, p, s: Math.min(a.avail, Math.max(10, Math.round(a.avail/10/5)*5)) , j:false};
+function openBet(eid,m,p){
+  const f=S.fixtures[eid]; if(!f||isLocked(f)) return toast('המשחק ננעל 🔒',false,'err'); if(!A) return toast('קודם נכנסים עם שם 🙂');
+  const a=account(); sheetSt={eid,m,p,s:Math.min(a.avail,Math.max(10,Math.round(a.avail/10/5)*5)),j:false};
   if(m==='CS'){ const [h,x]=p.split('-').map(Number); sheetSt.ch=h; sheetSt.ca=x; }
   renderSheet(); document.getElementById('sheet').classList.add('show'); document.getElementById('sheetBg').classList.add('show');
 }
 function closeSheet(){ sheetSt=null; document.getElementById('sheet').classList.remove('show'); document.getElementById('sheetBg').classList.remove('show'); }
-function sheetOdds(){ const f=S.fixtures[sheetSt.eid], o=(f&&f.odds)||{}; return sheetSt.m==='CS' ? (o.cs||{})[`${sheetSt.ch}-${sheetSt.ca}`] : o[sheetSt.p]; }
+function sheetOdds(){ const f=S.fixtures[sheetSt.eid], o=(f&&f.odds)||{}; return sheetSt.m==='CS'?(o.cs||{})[`${sheetSt.ch}-${sheetSt.ca}`]:o[sheetSt.p]; }
 function renderSheet(){
-  if(!sheetSt) return; const f=S.fixtures[sheetSt.eid]; if(!f) return closeSheet();
-  const L=isLocked(f), pl=myP(), a=account(pl), dk=dayKey(f.ko), jkFree=!jokerUsed(pl,dk);
+  if(!sheetSt) return; const f=S.fixtures[sheetSt.eid]; if(!f||!A) return closeSheet();
+  const L=isLocked(f), a=account(), dk=f.day||dayKey(f.ko), jkFree=!jokerUsed(dk);
   if(sheetSt.m==='CS') sheetSt.p=`${sheetSt.ch}-${sheetSt.ca}`;
-  const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)), win=o? (sheetSt.j? s+2*(s*o-s) : s*o) : 0;
-  let h = `<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">🎰 הימור חדש</b><button class="x" style="border-color:#555;color:#ccc" onclick="closeSheet()">✕</button></div>
-    <div class="muted" style="margin:4px 0 10px">${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} – ${esc(he(f.away))} · ${dayLabel(dk)} ${hm(f.ko)}</div>`;
-  if(sheetSt.m==='CS'){
-    h += `<div class="pick"><div class="muted">🎯 תוצאה מדויקת</div>
-      <div class="csgrid"><div><div style="font-weight:900;font-size:13px;margin-bottom:6px">${esc(he(f.home))}</div><div class="step"><button class="minus" onclick="csB('ch',-1)">−</button><span class="val">${sheetSt.ch}</span><button class="plus" onclick="csB('ch',1)">+</button></div></div>
-      <div style="font-weight:900;color:var(--o)">:</div>
-      <div><div style="font-weight:900;font-size:13px;margin-bottom:6px">${esc(he(f.away))}</div><div class="step"><button class="minus" onclick="csB('ca',-1)">−</button><span class="val">${sheetSt.ca}</span><button class="plus" onclick="csB('ca',1)">+</button></div></div></div>
+  const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)), win=o?(sheetSt.j?s+2*(s*o-s):s*o):0;
+  let h=`<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">🎰 הימור חדש</b><button class="x" style="border-color:#555;color:#ccc" onclick="closeSheet()">✕</button></div>
+    <div class="muted" style="margin:4px 0 10px">${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} – ${esc(he(f.away))} · ${dayLabel(dk)} ${hm(f.ko)}</div>
+    <div class="seg"><button class="${sheetSt.m==='W'?'on':''}" onclick="sheetSt.m='W';sheetSt.p=sheetSt.p.includes('-')?'1':sheetSt.p;renderSheet()">🏆 מי מנצח</button><button class="${sheetSt.m==='CS'?'on':''}" onclick="sheetSt.m='CS';sheetSt.ch=sheetSt.ch??1;sheetSt.ca=sheetSt.ca??0;renderSheet()">🎯 תוצאה מדויקת</button></div>`;
+  if(sheetSt.m==='CS') h+=`<div class="pick"><div class="csgrid"><div><div style="font-weight:900;font-size:13px;margin-bottom:6px">${esc(he(f.home))}</div><div class="step"><button class="minus" onclick="csB('ch',-1)">−</button><span class="val">${sheetSt.ch}</span><button class="plus" onclick="csB('ch',1)">+</button></div></div>
+      <div style="font-weight:900;color:var(--o)">:</div><div><div style="font-weight:900;font-size:13px;margin-bottom:6px">${esc(he(f.away))}</div><div class="step"><button class="minus" onclick="csB('ca',-1)">−</button><span class="val">${sheetSt.ca}</span><button class="plus" onclick="csB('ca',1)">+</button></div></div></div>
       <div class="o" style="margin-top:8px">${o?'× '+o.toFixed(2):'–'}</div></div>`;
-  } else {
-    h += `<div class="pick"><div class="t">${esc(pickLabel(f,{m:'W',p:sheetSt.p}))}</div><div class="o">× ${o?o.toFixed(2):'–'}</div></div>`;
-  }
-  h += `<div class="stake"><input id="stakeIn" type="number" inputmode="numeric" min="1" value="${s||''}" oninput="sheetSt.s=+this.value;updWin()"><span style="font-weight:900">🪙</span></div>
+  else h+=`<div class="odds" style="margin-top:0">${['1','X','2'].map(k=>`<button class="ob ${sheetSt.p===k?'mine':''}" onclick="sheetSt.p='${k}';renderSheet()"><span class="l">${k==='X'?'תיקו':esc(he(k==='1'?f.home:f.away))}</span><span class="v">${f.odds&&f.odds[k]?f.odds[k].toFixed(2):'–'}</span></button>`).join('')}</div>`;
+  h+=`<div class="stake"><input id="stakeIn" type="number" inputmode="numeric" min="1" value="${s||''}" oninput="sheetSt.s=+this.value;updWin()"><span style="font-weight:900">🪙</span></div>
     <div class="qs">${[10,25,50,100].map(v=>`<button onclick="setStake(${v})">${v}</button>`).join('')}<button onclick="setStake(${Math.floor(a.avail)})">הכול</button></div>
-    <div class="muted" style="text-align:center;margin-top:6px">זמין: ${fmt(a.avail)} 🪙</div>
+    <div class="muted" style="text-align:center;margin-top:6px">יתרה: ${fmt(a.avail)} 🪙</div>
     ${jkFree?`<div class="jk ${sheetSt.j?'on':''}" onclick="sheetSt.j=!sheetSt.j;renderSheet()"><span>🃏 ג'וקר יומי – הרווח כפול!<br><small style="opacity:.8">פעם אחת ל${dayLabel(dk)}</small></span><span class="sw"></span></div>`:`<div class="muted" style="text-align:center;margin:8px 0">🃏 כבר השתמשת בג'וקר של ${dayLabel(dk)}</div>`}
     <div class="win" id="winTxt">זכייה אפשרית: <b>${fmt(win)} 🪙</b></div>
     <button class="btn" id="betBtn" ${L||!o?'disabled':''} onclick="placeBet()">${L?'🔒 ננעל':'הימור! 🎰'}</button>
-    <div class="muted" style="text-align:center;margin-top:8px">אפשר לבטל עד הנעילה (2 דק' לפני המשחק)</div>`;
-  const sh=document.getElementById('sheet'), focused=document.activeElement&&document.activeElement.id==='stakeIn';
-  sh.innerHTML=h; if(focused){ const i=document.getElementById('stakeIn'); i.focus(); i.setSelectionRange(i.value.length,i.value.length); }
+    <div class="muted" style="text-align:center;margin-top:8px">אפשר לבטל עד הנעילה · אפשר כמה הימורים על אותו משחק</div>`;
+  const sh=document.getElementById('sheet'), foc=document.activeElement&&document.activeElement.id==='stakeIn'; sh.innerHTML=h;
+  if(foc){ const i=document.getElementById('stakeIn'); i.focus(); i.setSelectionRange(i.value.length,i.value.length); }
 }
 function updWin(){ const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)); document.getElementById('winTxt').innerHTML=`זכייה אפשרית: <b>${fmt(o?(sheetSt.j?s+2*(s*o-s):s*o):0)} 🪙</b>`; }
 function setStake(v){ sheetSt.s=Math.max(0,v); renderSheet(); }
 function csB(k,d){ sheetSt[k]=Math.max(0,Math.min(4,sheetSt[k]+d)); renderSheet(); }
 async function placeBet(){
-  const f=S.fixtures[sheetSt.eid], pl=myP(); if(!f||isLocked(f)) return toast('המשחק ננעל 🔒',false,'err');
-  if(!isMine(pl)) return toast('השם הזה שייך למכשיר אחר 🙅',false,'err');
-  const s=Math.floor(sheetSt.s||0), o=sheetOdds(), a=account(pl);
-  if(!o) return toast('אין יחס לבחירה הזו',false,'err');
-  if(s<1) return toast('כמה ז\'יטונים? 🙂',false,'err');
-  if(s>a.avail) return toast(`אין מספיק ז'יטונים – זמין ${fmt(a.avail)}`,false,'err');
-  if(sheetSt.j && jokerUsed(pl,dayKey(f.ko))) sheetSt.j=false;
-  const bid='b'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-  const bet={e:sheetSt.eid, m:sheetSt.m, p:sheetSt.p, s, o, at:Date.now()}; if(sheetSt.j) bet.j=true;
+  const f=S.fixtures[sheetSt.eid]; if(!f||isLocked(f)) return toast('המשחק ננעל 🔒',false,'err');
+  const s=Math.floor(sheetSt.s||0), o=sheetOdds(), bal=A.wallet.bal, dk=f.day||dayKey(f.ko);
+  if(!o) return toast('אין יחס לבחירה הזו',false,'err'); if(s<1) return toast("כמה ז'יטונים? 🙂",false,'err');
+  if(s>bal) return toast(`אין מספיק ז'יטונים – יתרה ${fmt(bal)}`,false,'err');
+  const bid='b'+Date.now().toString(36)+rnd(4,AZ), bet={e:sheetSt.eid,m:sheetSt.m,p:sheetSt.p,s,o,at:SV};
+  const upd={[`acct/${SEC}/bets/${bid}`]:bet, [`acct/${SEC}/wallet/bal`]:bal-s, [`acct/${SEC}/wallet/op`]:'b:'+bid};
+  if(sheetSt.j && !jokerUsed(dk)){ bet.j=true; upd[`acct/${SEC}/jokers/${dk}`]=bid; }
   const btn=document.getElementById('betBtn'); btn.disabled=true; btn.textContent='שולח...';
-  if(await save('PUT',`players/${keyOf(me)}/bets/${bid}`, bet, 'ההימור נקלט! ✅ בהצלחה 🍀')){ closeSheet(); confetti(60); }
-  else { btn.disabled=false; btn.textContent='הימור! 🎰'; }
+  const r=await write('PATCH','',upd);
+  if(r==='ok'){ closeSheet(); toast('ההימור נקלט! ✅ בהצלחה 🍀',true); confetti(60); }
+  else { btn.disabled=false; btn.textContent='הימור! 🎰'; if(r==='denied') toast('ההימור נדחה – ייתכן שהיחס התעדכן או שהמשחק ננעל. נסה שוב',false,'err',4000); }
 }
 async function cancelBet(bid){
-  const pl=myP(), b=pl&&pl.bets&&pl.bets[bid]; if(!b) return;
-  if(isLocked(S.fixtures[b.e])) return toast('המשחק ננעל – אי אפשר לבטל 🔒',false,'err');
+  const b=A&&A.bets&&A.bets[bid]; if(!b) return; const f=S.fixtures[b.e];
+  if(isLocked(f)) return toast('המשחק ננעל – אי אפשר לבטל 🔒',false,'err');
   if(!confirm(`לבטל את ההימור (${fmt(b.s)} ז'יטונים יחזרו אליך)?`)) return;
-  await save('DELETE',`players/${keyOf(me)}/bets/${bid}`, undefined, 'ההימור בוטל ↩️');
+  const upd={[`acct/${SEC}/bets/${bid}`]:null, [`acct/${SEC}/wallet/bal`]:A.wallet.bal+b.s, [`acct/${SEC}/wallet/op`]:'c:'+bid};
+  if(b.j) upd[`acct/${SEC}/jokers/${f.day||dayKey(f.ko)}`]=null;
+  const r=await write('PATCH','',upd);
+  if(r==='ok') toast('ההימור בוטל ↩️',true); else if(r==='denied') toast('לא ניתן לבטל כרגע',false,'err');
 }
 
-// ================= מנהל =================
+// ================= מנהל (רק עם המפתח האישי של המנהל) =================
+async function adminOp(t, extra){ if(!AK) return; const id='o'+Date.now().toString(36)+rnd(4,AZ);
+  const r=await write('PUT',`adminOps/${AK}/${id}`,{t,at:SV,...extra}); toast(r==='ok'?'נשלח לרובוט – יבוצע תוך כ-20 שניות ⏳':'הפעולה נדחתה',r==='ok',r==='ok'?null:'err',3000); }
 function viewAdmin(){
-  const ra=S.meta.robotAt;
-  let h = `<h2>⚙️ מסך מנהל</h2><div class="card"><b>🤖 הרובוט</b><div class="muted" style="margin-top:4px">${ra?`בדק לאחרונה ב-${new Date(ra).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem'})} ${Date.now()-ra>120000?'⚠️ לא פעיל כרגע (מופעל מחדש אוטומטית תוך כמה דקות)':'✅ פעיל'}`:'עוד לא התחבר'}
-    · ${fxList().length} משחקים במערכת</div></div>`;
-  const ps=Object.entries(S.players);
-  h += `<div class="card"><b>משתתפים (${ps.length})</b>`;
-  ps.forEach(([k,p])=>{ const a=account(p); h+=`<div class="prow"><span>${esc(p.name)} · <span class="muted">${fmt(a.value)} 🪙 · ${a.n} הימורים</span></span><span style="display:flex;gap:6px">
-    ${p.owner?`<button class="x" style="border-color:#888;color:#ccc" onclick="releaseP('${esc(k)}')">שחרר</button>`:''}<button class="x" onclick="delP('${esc(k)}')">מחק</button></span></div>`; });
-  return h + `</div><button class="btn sec" onclick="isAdmin=false;sessionSet('bb_admin','0');go('table')">יציאה ממצב מנהל</button>`;
+  if(!AK) return `<div class="card" style="text-align:center;margin-top:20px"><div style="font-size:44px">🔐</div><h2>כניסת מנהל</h2><div class="muted">הכניסה למנהל רק דרך הלינק האישי והסודי של המנהל. אין כאן סיסמה.</div></div>`;
+  if(!AV) return `<div class="empty"><div class="e">⏳</div>טוען… (אם זה לא נטען – המפתח לא תקף)</div>`;
+  const ra=AV.robot||S.meta.robotAt, users=(AV.users||[]).slice().sort((a,b)=>b.bal-a.bal), reqs=AV.reqs||[];
+  let h=`<h2>⚙️ מסך מנהל</h2><div class="card"><b>🤖 הרובוט</b><div class="muted" style="margin-top:4px">${ra?`בדק לאחרונה ב-${new Date(ra).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem'})} ${Date.now()-ra>120000?'⚠️ לא פעיל כרגע (מופעל מחדש אוטומטית תוך כמה דקות)':'✅ פעיל'}`:'עוד לא התחבר'} · ${fxList().length} משחקים</div></div>`;
+  if(reqs.length) h+=`<div class="card" style="border-color:var(--y)"><b>📨 בקשות שחזור (${reqs.length})</b>${reqs.map(r=>`<div class="prow"><span>${esc(r.n)} <span class="muted">מבקש להיכנס מטלפון חדש</span></span><span style="display:flex;gap:6px">
+      <button class="x" style="border-color:var(--g);color:var(--g)" onclick="if(confirm('לאשר? החשבון יעבור לטלפון החדש והישן יתנתק'))adminOp('approve',{rid:'${r.rid}'})">אשר</button><button class="x" onclick="adminOp('reject',{rid:'${r.rid}'})">דחה</button></span></div>`).join('')}</div>`;
+  h+=`<div class="card"><b>משתתפים (${users.length})</b>${users.map(u=>`<div class="prow"><span>${esc(u.n)} · <span class="muted">${fmt(u.bal)} 🪙 · ${u.nb} הימורים</span></span><span style="display:flex;gap:6px">
+    <button class="x" style="border-color:var(--y);color:var(--y)" onclick="const d=prompt('כמה ז\\'יטונים להוסיף? (מינוס להורדה)');if(d&&!isNaN(+d))adminOp('adjust',{pid:'${u.pid}',d:+d})">±🪙</button>
+    <button class="x" onclick="if(confirm('למחוק את ${esc(u.n)} וכל ההימורים שלו?'))adminOp('delete',{pid:'${u.pid}'})">מחק</button></span></div>`).join('')}</div>`;
+  const recent=fxList().filter(f=>f.st!=='none'||f.manual).sort((a,b)=>b.ko-a.ko).slice(0,15);
+  h+=`<div class="card"><b>✏️ תיקון תוצאה ידני</b><div class="muted">רק אם הרובוט טעה. תוצאה ידנית ננעלת עד שתחזיר לרובוט.</div>${recent.map(f=>`<div class="prow"><span>${esc(he(f.home))} ${f.h}-${f.a} ${esc(he(f.away))} ${f.manual?'✏️':''}</span><span style="display:flex;gap:6px">
+    <button class="x" style="border-color:var(--y);color:var(--y)" onclick="fixFx('${f.id}')">תקן</button>${f.manual?`<button class="x" style="border-color:#888;color:#ccc" onclick="adminOp('unfix',{e:'${f.id}'})">לרובוט</button>`:''}</span></div>`).join('')}</div>`;
+  const log=Object.values(AV.log||{}).sort((a,b)=>b.at-a.at).slice(0,8);
+  if(log.length) h+=`<div class="card"><b>📜 פעולות אחרונות</b>${log.map(l=>`<div class="muted">${new Date(l.at).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem'})} · ${esc(l.t)} · ${esc(l.res)}</div>`).join('')}</div>`;
+  return h;
 }
-async function releaseP(k){ if(!confirm('לשחרר את '+S.players[k].name+'? הוא יוכל להיכנס שוב מטלפון אחר, וההימורים נשמרים')) return; await save('DELETE','players/'+k+'/owner',undefined,'שוחרר ✅'); }
-async function delP(k){ if(!confirm('למחוק את '+S.players[k].name+' וכל ההימורים שלו?')) return; await save('DELETE','players/'+k,undefined,'נמחק 🗑️'); }
-function adminLogin(){ const pin=prompt('קוד מנהל:'); if(pin===null) return; if(pin===ADMIN_PIN){ isAdmin=true; sessionSet('bb_admin','1'); go('admin'); } else toast('קוד שגוי 🙅',false,'err'); }
+function fixFx(id){ const f=S.fixtures[id]; const v=prompt(`תוצאה סופית ל-${he(f.home)} – ${he(f.away)} (למשל 2-1):`, `${f.h}-${f.a}`); if(!v) return;
+  const m=v.match(/^(\d+)\s*-\s*(\d+)$/); if(!m) return toast('פורמט: 2-1',false,'err'); adminOp('fix',{e:id,h:+m[1],a:+m[2],st:'finished'}); }
 
 // ================= ניווט =================
 function renderNav(){
-  const p=myP(), openN=p?account(p).open:0;
-  const tabs=[['games','🎰','משחקים'],['mine','🧾','ההימורים שלי'],['table','🏆','טבלה'],['leagues','📊','ליגות']].filter(t=>me||t[0]!=='mine');
-  if(isAdmin) tabs.push(['admin','⚙️','מנהל']);
-  document.getElementById('nav').innerHTML = (me||isAdmin) ? tabs.map(([k,ic,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')"><span class="ic">${ic}</span>${l}${k==='mine'&&openN?`<span class="badge">${openN}</span>`:''}</button>`).join('') : '';
+  const a=account(), openN=a?a.open:0;
+  const tabs=[['games','🎰','משחקים'],['mine','🧾','ההימורים שלי'],['table','🏆','טבלה'],['leagues','📊','ליגות']].filter(t=>A||t[0]!=='mine');
+  if(AK) tabs.push(['admin','⚙️','מנהל']);
+  document.getElementById('nav').innerHTML=(A||AK)?tabs.map(([k,ic,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')"><span class="ic">${ic}</span>${l}${k==='mine'&&openN?`<span class="badge">${openN}</span>`:''}</button>`).join(''):'';
 }
 function go(k){ tab=k; lsSet('bb_tab',k); render(); window.scrollTo(0,0); }
 function render(){
-  renderTop();
-  const app=document.getElementById('app');
-  if(!me && !isAdmin){ app.innerHTML=viewLogin()+adminLink(); renderNav(); return; }
-  if(!me && tab==='mine') tab='games';
-  if(tab==='admin' && !isAdmin) tab='table';
-  app.innerHTML = ({games:viewGames, mine:viewMine, table:viewTable, leagues:viewLeagues, admin:viewAdmin}[tab]||viewGames)() + adminLink();
-  renderNav();
+  renderTop(); const app=document.getElementById('app');
+  if(!A && !AK){ app.innerHTML=(SEC&&!loaded.me)?'<div class="empty"><div class="e">⏳</div>מתחבר…</div>':viewLogin()+footer(); renderNav(); return; }
+  if(!A && tab==='mine') tab='games'; if(tab==='admin'&&!AK) tab='table';
+  app.innerHTML=({games:viewGames,mine:viewMine,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
 }
-const adminLink = () => isAdmin?'':`<footer><a href="#" onclick="adminLogin();return false">⚙️ כניסת מנהל</a> · מופעל ע"י CrossFit BUX 🏋️<br>משחק לשם הכיף בלבד · אין כסף אמיתי ואין אפשרות לקנות ז'יטונים</footer>`;
+const footer=()=>`<footer>מופעל ע"י CrossFit BUX 🏋️<br>משחק לשם הכיף בלבד · אין כסף אמיתי ואין אפשרות לקנות ז'יטונים</footer>`;
 
 // ================= באנר גול =================
 function detectGoals(){
   const now={}; fxList().forEach(f=>{ if(f.st==='live'||f.st==='finished') now[f.id]=(f.h|0)+(f.a|0); });
-  if(seenGoals) for(const id in now) if(seenGoals[id]!==undefined && now[id]>seenGoals[id]) showGoal({id, ...S.fixtures[id]});
+  if(seenGoals) for(const id in now) if(seenGoals[id]!==undefined && now[id]>seenGoals[id]) showGoal({id,...S.fixtures[id]});
   seenGoals=now;
 }
 function showGoal(f){
-  const F0=prevFixtures(), prev=F0?rankMap('week',F0):{}, up=standings('week').filter(r=>prev[r.k]!=null&&prev[r.k]>r.rank).length;
-  const p=myP(), myB=p?Object.values(p.bets||{}).filter(b=>b.e===f.id):[];
-  let mineMsg='';
-  if(myB.length){ const win=myB.filter(b=>betState(b)==='live-win'), lose=myB.length-win.length;
-    mineMsg = win.length ? `<br>🤑 ההימור שלך כרגע זוכה! +${fmt(win.reduce((t,b)=>t+payout(b)-b.s,0))} 🪙` : `<br>😬 ההימור שלך כרגע מפסיד – יש עוד זמן!`; }
+  const mine=myBets().filter(([id,b])=>b.e===f.id); let msg='';
+  if(mine.length){ const win=mine.filter(([id,b])=>betState(id,b)==='live-win');
+    msg=win.length?`<br>🤑 ההימור שלך כרגע זוכה! +${fmt(win.reduce((t,[id,b])=>t+payout(b)-b.s,0))} 🪙`:'<br>😬 ההימור שלך כרגע מפסיד – יש עוד זמן!'; }
   const el=document.getElementById('goalbar');
-  el.innerHTML=`<span class="bg">⚽ גול!</span>${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} <bdi dir="ltr">${f.h}–${f.a}</bdi> ${esc(he(f.away))}${up?` · ${up} עלו בטבלה`:''}${mineMsg}`;
+  el.innerHTML=`<span class="bg">⚽ גול!</span>${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} <bdi dir="ltr">${f.h}–${f.a}</bdi> ${esc(he(f.away))}${msg}`;
   el.classList.add('show'); try{ navigator.vibrate&&navigator.vibrate([120,60,120]) }catch(e){}
   clearTimeout(goalTimer); goalTimer=setTimeout(()=>el.classList.remove('show'),6000);
-}
-
-// ================= פודיום שבועי + קונפטי =================
-function showPodium(wk){
-  const F=S.fixtures, rows=Object.entries(S.players).filter(([k,p])=>p&&p.name).map(([k,p])=>({name:p.name,...account(p,F,wk)})).filter(r=>r.wkBets>0).sort((a,b)=>b.wkProfit-a.wkProfit);
-  if(!rows.length) return toast('לא היו הימורים בשבוע הזה');
-  const top=[rows[1],rows[0],rows[2]], cls=['p2','p1','p3'], med=['🥈','🥇','🥉'];
-  document.getElementById('final').innerHTML=`<h1>🏁 סיכום שבוע ${weekLabel(wk)}</h1><div class="muted">הרווחים הגדולים של השבוע</div>
-    <div class="podium">${top.map((r,i)=>r?`<div class="pod ${cls[i]}"><div class="who2">${i===1?'👑 ':''}${esc(r.name)}</div><div class="blk">${med[i]}<small>${sgn(r.wkProfit)} 🪙</small></div></div>`:'<div class="pod"></div>').join('')}</div>
-    <div style="font-weight:900;color:var(--y)">👑 ${esc(rows[0].name)} – אלוף BUX של השבוע!</div>
-    <div style="font-weight:900;font-size:19px;margin:14px 0 22px">נתראה באימון – CrossFit BUX יהוד 🏋️</div>
-    <button class="btn" style="max-width:300px" onclick="document.getElementById('final').classList.remove('show')">סגור</button>`;
-  document.getElementById('final').classList.add('show'); confetti();
-}
-function afterFirstLoad(){   // פעם בשבוע: פודיום של השבוע שהסתיים
-  const last=addDays(weekKey(dayKey(Date.now())),-7);
-  if(me && lsGet('bb_pod')!==last){ lsSet('bb_pod',last); const any=Object.values(S.players).some(p=>Object.values(p.bets||{}).some(b=>S.fixtures[b.e]&&weekKey(dayKey(S.fixtures[b.e].ko))===last)); if(any) setTimeout(()=>showPodium(last),800); }
 }
 function confetti(n=180){
   const c=document.getElementById('conf'), x=c.getContext('2d'); c.width=innerWidth; c.height=innerHeight;
   const cols=['#FFD000','#FF6B00','#fff','#22c55e','#ff3d7f'];
   const ps=Array.from({length:n},()=>({x:Math.random()*c.width,y:-20-Math.random()*c.height*.6,r:4+Math.random()*6,c:cols[Math.random()*5|0],vy:2+Math.random()*3,vx:-1.5+Math.random()*3,a:Math.random()*6,va:-.2+Math.random()*.4}));
-  const t0=Date.now();
-  (function f(){ x.clearRect(0,0,c.width,c.height);
+  const t0=Date.now(); (function f(){ x.clearRect(0,0,c.width,c.height);
     ps.forEach(p=>{ p.y+=p.vy; p.x+=p.vx; p.a+=p.va; x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.fillStyle=p.c; x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); x.restore(); });
     if(Date.now()-t0<4500) requestAnimationFrame(f); else x.clearRect(0,0,c.width,c.height); })();
 }
-function toast(msg,big,kind,ms=2400){
-  document.querySelectorAll('.toast').forEach(t=>t.remove());
+function toast(msg,big,kind,ms=2400){ document.querySelectorAll('.toast').forEach(t=>t.remove());
   const t=document.createElement('div'); t.className='toast'+(kind==='err'?' err':'')+(big?' big':''); t.textContent=msg; document.body.appendChild(t);
-  setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.remove(),300)},ms);
-}
+  setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.remove(),300)},ms); }
 
 // ================= הפעלה =================
-setInterval(()=>{ if(tab==='games' && !sheetSt && !document.querySelector('details[open]')) render(); }, 30000);   // ספירה לאחור לנעילה
-render(); listen();
-if(/[?&]admin=1/.test(location.search) || /\/admin\/?$/.test(location.pathname)){ if(isAdmin) go('admin'); else setTimeout(adminLogin,400); }
+setInterval(()=>{ if(tab==='games'&&!sheetSt&&!document.querySelector('details[open]')) render(); },30000);
+render(); listenAll();
 </script>
 </body>
 </html>

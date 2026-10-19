@@ -1,0 +1,78 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "fixtures": { ".read": true, ".indexOn": ["ko"] },
+    "tables":   { ".read": true },
+    "standings":{ ".read": true },
+    "revealed": { ".read": true },
+    "profiles": { ".read": true },
+    "meta":     { ".read": true },
+
+    "names": {
+      ".read": true,
+      "$nk": {
+        ".write": "!data.exists() && newData.isString() && newData.val().matches(/^p[a-z0-9]{12,30}$/)"
+      }
+    },
+
+    "acct": {
+      "$secret": {
+        ".read": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/)",
+        ".write": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/) && !data.exists() && newData.hasChildren(['name','nk','pid','joined','wallet']) && !newData.hasChild('bets') && !newData.hasChild('settled') && !newData.hasChild('jokers') && newData.child('wallet/bal').val() === 500 && newData.child('wallet/op').val() === 'init' && newData.child('wallet').hasChildren(['bal','op']) && !newData.child('wallet/wk').exists() && newData.parent().parent().child('names').child(newData.child('nk').val()).val() === newData.child('pid').val() && !root.child('names').child(newData.child('nk').val()).exists()",
+
+        "name":   { ".validate": "newData.isString() && newData.val().matches(/^[^ .#$\\[\\]\\/<>]([^.#$\\[\\]\\/<>]{0,18}[^ .#$\\[\\]\\/<>])?$/) && newData.val().length >= 2" },
+        "nk":     { ".validate": "newData.isString() && newData.val() === newData.parent().child('name').val().toLowerCase().replace(' ', '')" },
+        "pid":    { ".validate": "newData.isString() && newData.val().matches(/^p[a-z0-9]{12,30}$/)" },
+        "joined": { ".validate": "newData.isNumber() && newData.val() <= now + 60000 && newData.val() >= now - 600000" },
+
+        "wallet": {
+          ".write": "data.exists() && newData.child('bal').isNumber() && newData.child('bal').val() >= 0 && newData.child('wk').val() === data.child('wk').val() && ((newData.child('op').val().beginsWith('b:') && !data.parent().child('bets').child(newData.child('op').val().replace('b:', '')).exists() && newData.parent().child('bets').child(newData.child('op').val().replace('b:', '')).exists() && newData.child('bal').val() === data.child('bal').val() - newData.parent().child('bets').child(newData.child('op').val().replace('b:', '')).child('s').val()) || (newData.child('op').val().beginsWith('c:') && data.parent().child('bets').child(newData.child('op').val().replace('c:', '')).exists() && !newData.parent().child('bets').child(newData.child('op').val().replace('c:', '')).exists() && newData.child('bal').val() === data.child('bal').val() + data.parent().child('bets').child(newData.child('op').val().replace('c:', '')).child('s').val()))",
+          "bal": { ".validate": "newData.isNumber()" },
+          "op":  { ".validate": "newData.isString()" },
+          "$other": { ".validate": "$other === 'wk'" }
+        },
+
+        "bets": {
+          "$bid": {
+            ".write": "$bid.matches(/^b[a-z0-9]{8,24}$/) && ((!data.exists() && newData.exists() && newData.parent().parent().child('wallet/op').val() === 'b:' + $bid) || (data.exists() && !newData.exists() && newData.parent().parent().child('wallet/op').val() === 'c:' + $bid && root.child('fixtures').child(data.child('e').val()).child('st').val() === 'none' && now < root.child('fixtures').child(data.child('e').val()).child('ko').val() - 120000))",
+            ".validate": "newData.hasChildren(['e','m','p','s','o','at']) && newData.child('e').isString() && newData.child('e').val().matches(/^[0-9]{1,12}$/) && root.child('fixtures').child(newData.child('e').val()).child('st').val() === 'none' && now < root.child('fixtures').child(newData.child('e').val()).child('ko').val() - 120000 && ((newData.child('m').val() === 'W' && newData.child('p').val().matches(/^(1|X|2)$/) && newData.child('o').val() === root.child('fixtures').child(newData.child('e').val()).child('odds').child(newData.child('p').val()).val()) || (newData.child('m').val() === 'CS' && newData.child('p').val().matches(/^[0-4]-[0-4]$/) && newData.child('o').val() === root.child('fixtures').child(newData.child('e').val()).child('odds/cs').child(newData.child('p').val()).val())) && (!newData.child('j').exists() || newData.parent().parent().child('jokers').child(root.child('fixtures').child(newData.child('e').val()).child('day').val()).val() === $bid)",
+            "s":  { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000000 && newData.val() % 1 === 0" },
+            "o":  { ".validate": "newData.isNumber() && newData.val() >= 1" },
+            "at": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+            "j":  { ".validate": "newData.val() === true" },
+            "e":  { ".validate": true }, "m": { ".validate": true }, "p": { ".validate": true },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "jokers": {
+          "$day": {
+            ".write": "(!data.exists() && newData.isString() && !data.parent().parent().child('bets').child(newData.val()).exists() && newData.parent().parent().child('bets').child(newData.val()).child('j').val() === true && root.child('fixtures').child(newData.parent().parent().child('bets').child(newData.val()).child('e').val()).child('day').val() === $day) || (data.exists() && !newData.exists() && !newData.parent().parent().child('bets').child(data.val()).exists())"
+          }
+        },
+
+        "$other": { ".validate": "$other === 'settled'" }
+      }
+    },
+
+    "recoverReq": {
+      "$secret": {
+        ".write": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/) && !data.exists() && !root.child('acct').child($secret).exists() && newData.hasChildren(['nk','at']) && root.child('names').child(newData.child('nk').val()).exists()",
+        ".read": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/)"
+      }
+    },
+
+    "adminOps": {
+      "$k": {
+        "$op": {
+          ".write": "root.child('adminKeys').child($k).exists() && !data.exists() && newData.hasChildren(['t','at'])"
+        }
+      }
+    },
+    "adminView": {
+      "$k": { ".read": "root.child('adminKeys').child($k).exists()" }
+    }
+  }
+}
