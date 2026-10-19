@@ -424,14 +424,14 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 .lgt button b{font-size:13px;white-space:nowrap}.lgt button span{font-size:11px;color:var(--mut);display:flex;align-items:center;gap:4px}
 .lgt button.on{background:var(--txt);color:var(--bg);border-color:var(--txt)}.lgt button.on b{font-weight:900}.lgt button .lvn{color:#C8102E;font-weight:900}
 .ltl{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin-bottom:12px}.ltl i{width:10px;height:10px;border-radius:3px;background:rgba(255,90,106,.25);box-shadow:inset 0 0 0 1px var(--red)}
-.lt2{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
-.lt2 .r{display:grid;grid-template-columns:30px minmax(0,1fr) 28px 36px 40px;gap:6px;align-items:center;padding:12px;border-bottom:1px solid var(--line)}.lt2 .r:last-child{border-bottom:0}
+.lt2{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}.lt2 table,.lt2 tbody,.lt2 thead{display:block;width:100%}.lt2 td,.lt2 th{padding:0;border:0;font-size:inherit;font-weight:inherit;text-align:inherit;letter-spacing:0;color:inherit}
+.lt2 tr.r{display:grid;grid-template-columns:30px minmax(0,1fr) 28px 36px 40px;gap:6px;align-items:center;padding:12px;border-bottom:1px solid var(--line)}.lt2 .r:last-child{border-bottom:0}
 .lt2 .r.h{padding:10px 12px;font-size:11px;color:var(--mut);font-weight:700}
 .lt2 .r.eu{box-shadow:inset -3px 0 0 var(--em)}.lt2 .r.rl{box-shadow:inset -3px 0 0 var(--red)}.lt2 .r.lv{background:rgba(255,90,106,.08)}
-.lt2 .r>b:first-child{font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:2px}.lt2 .r>b:first-child span{font-size:10px}
+.lt2 .r td:first-child b{font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:2px}.lt2 .r td:first-child span{font-size:10px}
 .lt2 .tn{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;min-width:0}.lt2 .tn>span:not(.cr){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lt2 .cr{width:24px;height:24px;border-radius:50%;background:var(--card3);font-size:9px;font-weight:900;display:grid;place-items:center;flex:none;overflow:hidden}.lt2 .cr img{width:20px;height:20px;object-fit:contain}
-.lt2 .lvc{font-size:10px;font-weight:900;color:var(--red);background:rgba(255,90,106,.15);border-radius:6px;padding:1px 5px;font-variant-numeric:tabular-nums;flex:none;direction:ltr}
+.lt2 .lvc{font-size:10px;font-weight:900;color:var(--red);background:rgba(255,90,106,.15);border-radius:6px;padding:1px 5px;font-variant-numeric:tabular-nums;flex:none}
 .lt2 .c{text-align:center;font-size:13px;color:var(--txt2);font-variant-numeric:tabular-nums}.lt2 .pt{text-align:left;font-variant-numeric:tabular-nums}
 .ltleg{display:flex;gap:16px;font-size:12px;color:var(--mut);margin-top:12px}.ltleg span{display:flex;align-items:center;gap:6px}.ltleg i{width:3px;height:14px}
 .display{font-family:Karantina,Heebo,sans-serif;font-weight:700;letter-spacing:-.5px;line-height:.9}
@@ -885,7 +885,7 @@ function leagueFeed(L){
   Object.entries(S.revealed||{}).forEach(([e,bs])=>{ const f=S.fixtures[e]; if(!f) return;
     const mem=Object.entries(bs||{}).map(([k,b])=>({pid:k.split('_')[0],...b})).filter(b=>L.m&&L.m[b.pid]);
     mem.forEach(b=>{ const nm=L.m[b.pid], o=b.m==='W'?((f.odds||{})[b.p]):(((f.odds||{}).cs||{})[b.p]);
-      if(b.st==='won' && o){ const prof=Math.round((b.j?b.s+2*(b.s*o-b.s):b.s*o)-b.s); out.push({t:f.ko+2*3600e3,pid:b.pid,big:prof,h:`<b>${esc(nm)}</b> לקח <b style="color:var(--em)">+${fmt(prof)}</b> על ${b.m==='CS'?`<bdi dir="ltr">${esc(b.p.replace('-','–'))}</bdi> מדויק`:esc(b.p==='X'?'תיקו':he(b.p==='1'?f.home:f.away))} ב${esc(he(f.home))}–${esc(he(f.away))}.`}); }
+      if(b.st==='won' && o){ const prof=Math.round((b.j?b.s+2*(b.s*o-b.s):b.s*o)-b.s); out.push({t:f.ko+2*3600e3,pid:b.pid,big:prof,h:`<b>${esc(nm)}</b> לקח <b style="color:var(--em)">+${fmt(prof)}</b> על ${b.m==='CS'?`<bdi dir="rtl">${esc(b.p.replace('-','–'))}</bdi> מדויק`:esc(b.p==='X'?'תיקו':he(b.p==='1'?f.home:f.away))} ב${esc(he(f.home))}–${esc(he(f.away))}.`}); }
       else if(b.m==='W' && mem.length>=3 && mem.filter(x=>x.m==='W'&&x.p===b.p).length===1 && (f.st==='live'||f.st==='none')) out.push({t:f.ko,pid:b.pid,big:b.s,h:`<b>${esc(nm)}</b> שם ${fmt(b.s)} על ${esc(b.p==='X'?'תיקו':he(b.p==='1'?f.home:f.away))} ב${esc(he(f.home))}–${esc(he(f.away))}. היחיד בליגה.`});
     }); });
   return out.sort((a,b)=>b.t-a.t).slice(0,5);
@@ -1024,13 +1024,13 @@ function viewLeagues(){
   const rows=liveTable(lgF); if(!rows.length) return h+`<div class="empty"><div class="e">📊</div>הטבלה תופיע ברגע שהרובוט יביא אותה</div>`;
   const z=ZONES[lgF]||[0,'',0], anyLive=rows.some(r=>r.live);
   h+=`<div class="ltl">${anyLive?'<i></i>מחושב לפי התוצאה החיה · מתעדכן בכל גול':'מתעדכן אוטומטית אחרי כל מחזור'}</div>
-    <div class="lt2"><div class="r h"><span>#</span><span>קבוצה</span><span style="text-align:center">מש׳</span><span style="text-align:center">הפרש</span><span style="text-align:left">נק׳</span></div>`;
+    <div class="lt2"><table><thead><tr class="r h"><th>#</th><th>קבוצה</th><th style="text-align:center">מש׳</th><th style="text-align:center">הפרש</th><th style="text-align:left">נק׳</th></tr></thead><tbody>`;
   rows.forEach((r,i)=>{ const d=r.base-(i+1), gd=r.gf-r.ga, zc=i<z[0]?'eu':i>=rows.length-z[2]?'rl':'';
     const cr=r.img?`<span class="cr" data-i="${esc(he(r.t).slice(0,2))}"><img src="https://lsm-static-prod.livescore.com/medium/${esc(r.img)}" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode(this.parentNode.dataset.i||''))"></span>`:`<span class="cr" style="background:hsl(${hueOf(r.t)} 45% 34%)">${esc(he(r.t).slice(0,2))}</span>`;
-    h+=`<div class="r ${zc} ${r.live?'lv':''}"><b>${i+1}${d>0?'<span style="color:var(--em)">▲</span>':d<0?'<span style="color:var(--red)">▼</span>':''}</b>
-      <span class="tn">${cr}<span>${esc(he(r.t))}</span>${r.live?`<span class="lvc">${esc(r.lmin)} ${r.live}</span>`:''}</span>
-      <span class="c">${r.pld}</span><span class="c" dir="ltr">${gd>0?'+':gd<0?'−':''}${Math.abs(gd)}</span><b class="pt" style="${r.live&&r.ld>0?'color:var(--em)':r.live&&r.ld<0?'color:var(--red2)':''}">${r.pts}</b></div>`; });
-  h+=`</div>`;
+    h+=`<tr class="r ${zc} ${r.live?'lv':''}"><td><b>${i+1}${d>0?'<span style="color:var(--em)">▲</span>':d<0?'<span style="color:var(--red)">▼</span>':''}</b></td>
+      <td class="tn">${cr}<span>${esc(he(r.t))}</span>${r.live?`<span class="lvc"><bdi dir="ltr">${esc(r.lmin)}</bdi> <bdi dir="rtl">${r.live}</bdi></span>`:''}</td>
+      <td class="c">${r.pld}</td><td class="c" dir="ltr">${gd>0?'+':gd<0?'−':''}${Math.abs(gd)}</td><td class="pt"><b style="${r.live&&r.ld>0?'color:var(--em)':r.live&&r.ld<0?'color:var(--red2)':''}">${r.pts}</b></td></tr>`; });
+  h+=`</tbody></table></div>`;
   if(z[0]||z[2]) h+=`<div class="ltleg">${z[0]?`<span><i style="background:var(--em)"></i>${z[1]}</span>`:''}${z[2]?`<span><i style="background:var(--red)"></i>ירידה</span>`:''}</div>`;
   return h;
 }
