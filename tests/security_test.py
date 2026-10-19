@@ -24,9 +24,12 @@ R.fb('', 'PATCH', {f'fixtures/{OPEN}': {'lg': 'isr1', 'home': 'Maccabi Haifa', '
                    f'fixtures/{LOCKED}': {'lg': 'isr1', 'home': 'Hapoel Tel Aviv', 'away': 'Beitar Jerusalem', 'ko': now + 60000, 'day': R.day_key(now), 'st': 'none', 'h': 0, 'a': 0,
                                           'odds': {'1': 2.0, 'X': 3.0, '2': 3.5}}})
 
+RCA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+CODES = {}
 def new_acct(name):
-    sec, pid, nk = 's' + rs(48, AZM), 'p' + rs(16, AZ), name.lower().replace(' ', '')
-    st, _ = req('PATCH', '', {f'names/{nk}': pid, f'acct/{sec}': {'name': name, 'nk': nk, 'pid': pid, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}}})
+    sec, pid, nk, rc = 's' + rs(48, AZM), 'p' + rs(16, AZ), name.lower().replace(' ', ''), rs(12, RCA)
+    st, _ = req('PATCH', '', {f'names/{nk}': pid, f'rc/{rc}': sec, f'acct/{sec}': {'name': name, 'nk': nk, 'pid': pid, 'rc': rc, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}}})
+    CODES[sec] = rc
     return st, sec, pid, nk
 
 print('--- קריאה')
@@ -104,6 +107,14 @@ check('קריאת חשבון לפי מזהה ציבורי (pid)', req('GET', f'a
 st, data = req('GET', f'names/{Bnk}'); check('מהשם אפשר לדעת רק מזהה ציבורי (לא מפתח)', (st, data == Bpid), (200, True))
 st, rv = req('GET', f'pub/revealed/{OPEN}'); check('הימורים של אחרים מוסתרים לפני הנעילה', rv, None)
 
+print('--- קוד כניסה אישי')
+check('קריאת כל הקודים (rc)', req('GET', 'rc')[0], 401)
+st, got = req('GET', f'rc/{CODES[A]}'); check('כניסה עם הקוד הנכון מחזירה את החשבון', got == A, True)
+check('ניחוש קוד אקראי לא מחזיר חשבון', req('GET', f'rc/{rs(12, RCA)}')[1], None)
+check('דריסת קוד קיים כך שיצביע לחשבון אחר', req('PUT', f'rc/{CODES[A]}', B)[0], 401)
+check('קוד חדש שמצביע לחשבון של מישהו אחר', req('PUT', f'rc/{rs(12, RCA)}', B)[0], 401)
+check('החלפת הקוד של חשבון קיים', req('PATCH', '', {f'acct/{A}/rc': (c2 := rs(12, RCA)), f'rc/{c2}': A})[0], 401)
+
 print('--- מנהל')
 check('פעולת מנהל עם מפתח מזויף', req('PUT', f'adminOps/k{rs(40, AZM)}/o1', {'t': 'adjust', 'pid': Apid, 'd': 9999, 'at': SV})[0], 401)
 check('רישום מפתח מנהל חדש', req('PUT', f'adminKeys/k{rs(40, AZM)}', True)[0], 401)
@@ -113,7 +124,7 @@ st, a = req('GET', f'acct/{A}')
 check('יתרה סופית של A נכונה (500−50−10 = 440)', (a or {}).get('wallet', {}).get('bal'), 440)
 
 # ניקוי
-R.fb('', 'PATCH', {f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None,
+R.fb('', 'PATCH', {f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None,
                    f'fixtures/{OPEN}': None, f'fixtures/{LOCKED}': None, f'pub/profiles/{Apid}': None, f'pub/profiles/{Bpid}': None, f'pub/revealed/{OPEN}': None})
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)

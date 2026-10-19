@@ -38,6 +38,8 @@ try:
         pg.fill('#nameIn', name); pg.click('#loginBtn')
         pg.wait_for_function('() => (typeof A!=="undefined" && A) && A.wallet && A.wallet.bal === 500', timeout=20000)
         check(True, 'משתמש חדש נכנס וקיבל 500')
+        pg.wait_for_selector('#final.show', timeout=10000); code = pg.locator('#final div[style*="letter-spacing"]').inner_text().replace('-', '').strip()
+        check(len(code) == 12, 'הוצג קוד כניסה אישי'); pg.click('#final .btn.sec')
         pg.evaluate(f"() => {{ dayF = S.fixtures['{E}'].day; render(); }}")
         pg.wait_for_selector(f"button.ob[onclick*=\"'{E}','W','1'\"]", timeout=15000)
         pg.click(f"button.ob[onclick*=\"'{E}','W','1'\"]")
@@ -54,6 +56,12 @@ try:
         pg.wait_for_function('() => A && A.wallet.bal === 500 && Object.keys(A.bets||{}).length === 0', timeout=20000)
         check(True, 'ביטול החזיר את הז\'יטונים (500)')
         sec, a = acct(); check(a and a['wallet']['bal'] == 500, 'הביטול נשמר בשרת')
+        ctx2 = b.new_context(viewport={'width': 390, 'height': 844}); pg2 = ctx2.new_page()
+        pg2.goto('http://127.0.0.1:8765/index.html'); pg2.wait_for_selector('#nameIn', timeout=20000)
+        pg2.once('dialog', lambda d: d.accept(code))
+        pg2.click("a[onclick^=\"loginWithCode\"]")
+        pg2.wait_for_function(f'() => (typeof A!=="undefined" && A) && A.name === "{name}"', timeout=20000)
+        check(True, 'כניסה ממכשיר אחר עם הקוד – אותו חשבון'); ctx2.close()
         check(not errs, 'אין שגיאות JavaScript בדף' + (f': {errs[:2]}' if errs else ''))
         b.close()
 except Exception as ex:
@@ -61,6 +69,6 @@ except Exception as ex:
 finally:
     s, a = acct()
     upd = {f'fixtures/{E}': None}
-    if s: upd.update({f'acct/{s}': None, f"names/{a['nk']}": None})
+    if s: upd.update({f'acct/{s}': None, f"names/{a['nk']}": None}); upd.update({f"rc/{a['rc']}": None} if a.get('rc') else {})
     R.fb('', 'PATCH', upd); srv.shutdown()
 sys.exit(1 if fails else 0)

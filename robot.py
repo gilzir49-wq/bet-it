@@ -289,11 +289,15 @@ def admin_tick(accts):
                     elif t == 'approve':
                         old = by_nk.get(reqs[s2].get('nk'))
                         if not old: res = 'not found'
-                        else: fb(f'acct/{s2}', 'PUT', old[1]); fb(f'acct/{old[0]}', 'DELETE'); fb(f'recoverReq/{s2}', 'DELETE')
+                        else:
+                            fb(f'acct/{s2}', 'PUT', old[1])
+                            if old[1].get('rc'): fb(f"rc/{old[1]['rc']}", 'PUT', s2)       # קוד הכניסה עובר לטלפון החדש
+                            fb(f'acct/{old[0]}', 'DELETE'); fb(f'recoverReq/{s2}', 'DELETE')
                     else: fb(f'recoverReq/{s2}', 'DELETE')
                 elif t == 'delete':
                     hit = next(((s, a) for s, a in accts.items() if a and a.get('pid') == op.get('pid')), None)
-                    if hit: fb('', 'PATCH', {f'acct/{hit[0]}': None, f"names/{hit[1]['nk']}": None, f"pub/profiles/{hit[1]['pid']}": None})
+                    if hit: fb('', 'PATCH', {f'acct/{hit[0]}': None, f"names/{hit[1]['nk']}": None, f"pub/profiles/{hit[1]['pid']}": None,
+                                              **({f"rc/{hit[1]['rc']}": None} if hit[1].get('rc') else {})})
                     else: res = 'not found'
                 elif t == 'adjust':
                     hit = next((s for s, a in accts.items() if a and a.get('pid') == op.get('pid')), None)

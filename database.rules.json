@@ -22,6 +22,8 @@
         "nk":     { ".validate": "newData.isString() && newData.val() === newData.parent().child('name').val().toLowerCase().replace(' ', '')" },
         "pid":    { ".validate": "newData.isString() && newData.val().matches(/^p[a-z0-9]{12,30}$/)" },
         "joined": { ".validate": "newData.isNumber() && newData.val() <= now + 60000 && newData.val() >= now - 600000" },
+        "rc":     { ".write": "!data.exists() && $secret.matches(/^s[a-zA-Z0-9]{40,64}$/) && root.child('acct').child($secret).exists()",
+                    ".validate": "newData.isString() && newData.val().matches(/^[A-HJ-NP-Z2-9]{12}$/) && newData.parent().parent().parent().child('rc').child(newData.val()).val() === $secret" },
 
         "wallet": {
           ".write": "data.exists() && newData.child('bal').isNumber() && newData.child('bal').val() >= 0 && newData.child('wk').val() === data.child('wk').val() && ((newData.child('op').val().beginsWith('b:') && !data.parent().child('bets').child(newData.child('op').val().replace('b:', '')).exists() && newData.parent().child('bets').child(newData.child('op').val().replace('b:', '')).exists() && newData.child('bal').val() === data.child('bal').val() - newData.parent().child('bets').child(newData.child('op').val().replace('b:', '')).child('s').val()) || (newData.child('op').val().beginsWith('c:') && data.parent().child('bets').child(newData.child('op').val().replace('c:', '')).exists() && !newData.parent().child('bets').child(newData.child('op').val().replace('c:', '')).exists() && newData.child('bal').val() === data.child('bal').val() + data.parent().child('bets').child(newData.child('op').val().replace('c:', '')).child('s').val()))",
@@ -50,6 +52,13 @@
         },
 
         "$other": { ".validate": "$other === 'settled'" }
+      }
+    },
+
+    "rc": {
+      "$code": {
+        ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{12}$/)",
+        ".write": "$code.matches(/^[A-HJ-NP-Z2-9]{12}$/) && !data.exists() && newData.isString() && newData.parent().parent().child('acct').child(newData.val()).child('rc').val() === $code"
       }
     },
 
