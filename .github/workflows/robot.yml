@@ -1,0 +1,15 @@
+name: רובוט BUX BET
+on:
+  schedule:
+    - cron: '*/10 * * * *'    # מתחיל מחדש אוטומטית אם הריצה הקודמת הסתיימה
+  workflow_dispatch:
+concurrency:
+  group: bux-bet-robot
+  cancel-in-progress: false
+jobs:
+  robot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 robot.py bux-bet
