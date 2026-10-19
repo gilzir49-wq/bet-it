@@ -923,6 +923,7 @@ async function placeBet(){
 }
 async function cancelBet(bid){
   const b=A&&A.bets&&A.bets[bid]; if(!b) return; const f=S.fixtures[b.e];
+  if(A.settled&&A.settled[bid]) return toast('ההימור כבר נסגר – הז\'יטונים כבר חזרו אליך',false,'err',3500);
   if(isLocked(f)) return toast('המשחק ננעל – אי אפשר לבטל 🔒',false,'err');
   if(!confirm(`לבטל את ההימור (${fmt(b.s)} ז'יטונים יחזרו אליך)?`)) return;
   const upd={[`acct/${SEC}/bets/${bid}`]:null, [`acct/${SEC}/wallet/bal`]:A.wallet.bal+b.s, [`acct/${SEC}/wallet/op`]:'c:'+bid};
