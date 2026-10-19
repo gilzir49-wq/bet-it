@@ -21,8 +21,8 @@ out=subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(
 st,a=req('GET',f'acct/{sec}'); w=a['wallet']
 # צפוי: 300 + ג'וקר 100+2*(200-100)=300 + מדויק 50*8=400 + תיקו 0 = 1000
 assert w['bal']==1000, w; print('balance after settle:', w['bal'], '(expected 1000)', '| settled:', {k:v['st']+' '+str(v['pay']) for k,v in a.get('settled',{}).items()})
-st,rv=req('GET',f'revealed/{E}'); print('revealed after lock:', len(rv or {}), 'bets')
-st,sd=req('GET','standings'); row=[r for r in sd['rows'] if r['pid']==pid]; print('standings row:', row, '| bank:', sd['bank'])
+st,rv=req('GET',f'pub/revealed/{E}'); print('revealed after lock:', len(rv or {}), 'bets')
+st,sd=req('GET','pub/standings'); row=[r for r in sd['rows'] if r['pid']==pid]; print('standings row:', row, '| bank:', sd['bank'])
 # שחזור: טלפון חדש מבקש, מנהל מאשר
 s2='s'+rs(48,AZM); print('recover req', req('PUT',f'recoverReq/{s2}',{'nk':nk,'at':SV})[0])
 K='k'+rs(40,AZM); R.fb(f'adminKeys/{K}','PUT',True)
@@ -31,5 +31,5 @@ st,av=req('GET',f'adminView/{K}'); r=[x for x in av.get('reqs',[]) if x['nk']==n
 print('admin approve', req('PUT',f'adminOps/{K}/oe2e1',{'t':'approve','rid':r[0]['rid'],'at':SV})[0])
 subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
 ok=req('GET',f'acct/{s2}')[1] is not None and req('GET',f'acct/{sec}')[1] is None; assert ok, 'recovery failed'; print('new phone has account:', req('GET',f'acct/{s2}')[1] is not None and req('GET',f'acct/{s2}')[1]['wallet']['bal']==1000, '| old key dead:', req('GET',f'acct/{sec}')[1] is None)
-R.fb('','PATCH',{f'acct/{s2}':None,f'acct/{sec}':None,f'names/{nk}':None,f'fixtures/{E}':None,f'revealed/{E}':None,f'profiles/{pid}':None,f'adminView/{K}/log':None})
+R.fb('','PATCH',{f'acct/{s2}':None,f'acct/{sec}':None,f'names/{nk}':None,f'fixtures/{E}':None,f'pub/revealed/{E}':None,f'pub/profiles/{pid}':None,f'adminView/{K}/log':None})
 R.fb(f'adminKeys/{K}','DELETE'); print('cleaned')

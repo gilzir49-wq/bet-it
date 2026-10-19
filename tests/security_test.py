@@ -39,9 +39,9 @@ check('קריאת תצוגת מנהל עם מפתח מזויף', req('GET', 'adm
 print('--- זיוף תוצאות ונתונים ציבוריים')
 check('זיוף תוצאת משחק', req('PATCH', f'fixtures/{OPEN}', {'h': 5, 'st': 'finished'})[0], 401)
 check('זיוף יחס', req('PUT', f'fixtures/{OPEN}/odds/1', 50)[0], 401)
-check('זיוף טבלת דירוג', req('PUT', 'standings/bank', 0)[0], 401)
-check('זיוף "הימורים שנחשפו"', req('PUT', 'revealed/x', {'a': 1})[0], 401)
-check('זיוף טבלת ליגה', req('PUT', 'tables/isr1', {})[0], 401)
+check('זיוף טבלת דירוג', req('PUT', 'pub/standings/bank', 0)[0], 401)
+check('זיוף "הימורים שנחשפו"', req('PUT', 'pub/revealed/x', {'a': 1})[0], 401)
+check('זיוף טבלת ליגה', req('PUT', 'pub/tables/isr1', {})[0], 401)
 check('כתיבה לנתיב לא מוגדר', req('PUT', 'hack', 1)[0], 401)
 
 print('--- יצירת חשבון')
@@ -102,7 +102,7 @@ print('--- התחזות לשחקן אחר')
 check('הימור בחשבון של B עם מפתח מזויף', req('PATCH', '', bet('s' + rs(48, AZM), 'bpentest17', 500))[0], 401)
 check('קריאת חשבון לפי מזהה ציבורי (pid)', req('GET', f'acct/{Bpid}')[0], 401)
 st, data = req('GET', f'names/{Bnk}'); check('מהשם אפשר לדעת רק מזהה ציבורי (לא מפתח)', (st, data == Bpid), (200, True))
-st, rv = req('GET', f'revealed/{OPEN}'); check('הימורים של אחרים מוסתרים לפני הנעילה', rv, None)
+st, rv = req('GET', f'pub/revealed/{OPEN}'); check('הימורים של אחרים מוסתרים לפני הנעילה', rv, None)
 
 print('--- מנהל')
 check('פעולת מנהל עם מפתח מזויף', req('PUT', f'adminOps/k{rs(40, AZM)}/o1', {'t': 'adjust', 'pid': Apid, 'd': 9999, 'at': SV})[0], 401)
@@ -114,6 +114,6 @@ check('יתרה סופית של A נכונה (500−50−10 = 440)', (a or {}).g
 
 # ניקוי
 R.fb('', 'PATCH', {f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None,
-                   f'fixtures/{OPEN}': None, f'fixtures/{LOCKED}': None, f'profiles/{Apid}': None, f'profiles/{Bpid}': None, f'revealed/{OPEN}': None})
+                   f'fixtures/{OPEN}': None, f'fixtures/{LOCKED}': None, f'pub/profiles/{Apid}': None, f'pub/profiles/{Bpid}': None, f'pub/revealed/{OPEN}': None})
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)
