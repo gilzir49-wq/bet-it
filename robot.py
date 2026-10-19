@@ -12,7 +12,7 @@ IL = ZoneInfo('Asia/Jerusalem')
 LS = 'https://prod-public-api.livescore.com/v1/api/app'
 LEAGUES = {'isr1': ('israel', 'premier-league'), 'isr2': ('israel', 'liga-leumit'),
            'eng': ('england', 'premier-league'), 'ita': ('italy', 'serie-a')}
-DAYS_AHEAD = 3
+DAYS_AHEAD = 7   # משחקים לשבוע קדימה
 REFRESH_EVERY = 600
 POLL = 20
 RUN_FOR = 5 * 3600 + 40 * 60
