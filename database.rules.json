@@ -14,7 +14,7 @@
     "names": {
       ".read": true,
       "$nk": {
-        ".write": "!data.exists() && newData.isString() && newData.val().matches(/^p[a-z0-9]{12,30}$/)"
+        ".write": "!data.exists() && $nk.length >= 2 && $nk.length <= 20 && !$nk.contains(' ') && newData.isString() && newData.val().matches(/^p[a-z0-9]{12,30}$/)"
       }
     },
     "acct": {
@@ -115,7 +115,10 @@
     "lgdef": {
       "$lid": {
         ".read": "$lid.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
-        ".write": "!data.exists() && $lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['n','at']) && newData.child('n').isString() && newData.child('n').val().length >= 2 && newData.child('n').val().length <= 24 && !newData.child('n').val().matches(/[<>\"`\\\\&;{}]/) && newData.child('at').isNumber() && newData.child('at').val() <= now + 60000 && !newData.child('n').val().contains('\"') && !newData.child('n').val().contains('`') && !newData.child('n').val().contains('\\\\') && !newData.child('n').val().contains('&') && !newData.child('n').val().contains(';') && !newData.child('n').val().contains('{') && !newData.child('n').val().contains('}') && !newData.child('n').val().contains('<') && !newData.child('n').val().contains('>')"
+        ".write": "!data.exists() && $lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['n','at']) && newData.child('n').isString() && newData.child('n').val().length >= 2 && newData.child('n').val().length <= 24 && !newData.child('n').val().matches(/[<>\"`\\\\&;{}]/) && newData.child('at').isNumber() && newData.child('at').val() <= now + 60000 && !newData.child('n').val().contains('\"') && !newData.child('n').val().contains('`') && !newData.child('n').val().contains('\\\\') && !newData.child('n').val().contains('&') && !newData.child('n').val().contains(';') && !newData.child('n').val().contains('{') && !newData.child('n').val().contains('}') && !newData.child('n').val().contains('<') && !newData.child('n').val().contains('>')",
+        "n": { ".validate": true },
+        "at": { ".validate": true },
+        "$x": { ".validate": false }
       }
     },
     "rc": {
@@ -127,6 +130,9 @@
     "recoverReq": {
       "$secret": {
         ".write": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/) && !data.exists() && !root.child('acct').child($secret).exists() && newData.hasChildren(['nk','at']) && root.child('names').child(newData.child('nk').val()).exists()",
+        "nk": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 20" },
+        "at": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+        "$x": { ".validate": false },
         ".read": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/)"
       }
     },

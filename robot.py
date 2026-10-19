@@ -302,11 +302,13 @@ def leagues_tick(accts):
                     if pid in by_pid: fb(f'acct/{by_pid[pid]}/leagues/{lid}', 'DELETE')
             fb(f'acct/{sec}/lgkick/{lid}', 'DELETE')
     # ליגה בלי בעלים (ספאם/נטושה) – נמחקת אחרי 10 דקות
-    t = time.time()
+    t = time.time(); dead = {}
     for lid in defs:
         if lid in out and out[lid]['o']: lg_first_seen.pop(lid, None); continue
         if t - lg_first_seen.setdefault(lid, t) > 600:
-            fb(f'lgdef/{lid}', 'DELETE'); out.pop(lid, None); lg_first_seen.pop(lid, None)
+            dead[f'lgdef/{lid}'] = None; out.pop(lid, None); lg_first_seen.pop(lid, None)
+    for i in range(0, len(dead), 500):
+        fb('', 'PATCH', dict(list(dead.items())[i:i + 500]))
     out = {k: v for k, v in out.items() if v['o']}
     sig = json.dumps(out, sort_keys=True)
     if published.get('lg') != sig: fb('pub/lg', 'PUT', out or None); published['lg'] = sig
@@ -371,9 +373,12 @@ def admin_tick(accts):
 def cleanup_names(accts):
     """שמות שנתפסו בלי חשבון (ספאם) – נמחקים אחרי 3 דקות."""
     names = fb('names') or {}; pids = {a.get('pid') for a in accts.values() if a}; t = time.time()
+    dead = {}
     for nk, pid in names.items():
         if pid in pids: orphan_seen.pop(nk, None); continue
-        if t - orphan_seen.setdefault(nk, t) > 180: fb(f'names/{nk}', 'DELETE'); orphan_seen.pop(nk, None)
+        if t - orphan_seen.setdefault(nk, t) > 180: dead[f'names/{nk}'] = None; orphan_seen.pop(nk, None)
+    for i in range(0, len(dead), 500):          # מחיקה בקבוצות – גם הצפה של אלפי שמות לא תוקעת את הרובוט
+        fb('', 'PATCH', dict(list(dead.items())[i:i + 500]))
 
 # ---------- לולאה ----------
 if __name__ == '__main__':
