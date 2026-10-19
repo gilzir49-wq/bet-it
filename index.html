@@ -592,7 +592,7 @@ const adminLink = () => isAdmin?'':`<footer><a href="#" onclick="adminLogin();re
 // ================= באנר גול =================
 function detectGoals(){
   const now={}; fxList().forEach(f=>{ if(f.st==='live'||f.st==='finished') now[f.id]=(f.h|0)+(f.a|0); });
-  if(seenGoals) for(const id in now) if(seenGoals[id]!==undefined && now[id]>seenGoals[id]) showGoal(S.fixtures[id]);
+  if(seenGoals) for(const id in now) if(seenGoals[id]!==undefined && now[id]>seenGoals[id]) showGoal({id, ...S.fixtures[id]});
   seenGoals=now;
 }
 function showGoal(f){
