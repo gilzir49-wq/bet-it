@@ -1,0 +1,31 @@
+name: גיבוי BUX BET (מוצפן)
+on:
+  schedule:
+    - cron: '7 * * * *'      # כל שעה
+  workflow_dispatch:
+concurrency: { group: backup, cancel-in-progress: false }
+permissions: { contents: write }
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q google-auth requests
+      - run: python3 ops/backup.py
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+      - name: הצפנה ושמירה בענף backups
+        env:
+          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+        run: |
+          set -e
+          mkdir -p /tmp/out
+          for f in snapshots/*.json; do gzip -c "$f" | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:BACKUP_KEY -out "/tmp/out/$(basename $f).gz.enc"; done
+          git config user.name "BUX BET backup"; git config user.email "gilzir49@gmail.com"
+          git fetch -q origin backups || true
+          if git rev-parse -q --verify origin/backups >/dev/null; then git checkout -q -B backups origin/backups; else git checkout -q --orphan backups; git rm -rq --cached . ; fi
+          find . -maxdepth 1 ! -name .git ! -name . -exec rm -rf {} +
+          cp /tmp/out/* . 
+          echo "גיבויים מוצפנים (AES-256) של BUX BET. מפתח הפענוח שמור רק בכספת GitHub ואצל המנהל." > README.md
+          git add -A; git diff --cached --quiet || git commit -qm "גיבוי $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q origin backups
