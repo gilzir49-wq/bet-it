@@ -107,6 +107,11 @@ check('קריאת חשבון לפי מזהה ציבורי (pid)', req('GET', f'a
 st, data = req('GET', f'names/{Bnk}'); check('מהשם אפשר לדעת רק מזהה ציבורי (לא מפתח)', (st, data == Bpid), (200, True))
 st, rv = req('GET', f'pub/revealed/{OPEN}'); check('הימורים של אחרים מוסתרים לפני הנעילה', rv, None)
 
+print('--- הזרקת קוד דרך שמות')
+for bad in ['x"onclick', "a`b", 'a&quot;b', 'a;b', 'a{b}', 'a\\b', '<b>x']:
+    check(f'שם שחקן עם תווים מסוכנים: {bad}', new_acct('pt' + RUN + bad)[0], 401)
+check('שם ליגה עם תווים מסוכנים', req('PATCH', '', {f'lgdef/{rs(6, RCA)}': {'n': 'a"onclick=x', 'at': SV}})[0], 401)
+
 print('--- קוד כניסה אישי')
 check('קריאת כל הקודים (rc)', req('GET', 'rc')[0], 401)
 st, got = req('GET', f'rc/{CODES[A]}'); check('כניסה עם הקוד הנכון מחזירה את החשבון', got == A, True)

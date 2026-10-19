@@ -2,8 +2,10 @@ name: בדיקות ועלייה לאוויר
 # כל שינוי עולה לאתר האמיתי רק אם כל הבדיקות עברו בסביבת הבדיקה
 on:
   push: { branches: [master] }
+  pull_request: { branches: [master] }     # כל הצעת שינוי (מהסשנים) נבדקת לפני מיזוג
+  schedule: [ { cron: '30 0 * * *' } ]      # כל לילה: כל ההתקפות מחדש על סביבת הבדיקה
   workflow_dispatch:
-concurrency: { group: ci, cancel-in-progress: false }
+concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: false }
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -24,6 +26,7 @@ jobs:
         run: python3 tests/smoke_test.py
   deploy:
     needs: test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'   # עולה לאוויר רק ממיזוג ל-master
     runs-on: ubuntu-latest
     permissions: { pages: write, id-token: write, contents: read }
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }

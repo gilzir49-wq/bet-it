@@ -267,6 +267,14 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 #sheet .jk{display:flex;width:100%;align-items:center;gap:12px;background:rgba(169,123,255,.08);border:1px solid rgba(169,123,255,.35);border-radius:16px;padding:12px 14px;margin:12px 0;color:var(--txt);text-align:right;font-weight:400}
 #sheet .jk.on{background:rgba(169,123,255,.2);border-color:var(--p);box-shadow:0 0 0 4px rgba(169,123,255,.12)}
 #sheet .jk.on .sw{background:var(--p)}
+.steps{display:flex;flex-direction:column;gap:8px;margin:12px 0 14px}
+.steps div{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-weight:700;font-size:14px}
+.steps b{width:26px;height:26px;border-radius:50%;background:var(--gold);color:var(--on-accent);display:grid;place-items:center;font-weight:900;flex:0 0 auto}
+.linkbox{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line3);border-radius:12px;padding:6px 6px 6px 12px;margin:12px 0 8px;direction:ltr}
+.linkbox span{flex:1;font-size:13px;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.linkbox button{border:0;border-radius:9px;background:var(--card3);color:var(--txt);font-weight:900;padding:8px 12px;cursor:pointer}
+.invcta{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(198,244,50,.14),rgba(169,123,255,.1));border:1px solid rgba(198,244,50,.35);border-radius:18px;padding:14px;margin:12px 0;cursor:pointer}
+.invcta b{display:block;font-size:15px}.invcta span{font-size:12.5px;color:var(--txt2)}
 .display{font-family:Karantina,Heebo,sans-serif;font-weight:700;letter-spacing:-.5px;line-height:.9}
 @media (max-width:430px){ .brand>div{display:none} .bar{gap:6px} .topr{gap:5px} .pill{padding:6px 8px;font-size:12px} .bal{font-size:15px;padding:6px 10px} }
 .modeT{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:10px;font-weight:700;font-size:13.5px;cursor:pointer}
@@ -594,11 +602,12 @@ function viewTable(){
   if(L) rows=rows.filter(r=>L.m&&L.m[r.pid]);
   const vk=mode==='week'?'wp':'v', gk=mode==='week'?'pw':'ps';
   rankRows(rows,vk);
-  const prevOrder=rows.slice().sort((a,b)=>(a[gk]||0)-(b[gk]||0)); const prevRk={}; prevOrder.forEach((r,i)=>prevRk[r.pid]=i+1);   // מיקום קודם בתוך הטבלה הזו
+  const prevRk={}; rows.forEach(r=>{ const pv=r[gk]||r._rk; prevRk[r.pid]=1+rows.filter(x=>(x[gk]||x._rk)<pv).length; });   // מיקום קודם בתוך הטבלה הזו (תיקו = אותו מקום)
   const bank=st?st.bank:BANK_START, bd=bank-BANK_START;
   let h=`<div class="chips"><button class="chip ${tblScope==='all'?'on':''}" onclick="setScope('all')">🌍 ארצית</button>
     ${mine.map(l=>`<button class="chip ${tblScope===l?'on':''}" onclick="setScope('${l}')">👥 ${esc(S.lg[l].n)}<span class="n">${Object.keys(S.lg[l].m||{}).length}</span></button>`).join('')}
     ${A?`<button class="chip" onclick="leagueMenu()">➕ ליגה</button>`:''}</div>`;
+  if(!L && A && !mine.length) h+=`<div class="invcta" onclick="leagueMenu()"><span style="font-size:30px">👥</span><div><b>שחקו עם החבר׳ה</b><span>פתחו ליגה פרטית ושלחו לינק לקבוצת הוואטסאפ – טבלה רק שלכם</span></div><span style="margin-inline-start:auto;font-weight:900;color:var(--gold)">פתח ←</span></div>`;
   if(!L) h+=`<div class="bank"><div class="muted">🏦 קופת הבנק</div><div class="v">${fmt(bank)} 🪙</div>
     <div class="d ${bd>0?'neg':bd<0?'pos':''}">${bd>0?`הבנק מרוויח ${fmt(bd)} – השחקנים בהפסד 😈`:bd<0?`השחקנים לקחו לבנק ${fmt(-bd)}! 🤑`:'הבנק מחכה להימור הראשון'}</div></div>`;
   else h+=`<div class="card" style="text-align:center"><div style="font-size:22px;font-weight:900">👥 ${esc(L.n)}</div>
@@ -650,13 +659,18 @@ async function joinLeague(raw){
   if(r!=='ok') return toast('ההצטרפות לא הצליחה – נסה שוב',false,'err');
   closeSheet(); toast(`הצטרפת ל"${d.n}"! 🎉 הטבלה תתעדכן תוך רגע`,true); confetti(80); tblScope=c; lsSet('bb_scope',c); go('table');
 }
+function inviteText(lid,n){ const link=`${APP_URL}/#join=${lid}`; return {link, txt:`⚽ בואו לליגה שלי "${n}" ב-BET-IT – משחק הניחושים של החבר׳ה!\nמהמרים בז'יטונים על הכדורגל, בלי כסף אמיתי 🪙\nלוחצים על הלינק, כותבים שם – ואתם בפנים:\n👉 ${link}`}; }
+async function shareInvite(lid){ const n=(S.lg[lid]&&S.lg[lid].n)||'', {link,txt}=inviteText(lid,n);
+  if(navigator.share){ try{ await navigator.share({title:'BET-IT',text:txt}); return; }catch(e){ if(e.name==='AbortError') return; } }
+  window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`,'_blank'); }
 function inviteLeague(lid,name){
-  const n=name||(S.lg[lid]&&S.lg[lid].n)||'', link=`${APP_URL}/#join=${lid}`;
-  const txt=`⚽ הצטרפו לליגה שלי "${n}" ב-BET-IT – משחק הניחושים של החבר׳ה!\nמהמרים בז'יטונים על הכדורגל, בלי כסף אמיתי 🪙\n👉 ${link}\nקוד ליגה: ${lid}`;
-  sheet(`<h2 style="margin-top:0">📲 הזמנה לליגה</h2><div class="muted">שלחו את הלינק בקבוצת הווטסאפ – מי שנכנס מצטרף אוטומטית.</div>
-    <div style="font-size:30px;font-weight:900;letter-spacing:4px;text-align:center;color:var(--gold);margin:12px 0;direction:ltr">${lid}</div>
-    <a class="btn" style="display:block;text-align:center;text-decoration:none;background:linear-gradient(180deg,#3ee07a,#1fa855);color:#04210f" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank">🟢 שלח בוואטסאפ</a>
-    <button class="btn sec" style="margin-top:8px" onclick="navigator.clipboard&&navigator.clipboard.writeText(${JSON.stringify(link)}).then(()=>toast('הלינק הועתק 📋',true))">📋 העתק לינק</button>`);
+  const n=name||(S.lg[lid]&&S.lg[lid].n)||'', {link,txt}=inviteText(lid,n);
+  sheet(`<h2 style="margin:0 0 4px">📲 הזמנת חברים ל"${esc(n)}"</h2>
+    <div class="steps"><div><b>1</b>לוחצים על "שתף הזמנה"</div><div><b>2</b>בוחרים את קבוצת הוואטסאפ</div><div><b>3</b>מי שלוחץ על הלינק – נכנס ומצטרף לבד</div></div>
+    <button class="btn" data-lid="${lid}" onclick="shareInvite(this.dataset.lid)">📤 שתף הזמנה</button>
+    <a class="btn sec" style="display:block;text-align:center;text-decoration:none;margin-top:8px" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank">🟢 ישר לוואטסאפ</a>
+    <div class="linkbox"><span>${esc(link)}</span><button data-t="${esc(link)}" onclick="copyTxt(this.dataset.t,'הלינק הועתק 📋')">העתק</button></div>
+    <div class="muted" style="text-align:center">או שהם מקלידים קוד ליגה: <b style="color:var(--gold);letter-spacing:3px;direction:ltr;display:inline-block">${lid}</b></div>`);
 }
 function manageLeague(lid){
   const L=S.lg[lid], me=A&&A.pid; if(!L) return;
@@ -664,13 +678,14 @@ function manageLeague(lid){
     <button class="btn sec" style="margin-top:12px;border-color:var(--red);color:var(--red)" onclick="leaveLeague('${lid}')">עזוב את הליגה</button>`);
   const mem=Object.entries(L.m||{}).filter(([p])=>p!==me);
   sheet(`<h2 style="margin-top:0">⚙️ ניהול "${esc(L.n)}"</h2><div class="muted">את/ה מנהל/ת הליגה. אפשר להרחיק חברים (הם לא יוכלו לחזור).</div>
-    ${mem.length?mem.map(([p,n])=>`<div class="prow"><span>${esc(n)}</span><button class="x" onclick="kick('${lid}','${p}',${JSON.stringify(n).replace(/"/g,'&quot;')})">הרחק</button></div>`).join(''):'<div class="empty">עוד אין חברים – הזמן אותם 📲</div>'}
+    ${mem.length?mem.map(([p,n])=>`<div class="prow"><span>${esc(n)}</span><button class="x" data-lid="${lid}" data-pid="${p}" onclick="kick(this.dataset.lid,this.dataset.pid)">הרחק</button></div>`).join(''):'<div class="empty">עוד אין חברים – הזמן אותם 📲</div>'}
     <button class="btn" style="margin-top:12px" onclick="inviteLeague('${lid}')">📲 הזמן חברים</button>`);
 }
-async function kick(lid,pid,n){ if(!confirm(`להרחיק את ${n} מהליגה?`)) return; const r=await write('PUT',`acct/${SEC}/lgkick/${lid}/${pid}`,true);
+async function kick(lid,pid){ const n=(S.lg[lid]&&S.lg[lid].m&&S.lg[lid].m[pid])||'החבר'; if(!confirm(`להרחיק את ${n} מהליגה?`)) return; const r=await write('PUT',`acct/${SEC}/lgkick/${lid}/${pid}`,true);
   toast(r==='ok'?`${n} יורחק תוך כמה שניות`:'לא הצלחתי – נסה שוב',r==='ok',r==='ok'?null:'err'); closeSheet(); }
 async function leaveLeague(lid){ const r=await write('DELETE',`acct/${SEC}/leagues/${lid}`); if(r==='ok'){ closeSheet(); setScope('all'); toast('יצאת מהליגה',true); } }
 
+function copyTxt(t,msg){ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(msg||'הועתק 📋',true)).catch(()=>{ prompt('העתק:',t); }); }
 // ================= כרטיסי שיתוף (וואטסאפ / סטורי) =================
 async function makeCard(o){
   const c=document.createElement('canvas'); c.width=1080; c.height=1350; const x=c.getContext('2d');
@@ -719,7 +734,8 @@ function viewLeagues(){
 }
 
 // ================= כניסה + שחזור =================
-function viewLogin(){
+function fillInvName(){ const j=lsGet('bb_join'); if(!j) return; readOnce(`lgdef/${j}`).then(d=>{ const el=document.getElementById('invName'); if(el&&d) el.textContent=`"${d.n}"`; }).catch(()=>{}); }
+function viewLogin(){ setTimeout(fillInvName,50);
   if(PENDING) return `<div class="card" style="text-align:center;margin-top:20px"><div style="font-size:48px">⏳</div><h2>ממתין לאישור המנהל</h2>
     <div class="muted">ביקשת לשחזר את החשבון שלך. ברגע שהמנהל יאשר – תיכנס אוטומטית.</div>
     <button class="btn sec" style="margin-top:14px" onclick="PENDING=null;lsSet('bb_pending',null);render()">ביטול</button></div>`;
@@ -727,6 +743,7 @@ function viewLogin(){
     <div class="mk">⚽</div><h2>ברוכים הבאים ל-BET-IT</h2>
     <div class="muted">משחק הניחושים של החבר׳ה: מהמרים בז'יטונים וירטואליים על הכדורגל. בלי כסף אמיתי – רק כבוד ועקיצות.</div>
     <div class="feat"><div><b>🪙 ${START_COINS}</b>ז'יטונים במתנה</div><div><b>🎁 +${WEEKLY_BONUS}</b>כל שבוע מהבנק</div><div><b>🇮🇱 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🇮🇹</b>4 ליגות, שבוע קדימה</div><div><b>🃏 ×2</b>ג'וקר יומי</div></div>
+    ${lsGet('bb_join')?`<div class="invcta" style="cursor:default"><span style="font-size:26px">🎉</span><div><b>הוזמנת לליגת חברים!</b><span>כתוב שם ותצטרף אוטומטית לליגה <b id="invName" style="display:inline;font-size:13px"></b></span></div></div>`:''}
     <div style="font-weight:900;font-size:17px;margin-top:18px">איך קוראים לך?</div>
     <input class="name" id="nameIn" placeholder="השם שלך" maxlength="20" autocomplete="off" enterkeyhint="go" onkeydown="if(event.key==='Enter')login()">
     <div id="loginErr" style="color:#ff8080;font-weight:900;min-height:22px;margin-bottom:6px"></div>
@@ -737,7 +754,7 @@ let lastTakenNk=null;
 async function login(){
   const v=(document.getElementById('nameIn').value||'').trim().replace(/\s+/g,' '), err=document.getElementById('loginErr');
   if(v.length<2) return err.textContent='צריך לפחות 2 אותיות 🙂';
-  if(/[.#$\[\]\/<>]/.test(v)) return err.textContent='בלי סימנים מיוחדים בשם 🙂';
+  if(/[.#$\[\]\/<>"`\\&;{}]/.test(v)) return err.textContent='בלי סימנים מיוחדים בשם 🙂';
   const nk=nkOf(v), btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='בודק...';
   let taken=null; try{ taken=await readOnce(`names/${nk}`); }catch(e){ btn.disabled=false; btn.textContent='יאללה 🔥'; return err.textContent='אין חיבור – נסה שוב'; }
   if(taken){ btn.disabled=false; btn.textContent='יאללה 🔥'; lastTakenNk=nk;
@@ -926,7 +943,7 @@ function viewAdmin(){
       <button class="x" style="border-color:var(--g);color:var(--g)" onclick="if(confirm('לאשר? החשבון יעבור לטלפון החדש והישן יתנתק'))adminOp('approve',{rid:'${r.rid}'})">אשר</button><button class="x" onclick="adminOp('reject',{rid:'${r.rid}'})">דחה</button></span></div>`).join('')}</div>`;
   h+=`<div class="card"><b>משתתפים (${users.length})</b>${users.map(u=>`<div class="prow"><span>${esc(u.n)} · <span class="muted">${fmt(u.bal)} 🪙 · ${u.nb} הימורים</span></span><span style="display:flex;gap:6px">
     <button class="x" style="border-color:var(--y);color:var(--y)" onclick="const d=prompt('כמה ז\\'יטונים להוסיף? (מינוס להורדה)');if(d&&!isNaN(+d))adminOp('adjust',{pid:'${u.pid}',d:+d})">±🪙</button>
-    <button class="x" onclick="if(confirm('למחוק את ${esc(u.n)} וכל ההימורים שלו?'))adminOp('delete',{pid:'${u.pid}'})">מחק</button></span></div>`).join('')}</div>`;
+    <button class="x" data-pid="${u.pid}" onclick="delUser(this.dataset.pid)">מחק</button></span></div>`).join('')}</div>`;
   const recent=fxList().filter(f=>f.st!=='none'||f.manual).sort((a,b)=>b.ko-a.ko).slice(0,15);
   h+=`<div class="card"><b>✏️ תיקון תוצאה ידני</b><div class="muted">רק אם הרובוט טעה. תוצאה ידנית ננעלת עד שתחזיר לרובוט.</div>${recent.map(f=>`<div class="prow"><span>${esc(he(f.home))} ${f.h}-${f.a} ${esc(he(f.away))} ${f.manual?'✏️':''}</span><span style="display:flex;gap:6px">
     <button class="x" style="border-color:var(--y);color:var(--y)" onclick="fixFx('${f.id}')">תקן</button>${f.manual?`<button class="x" style="border-color:#888;color:#ccc" onclick="adminOp('unfix',{e:'${f.id}'})">לרובוט</button>`:''}</span></div>`).join('')}</div>`;
@@ -934,6 +951,7 @@ function viewAdmin(){
   if(log.length) h+=`<div class="card"><b>📜 פעולות אחרונות</b>${log.map(l=>`<div class="muted">${new Date(l.at).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem'})} · ${esc(l.t)} · ${esc(l.res)}</div>`).join('')}</div>`;
   return h;
 }
+function delUser(pid){ const u=(AV&&AV.users||[]).find(x=>x.pid===pid); if(u&&confirm(`למחוק את ${u.n} וכל ההימורים שלו?`)) adminOp('delete',{pid}); }
 function fixFx(id){ const f=S.fixtures[id]; const v=prompt(`תוצאה סופית ל-${he(f.home)} – ${he(f.away)} (למשל 2-1):`, `${f.h}-${f.a}`); if(!v) return;
   const m=v.match(/^(\d+)\s*-\s*(\d+)$/); if(!m) return toast('פורמט: 2-1',false,'err'); adminOp('fix',{e:id,h:+m[1],a:+m[2],st:'finished'}); }
 

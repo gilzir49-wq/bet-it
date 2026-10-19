@@ -18,7 +18,7 @@
         ".read": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/)",
         ".write": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/) && !data.exists() && newData.hasChildren(['name','nk','pid','joined','wallet']) && !newData.hasChild('bets') && !newData.hasChild('settled') && !newData.hasChild('jokers') && newData.child('wallet/bal').val() === 500 && newData.child('wallet/op').val() === 'init' && newData.child('wallet').hasChildren(['bal','op']) && !newData.child('wallet/wk').exists() && newData.parent().parent().child('names').child(newData.child('nk').val()).val() === newData.child('pid').val() && !root.child('names').child(newData.child('nk').val()).exists()",
 
-        "name":   { ".validate": "newData.isString() && newData.val().matches(/^[^ .#$\\[\\]\\/<>]([^.#$\\[\\]\\/<>]{0,18}[^ .#$\\[\\]\\/<>])?$/) && newData.val().length >= 2" },
+        "name":   { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 20 && newData.val().matches(/^[^ .#$\\[\\]\\/<>\"`\\\\&;{}]([^.#$\\[\\]\\/<>\"`\\\\&;{}]{0,18}[^ .#$\\[\\]\\/<>\"`\\\\&;{}])?$/)" },
         "nk":     { ".validate": "newData.isString() && newData.val() === newData.parent().child('name').val().toLowerCase().replace(' ', '')" },
         "pid":    { ".validate": "newData.isString() && newData.val().matches(/^p[a-z0-9]{12,30}$/)" },
         "joined": { ".validate": "newData.isNumber() && newData.val() <= now + 60000 && newData.val() >= now - 600000" },
@@ -72,7 +72,7 @@
     "lgdef": {
       "$lid": {
         ".read": "$lid.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
-        ".write": "!data.exists() && $lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['n','at']) && newData.child('n').isString() && newData.child('n').val().length >= 2 && newData.child('n').val().length <= 24 && !newData.child('n').val().matches(/[<>]/) && newData.child('at').isNumber() && newData.child('at').val() <= now + 60000"
+        ".write": "!data.exists() && $lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['n','at']) && newData.child('n').isString() && newData.child('n').val().length >= 2 && newData.child('n').val().length <= 24 && !newData.child('n').val().matches(/[<>\"`\\\\&;{}]/) && newData.child('at').isNumber() && newData.child('at').val() <= now + 60000"
       }
     },
 
