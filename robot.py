@@ -93,6 +93,13 @@ def refresh():
             print('stage error', lg, ex, flush=True); continue
         st = d['Stages'][0]
         rows = table_rows(st)
+        imgs = {}   # לוגו לכל קבוצה מתוך משחקי העונה (בטבלה לפעמים חסר)
+        for e in st.get('Events', []):
+            for T in ('T1', 'T2'):
+                t = e[T][0]
+                if t.get('Img'): imgs[t['Nm']] = t['Img']
+        for r in rows:
+            if not r['img']: r['img'] = imgs.get(r['t'], '')
         if rows:
             tables[lg] = rows
             upd[f'tables/{lg}'] = {'rows': rows, 'at': int(now)}
