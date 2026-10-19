@@ -9,8 +9,8 @@ def req(m,p,b=None):
 rs=lambda n,a:''.join(secrets.choice(a) for _ in range(n)); AZM=string.ascii_letters+string.digits; AZ=string.ascii_lowercase+string.digits; SV={'.sv':'timestamp'}
 now=int(time.time()*1000); E='999000003'; day=R.day_key(now+86400000)
 R.fb(f'fixtures/{E}','PUT',{'lg':'isr1','home':'Maccabi Haifa','away':'Hapoel Haifa','ko':now+86400000,'day':day,'st':'none','h':0,'a':0,'odds':{'1':2.0,'X':3.0,'2':4.0,'cs':{'2-1':8.0}}})
-sec,pid,nk='s'+rs(48,AZM),'p'+rs(16,AZ),'e2e_tester'
-print('create', req('PATCH','',{f'names/{nk}':pid,f'acct/{sec}':{'name':'e2e_tester','nk':nk,'pid':pid,'joined':SV,'wallet':{'bal':500,'op':'init'}}})[0])
+nk='e2e'+rs(8,AZ); sec,pid='s'+rs(48,AZM),'p'+rs(16,AZ)
+print('create', req('PATCH','',{f'names/{nk}':pid,f'acct/{sec}':{'name':nk,'nk':nk,'pid':pid,'joined':SV,'wallet':{'bal':500,'op':'init'}}})[0])
 b=lambda bid,m,p,s,o,bal,j=False: {**{f'acct/{sec}/bets/{bid}':{'e':E,'m':m,'p':p,'s':s,'o':o,'at':SV,**({'j':True} if j else {})},f'acct/{sec}/wallet/bal':bal-s,f'acct/{sec}/wallet/op':'b:'+bid},**({f'acct/{sec}/jokers/{day}':bid} if j else {})}
 print('bet W joker 100@2.0', req('PATCH','',b('be2e0000001','W','1',100,2.0,500,True))[0])
 print('bet CS 50@8.0', req('PATCH','',b('be2e0000002','CS','2-1',50,8.0,400))[0])

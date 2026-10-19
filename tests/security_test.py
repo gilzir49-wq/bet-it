@@ -17,7 +17,7 @@ results = []
 def check(name, cond, expect):
     ok = cond == expect; results.append((ok, name)); print(('✅' if ok else '❌ FAIL'), name, flush=True)
 
-now = int(time.time() * 1000); OPEN, LOCKED = '999000001', '999000002'
+now = int(time.time() * 1000); OPEN, LOCKED = '999000001', '999000002'; RUN = rs(5, AZ)
 day = R.day_key(now + 2 * 86400e3)
 R.fb('', 'PATCH', {f'fixtures/{OPEN}': {'lg': 'isr1', 'home': 'Maccabi Haifa', 'away': 'Hapoel Haifa', 'ko': now + 2 * 86400000, 'day': day, 'st': 'none', 'h': 0, 'a': 0,
                                         'odds': {'1': 1.8, 'X': 3.4, '2': 4.1, 'cs': {'1-0': 6.5, '2-1': 8.0}}},
@@ -46,14 +46,14 @@ check('כתיבה לנתיב לא מוגדר', req('PUT', 'hack', 1)[0], 401)
 
 print('--- יצירת חשבון')
 sec0, pid0 = 's' + rs(48, AZM), 'p' + rs(16, AZ)
-check('פתיחת חשבון עם 1,000,000 ז\'יטונים', req('PATCH', '', {f'names/pentest_rich': pid0, f'acct/{sec0}': {'name': 'pentest_rich', 'nk': 'pentest_rich', 'pid': pid0, 'joined': SV, 'wallet': {'bal': 1000000, 'op': 'init'}}})[0], 401)
-check('פתיחת חשבון עם הימורים/זכיות מוכנים', req('PATCH', '', {f'names/pentest_x': pid0, f'acct/{sec0}': {'name': 'pentest_x', 'nk': 'pentest_x', 'pid': pid0, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}, 'settled': {'b1': {'st': 'won', 'pay': 9999}}}})[0], 401)
-check('פתיחת חשבון בלי לתפוס שם', req('PUT', f'acct/{sec0}', {'name': 'pentest_y', 'nk': 'pentest_y', 'pid': pid0, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}})[0], 401)
-st, A, Apid, Ank = new_acct('pentest_a'); check('פתיחת חשבון תקין (500)', st, 200)
-st, B, Bpid, Bnk = new_acct('pentest_b'); check('פתיחת חשבון תקין שני', st, 200)
-check('התחזות: פתיחת חשבון עם שם תפוס', new_acct('pentest_a')[0], 401)
-check('התחזות: אותו שם באותיות גדולות', new_acct('PENTEST_A')[0], 401)
-check('דריסת חשבון קיים (איפוס יתרה)', req('PUT', f'acct/{A}', {'name': 'pentest_a', 'nk': Ank, 'pid': Apid, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}})[0], 401)
+check('פתיחת חשבון עם 1,000,000 ז\'יטונים', req('PATCH', '', {f'names/pentest_rich{RUN}': pid0, f'acct/{sec0}': {'name': 'pentest_rich'+RUN, 'nk': 'pentest_rich'+RUN, 'pid': pid0, 'joined': SV, 'wallet': {'bal': 1000000, 'op': 'init'}}})[0], 401)
+check('פתיחת חשבון עם הימורים/זכיות מוכנים', req('PATCH', '', {f'names/pentest_x{RUN}': pid0, f'acct/{sec0}': {'name': 'pentest_x'+RUN, 'nk': 'pentest_x'+RUN, 'pid': pid0, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}, 'settled': {'b1': {'st': 'won', 'pay': 9999}}}})[0], 401)
+check('פתיחת חשבון בלי לתפוס שם', req('PUT', f'acct/{sec0}', {'name': 'pentest_y'+RUN, 'nk': 'pentest_y'+RUN, 'pid': pid0, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}})[0], 401)
+st, A, Apid, Ank = new_acct('pentest_a'+RUN); check('פתיחת חשבון תקין (500)', st, 200)
+st, B, Bpid, Bnk = new_acct('pentest_b'+RUN); check('פתיחת חשבון תקין שני', st, 200)
+check('התחזות: פתיחת חשבון עם שם תפוס', new_acct('pentest_a'+RUN)[0], 401)
+check('התחזות: אותו שם באותיות גדולות', new_acct('PENTEST_A'+RUN.upper())[0], 401)
+check('דריסת חשבון קיים (איפוס יתרה)', req('PUT', f'acct/{A}', {'name': 'pentest_a'+RUN, 'nk': Ank, 'pid': Apid, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}})[0], 401)
 check('מחיקת חשבון', req('DELETE', f'acct/{A}')[0], 401)
 
 print('--- יתרה')
