@@ -18,6 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install -q google-auth requests playwright && python3 -m playwright install --with-deps chromium > /dev/null
+      - name: בדיקות יחידה לרובוט (נתונים שבורים, עיגול, שעון חורף, שחזור)
+        run: python3 tests/robot_unit_test.py
       - name: חוקי אבטחה לסביבת הבדיקה
         run: python3 ops/deploy_rules.py
       - name: בדיקת חדירה (ניסיונות רמאות)

@@ -60,7 +60,7 @@ def esd_ms(esd):
 def status_of(eps):
     eps = (eps or '').strip()
     if eps in ('FT', 'AET', 'AP', 'Ended'): return 'finished'
-    if eps in ('Postp.', 'Canc.', 'Abd.', 'Susp.'): return 'postp'
+    if eps in ('Postp.', 'Canc.', 'Abd.', 'Susp.', 'Aband.', 'Abd', 'Canc', 'Cancl.', 'Postp', 'AWD', 'WO', 'Awarded'): return 'postp'
     if eps in ('NS', '', 'TBA', 'Delayed'): return 'none'
     return 'live'
 
@@ -113,27 +113,30 @@ def refresh():
     for lg, (c, s) in LEAGUES.items():
         try: st = ls(f'{LS}/stage/soccer/{c}/{s}/0?MD=1')['Stages'][0]
         except Exception as ex: print('stage error', lg, ex, flush=True); continue
-        rows = table_rows(st)
+        try: rows = table_rows(st)
+        except Exception as ex: print('table error', lg, repr(ex), flush=True); rows = []
         if rows: tables[lg] = rows; upd[f'pub/tables/{lg}'] = {'rows': rows, 'at': now}
         for e in st.get('Events', []):
-            eid = str(e['Eid']); ko = esd_ms(e['Esd']); f = fixtures.get(eid)
-            if not f and not (lo <= ko < hi): continue
-            nf = dict(f or {})
-            nf.update({'lg': lg, 'home': e['T1'][0]['Nm'], 'away': e['T2'][0]['Nm'], 'hi': e['T1'][0].get('Img') or '',
-                       'ai': e['T2'][0].get('Img') or '', 'ko': ko, 'day': day_key(ko)})
-            stt = status_of(e.get('Eps'))
-            if not f:
-                nf.update({'st': stt, 'h': int(e.get('Tr1') or 0), 'a': int(e.get('Tr2') or 0)})
-                if stt == 'finished': nf['inT'] = True
-            elif not nf.get('manual'):
-                if stt == 'postp': nf['st'] = 'postp'
-                elif nf.get('st') == 'postp' and stt == 'none': nf['st'] = 'none'
-            if nf.get('st') == 'none' and ko - now > LOCK_MS and rows:
-                od = calc_odds(rows, nf['home'], nf['away']); nf['lam'] = od.pop('lam'); nf['odds'] = od   # lam = צפי שערים (לסיכוי זכייה לייב)
-            if nf.get('st') == 'finished' and not nf.get('inT') and nf.get('bh') is not None:
-                p = pld_of(lg, nf['home'])
-                if p is not None and p > nf['bh']: nf['inT'] = True
-            if nf != f: fixtures[eid] = nf; upd[f'fixtures/{eid}'] = nf
+            try:
+                eid = str(e['Eid']); ko = esd_ms(e['Esd']); f = fixtures.get(eid)
+                if not f and not (lo <= ko < hi): continue
+                nf = dict(f or {})
+                nf.update({'lg': lg, 'home': e['T1'][0]['Nm'], 'away': e['T2'][0]['Nm'], 'hi': e['T1'][0].get('Img') or '',
+                           'ai': e['T2'][0].get('Img') or '', 'ko': ko, 'day': day_key(ko)})
+                stt = status_of(e.get('Eps'))
+                if not f:
+                    nf.update({'st': stt, 'h': int(e.get('Tr1') or 0), 'a': int(e.get('Tr2') or 0)})
+                    if stt == 'finished': nf['inT'] = True
+                elif not nf.get('manual'):
+                    if stt == 'postp': nf['st'] = 'postp'
+                    elif nf.get('st') == 'postp' and stt == 'none': nf['st'] = 'none'
+                if nf.get('st') == 'none' and ko - now > LOCK_MS and rows:
+                    od = calc_odds(rows, nf['home'], nf['away']); nf['lam'] = od.pop('lam'); nf['odds'] = od   # lam = צפי שערים (לסיכוי זכייה לייב)
+                if nf.get('st') == 'finished' and not nf.get('inT') and nf.get('bh') is not None:
+                    p = pld_of(lg, nf['home'])
+                    if p is not None and p > nf['bh']: nf['inT'] = True
+                if nf != f: fixtures[eid] = nf; upd[f'fixtures/{eid}'] = nf
+            except Exception as ex: print('event error', lg, e.get('Eid'), repr(ex), flush=True)   # משחק אחד שבור לא עוצר את הבנק
     if upd: fb('', 'PATCH', upd)
     return sum(1 for k in upd if k.startswith('fixtures/'))
 
@@ -143,24 +146,28 @@ def live_tick():
             and f['ko'] <= now + 60000 and f['ko'] > now - 5 * 3600 * 1000]
     if not need: return {}
     ev = {}
-    for dd in sorted({datetime.datetime.fromtimestamp(fixtures[e]['ko'] / 1000, datetime.timezone.utc).strftime('%Y%m%d') for e in need}):
-        for s in ls(f'{LS}/date/soccer/{dd}/0?MD=1').get('Stages', []):
-            for e in s.get('Events', []): ev[str(e['Eid'])] = e
+    try:
+        for dd in sorted({datetime.datetime.fromtimestamp(fixtures[e]['ko'] / 1000, datetime.timezone.utc).strftime('%Y%m%d') for e in need}):
+            for s in ls(f'{LS}/date/soccer/{dd}/0?MD=1').get('Stages', []):
+                for e in s.get('Events', []): ev[str(e['Eid'])] = e
+    except Exception as ex: print('livescore error', repr(ex), flush=True); return {}   # בלי LiveScore – ממשיכים לסגור הימורים ולבצע פעולות מנהל
     upd, prev = {}, {}
     for eid in need:
         e = ev.get(eid)
         if not e: continue
-        f = fixtures[eid]; st = status_of(e.get('Eps'))
-        h = int(e.get('Tr1') or 0) if st in ('live', 'finished') else 0
-        a = int(e.get('Tr2') or 0) if st in ('live', 'finished') else 0
-        nf = dict(f)
-        if st == 'live' and f.get('bh') is None: nf['bh'] = pld_of(f['lg'], f['home']); nf['ba'] = pld_of(f['lg'], f['away'])
-        if (h, a, st) != (f.get('h'), f.get('a'), f.get('st')): prev[eid] = {'h': f.get('h', 0), 'a': f.get('a', 0), 'st': f.get('st')}
-        nf.update({'st': st, 'h': h, 'a': a})
-        if st == 'live': nf['min'] = (e.get('Eps') or '').strip()
-        else: nf.pop('min', None)
-        if st == 'finished' and nf.get('odds'): nf['odds'] = {k: v for k, v in nf['odds'].items() if k != 'cs'}
-        if nf != f: fixtures[eid] = nf; upd[f'fixtures/{eid}'] = nf
+        try:
+            f = fixtures[eid]; st = status_of(e.get('Eps'))
+            h = int(e.get('Tr1') or 0) if st in ('live', 'finished') else 0
+            a = int(e.get('Tr2') or 0) if st in ('live', 'finished') else 0
+            nf = dict(f)
+            if st == 'live' and f.get('bh') is None: nf['bh'] = pld_of(f['lg'], f['home']); nf['ba'] = pld_of(f['lg'], f['away'])
+            if (h, a, st) != (f.get('h'), f.get('a'), f.get('st')): prev[eid] = {'h': f.get('h', 0), 'a': f.get('a', 0), 'st': f.get('st')}
+            nf.update({'st': st, 'h': h, 'a': a})
+            if st == 'live': nf['min'] = (e.get('Eps') or '').strip()
+            else: nf.pop('min', None)
+            if st == 'finished' and nf.get('odds'): nf['odds'] = {k: v for k, v in nf['odds'].items() if k != 'cs'}
+            if nf != f: fixtures[eid] = nf; upd[f'fixtures/{eid}'] = nf
+        except Exception as ex: print('live event error', eid, repr(ex), flush=True)   # תוצאה לא קריאה – לא סוגרים לפיה
     if upd: fb('', 'PATCH', upd)
     return prev
 
@@ -169,7 +176,8 @@ sign = lambda n: (n > 0) - (n < 0)
 def wins(f, b):
     if b['m'] == 'CS': return f"{f['h']}-{f['a']}" == b['p']
     return {'1': 1, 'X': 0, '2': -1}[b['p']] == sign(f['h'] - f['a'])
-def payout(b): return round(b['s'] + 2 * (b['s'] * b['o'] - b['s'])) if b.get('j') else round(b['s'] * b['o'])
+jsround = lambda x: int(math.floor(x + 0.5))   # בדיוק כמו Math.round באתר – השחקן מקבל את מה שהוצג לו
+def payout(b): return jsround(b['s'] + 2 * (b['s'] * b['o'] - b['s'])) if b.get('j') else jsround(b['s'] * b['o'])
 def state(b, F=None):
     f = (F or fixtures).get(b['e'])
     if not f: return 'open'
@@ -336,9 +344,12 @@ def admin_tick(accts):
                         old = by_nk.get(reqs[s2].get('nk'))
                         if not old: res = 'not found'
                         else:
-                            fb(f'acct/{s2}', 'PUT', old[1])
-                            if old[1].get('rc'): fb(f"rc/{old[1]['rc']}", 'PUT', s2)       # קוד הכניסה עובר לטלפון החדש
-                            fb(f'acct/{old[0]}', 'DELETE'); fb(f'recoverReq/{s2}', 'DELETE')
+                            cur = fb(f'acct/{old[0]}') or old[1]                          # העותק הכי עדכני (לא מהסריקה)
+                            fb(f'acct/{s2}', 'PUT', cur)
+                            if fb(f'acct/{s2}') != cur: res = 'copy failed – nothing deleted'   # העתקה → אימות → רק אז מחיקה
+                            else:
+                                if cur.get('rc'): fb(f"rc/{cur['rc']}", 'PUT', s2)       # קוד הכניסה עובר לטלפון החדש
+                                fb(f'acct/{old[0]}', 'DELETE'); fb(f'recoverReq/{s2}', 'DELETE')
                     else: fb(f'recoverReq/{s2}', 'DELETE')
                 elif t == 'delete':
                     hit = next(((s, a) for s, a in accts.items() if a and a.get('pid') == op.get('pid')), None)
