@@ -258,11 +258,20 @@ def publish(accts, prev_fx):
         r['rw'], r['rs'] = rw[r['pid']], rs[r['pid']]
         r['pw'] = last_ranks.get('w', {}).get(r['pid'], r['rw']); r['ps'] = last_ranks.get('s', {}).get(r['pid'], r['rs'])
     st_body = {'rows': rows, 'wk': wk, 'bank': round(bank)}
+    # כמה הימורים יש על כל משחק שעוד לא ננעל ("9 מהחבר׳ה כבר הימרו") – רק מספר, בלי לחשוף מה
+    cnt = {}
+    for a in accts.values():
+        for b in ((a or {}).get('bets') or {}).values():
+            f = fixtures.get(b['e'])
+            if f and f['st'] == 'none' and now < f['ko'] - LOCK_MS: cnt[b['e']] = cnt.get(b['e'], 0) + 1
+    if published.get('cnt') != json.dumps(cnt, sort_keys=True): upd_cnt = cnt
+    else: upd_cnt = 'same'
     upd = {}
     if published.get('standings') != json.dumps(st_body, sort_keys=True): upd['pub/standings'] = {**st_body, 'at': now}
     if published.get('profiles') != json.dumps(profiles, sort_keys=True): upd['pub/profiles'] = profiles
     for e, v in revealed.items():
         if published.get('rv' + e) != json.dumps(v, sort_keys=True): upd[f'pub/revealed/{e}'] = v
+    if upd_cnt != 'same': upd['pub/cnt'] = upd_cnt or None; published['cnt'] = json.dumps(cnt, sort_keys=True)
     if upd:
         fb('', 'PATCH', upd)
         published['standings'] = json.dumps(st_body, sort_keys=True); published['profiles'] = json.dumps(profiles, sort_keys=True)

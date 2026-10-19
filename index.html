@@ -21,12 +21,12 @@
 <meta name="apple-mobile-web-app-title" content="BET-IT">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&family=Karantina:wght@400;700&display=swap" rel="stylesheet">
 <style>
 /* ===== BET-IT – עיצוב: כחול-לילה + ירוק-ליים חשמלי ===== */
 :root{
-  --bg:#070A14;--bg2:#0A0E1C;--card:#0F1426;--card2:#161C33;--card3:#1E2642;--line:#1C2340;--line2:#2A3358;
-  --txt:#EEF1FA;--mut:#8E97B5;--gold:#C6F432;--gold2:#8FD11E;--green:#3B2FD9;--em:#3BE38B;--red:#FF5A6A;--p:#A97BFF;
+  --bg:#070A14;--bg2:#0A0E1C;--card:#0F1426;--card2:#161C33;--card3:#1F2747;--line:#1C2340;--line2:#232B4D;--line3:#2A3358;
+  --txt:#F2F4FA;--txt2:#C9CFE3;--mut:#8E97B5;--mut2:#5A6385;--gold:#C6F432;--gold2:#A8D41E;--accent-hi:#E2FF7A;--on-accent:#0A0F00;--green:#3B2FD9;--em:#3BE38B;--red:#FF5A6A;--red2:#FF8A96;--p:#A97BFF;--p2:#C3A3FF;--warn:#FFC94D;
   --y:var(--gold);--o:var(--gold2);--g:var(--em);--r:var(--red);
   --r-sm:10px;--r-md:14px;--r-lg:20px;--shadow:0 10px 30px rgba(0,0,0,.45);
 }
@@ -204,6 +204,61 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 .empty{text-align:center;padding:30px 10px;color:var(--mut)}
 .empty .e{font-size:42px;margin-bottom:6px}
 @media (min-width:600px){ .wrap{padding:0 18px} }
+/* ===== לפי מערכת העיצוב BET-IT 1.0 ===== */
+.logo{display:flex;align-items:center;gap:3px;direction:ltr}
+.logo .lb{width:24px;height:28px;background:var(--gold);border-radius:6px;transform:rotate(-6deg);display:grid;place-items:center;font-weight:900;font-size:21px;color:var(--on-accent);line-height:1}
+.logo .lt{font-weight:900;font-size:21px;letter-spacing:-1px;color:var(--txt)}
+.cdot{width:8px;height:8px;border-radius:50%;background:var(--mut2);display:inline-block;margin-inline-start:4px}.cdot.on{background:var(--em)}
+.bankp{height:34px;color:var(--txt2);gap:6px}
+.bal{height:34px;background:rgba(198,244,50,.12);border:1px solid rgba(198,244,50,.45);gap:6px}
+.bal .coin{width:14px;height:14px;border-radius:50%;background:var(--gold);box-shadow:inset 0 0 0 3px #8FB51A;flex:0 0 auto}
+.chip{height:38px;padding:0 14px;border:1px solid var(--line2);background:var(--card);color:var(--txt2);display:flex;align-items:center;gap:6px}
+.chip.on{background:var(--txt);color:var(--bg);border-color:var(--txt);box-shadow:none;font-weight:900}
+.chip .n{font-size:12px;color:var(--mut);opacity:1}.chip.on .n{color:var(--bg);opacity:.55}
+.chip.livec{border-color:rgba(255,90,106,.45);background:rgba(255,90,106,.12);color:var(--red2)}
+.chip.livec.on{background:var(--red);color:#1A0004;border-color:var(--red)}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:livepulse 1.6s infinite;display:inline-block}
+@keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,90,106,.6)}70%{box-shadow:0 0 0 8px rgba(255,90,106,0)}100%{box-shadow:0 0 0 0 rgba(255,90,106,0)}}
+.lghead{color:var(--txt);text-transform:none;letter-spacing:0;font-size:17px;margin:18px 2px 8px;gap:10px}
+.lghead:after{display:none}
+.lghead .lc{width:28px;height:28px;border-radius:8px;background:var(--card3);display:grid;place-items:center;font-size:11px;font-weight:900}
+.lghead .cnt{font-size:13px;color:var(--mut);font-weight:500}
+.fx{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px;box-shadow:none}
+.fx.islive{border-color:rgba(255,90,106,.35);box-shadow:0 0 0 4px rgba(255,90,106,.05)}
+.fx .top{margin:0;font-size:13px;font-weight:700;color:var(--txt2)}
+.fx .when{font-variant-numeric:tabular-nums}
+.fx .lvl{display:flex;align-items:center;gap:7px;font-weight:900;color:var(--red)}
+.fx .lock{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--warn);font-variant-numeric:tabular-nums}
+.badge2{display:flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:900}
+.badge2.jk{background:rgba(169,123,255,.16);color:var(--p2)}
+.tm{gap:8px;font-size:15px;font-weight:700}
+.crest{width:46px;height:46px;border-radius:50%;background:var(--card2);box-shadow:inset 0 0 0 2px var(--line2);display:grid;place-items:center;overflow:hidden;font-weight:900;font-size:14px}
+.crest img{width:34px;height:34px;object-fit:contain;filter:none}
+.vs{font-size:13px;color:var(--mut2);font-weight:700}
+.score{font-size:40px;display:flex;align-items:center;gap:10px;direction:rtl}
+.score .sep{color:#3A4470;font-size:28px}.score .hi{color:var(--gold)}
+.pbar{display:flex;flex-direction:column;gap:6px}
+.pbar .seg3{display:flex;height:6px;border-radius:999px;overflow:hidden;gap:2px}
+.pbar .seg3 span{background:#3A4470}.pbar .seg3 span.x{background:var(--mut2)}.pbar .seg3 span.top{background:var(--gold)}
+.pbar .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}.pbar .lbl .top{color:var(--gold)}
+.odds{margin:0;gap:8px}
+.ob{height:56px;border:1px solid var(--line2);border-radius:12px;background:var(--card2);padding:0 4px;gap:1px;justify-content:center}
+.ob .l{font-size:12px;color:var(--mut);font-weight:500}.ob .v{font-size:17px;color:var(--txt)}
+.ob.mine{background:var(--gold);border-color:var(--gold);box-shadow:0 6px 18px rgba(198,244,50,.25)}
+.ob.mine .l{color:var(--on-accent);font-weight:700}.ob.mine .v{color:var(--on-accent)}
+.csb{height:44px;margin:0;border:1px dashed var(--line3);border-radius:12px;color:var(--txt2);font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.mybet{margin:0;background:var(--card2);border:0;border-radius:12px;padding:10px 12px;font-size:13px;align-items:center}
+.mybet.jk{box-shadow:inset 0 0 0 1px rgba(169,123,255,.4)}
+.mybet.won,.mybet.lost{background:var(--card2);border:0}
+.stp{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:900;white-space:nowrap}
+.stp i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.stp.win{background:rgba(59,227,139,.14);color:var(--em)}.stp.lose{background:rgba(255,90,106,.14);color:var(--red2)}.stp.open{background:var(--card3);color:var(--txt2)}.stp.void{background:var(--card3);color:var(--mut)}
+.crowd{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut)}
+.crowd .av{display:flex}.crowd .av span{width:20px;height:20px;border-radius:50%;box-shadow:0 0 0 2px var(--card);margin-inline-start:-6px}.crowd .av span:first-child{margin:0}
+.crowdbox{background:linear-gradient(180deg,#121A3A,#0F1426);border:1px solid var(--line2);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px;margin:14px 0}
+.crowdbox .row{display:grid;grid-template-columns:76px minmax(0,1fr) 40px;align-items:center;gap:10px;font-size:13px}
+.crowdbox .tr{height:8px;border-radius:999px;background:var(--line);overflow:hidden;display:flex}.crowdbox .tr span{background:var(--mut2)}.crowdbox .tr span.top{background:var(--gold)}
+.display{font-family:Karantina,Heebo,sans-serif;font-weight:700;letter-spacing:-.5px;line-height:.9}
 @media (max-width:430px){ .brand>div{display:none} .bar{gap:6px} .topr{gap:5px} .pill{padding:6px 8px;font-size:12px} .bal{font-size:15px;padding:6px 10px} }
 .modeT{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:10px;font-weight:700;font-size:13.5px;cursor:pointer}
 .modeT .sw{background:#3a3f5a}.modeT.on .sw{background:var(--gold)}.modeT.on .sw:after{right:21px}
@@ -250,7 +305,7 @@ const DB = 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app';
 </script>
 
 <header class="appbar"><div class="wrap bar">
-  <div class="brand"><span class="mark">LET&nbsp;IT<b class="sep">|</b>B<i id="cdot"></i></span><div><b>BET-IT</b><small>משחק הניחושים של החבר׳ה</small></div></div>
+  <div class="brand"><span class="logo"><span class="lb">B</span><span class="lt">ET-IT</span></span><i id="cdot" class="cdot"></i></div>
   <div class="topr" id="top"></div>
 </div></header>
 <div class="wrap" id="app"></div>
@@ -338,6 +393,7 @@ function listenAll(){
   stream('rv','pub/revealed', v=>{ S.revealed=v||{}; if(tab==='games'&&!sheetSt) render(); });
   stream('mt','pub/meta', v=>{ S.meta=v||{}; if(tab==='admin') render(); });
   stream('lg','pub/lg', v=>{ S.lg=v||{}; if(tab==='table'&&!sheetSt) render(); });
+  stream('cnt','pub/cnt', v=>{ S.cnt=v||{}; if(tab==='games'&&!sheetSt) render(); });
   listenMine();
   if(AK) stream('av',`adminView/${AK}`, v=>{ AV=v||{}; if(tab==='admin') render(); });
 }
@@ -416,49 +472,80 @@ function renderTop(){
   const a=account(), bank=S.standings?S.standings.bank:BANK_START;
   const cd=document.getElementById('cdot'); if(cd) cd.className=connected?'on':'';
   document.getElementById('top').innerHTML = `
-    <span class="pill" onclick="go('table')" title="קופת הבנק">🏦 ${fmt(bank)}</span>
-    ${a?`<span class="bal ${a.value!==a.avail?'lv':''}" id="bal" onclick="go('mine')">🪙 <span id="balV">${fmt(shownBal??a.value)}</span>${a.value!==a.avail?'<small>לייב</small>':''}</span>`:''}`;
+    <span class="pill bankp" onclick="go('table')" title="קופת הבנק"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8E97B5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg>${fmt(bank)}</span>
+    ${a?`<span class="bal ${a.value!==a.avail?'lv':''}" id="bal" onclick="go('mine')"><span class="coin"></span><span id="balV">${fmt(shownBal??a.value)}</span>${a.value!==a.avail?'<small>לייב</small>':''}</span>`:''}`;
   if(a) animateBal(a.value); else shownBal=null;
 }
 function stText(st,b,f){ const p=f?winProb(f,b):null;
   if(p!=null) return `${st==='live-win'?'🟢':'🔴'} סיכוי ${pctTag(p)}`;
   return st==='won'?`✅ +${fmt(payout(b)-b.s)}`:st==='lost'?'❌ הפסד':st==='live-win'?'🟢 כרגע זוכה':st==='live-lose'?'🔴 כרגע מפסיד':st==='void'?'↩️ הוחזר':'⏳ פתוח'; }
+// ===== כרטיס משחק – לפי העיצוב =====
+const LGCODE={isr1:'IL',isr2:'IL',eng:'EN',ita:'IT'};
+const hueOf=t=>{ let h=0; for(const c of String(t)) h=(h*31+c.charCodeAt(0))%360; return h; };
+function crest(img,name){ return `<span class="crest">${img?`<img src="https://lsm-static-prod.livescore.com/medium/${esc(img)}" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode('${esc(he(name).slice(0,2))}'))">`:`<span style="color:hsl(${hueOf(name)} 70% 70%)">${esc(he(name).slice(0,2))}</span>`}</span>`; }
+// סיכויי 1/X/2 בזמן אמת (לפי התוצאה, הדקה וצפי השערים)
+function outcomeProbs(f){ const lam=f.lam||{h:1.4,a:1.1}, r=Math.max(0,(90-minuteOf(f))/90), lh=lam.h*r, la=lam.a*r; let p1=0,px=0,p2=0;
+  for(let i=0;i<=8;i++) for(let j=0;j<=8;j++){ const q=pois(i,lh)*pois(j,la), H=f.h+i, X=f.a+j; if(H>X) p1+=q; else if(H===X) px+=q; else p2+=q; }
+  const t=p1+px+p2||1; return [p1/t,px/t,p2/t]; }
+function statusPill(st,b,f){ const p=f?winProb(f,b):null, pct=p!=null?` · ${Math.round(p*100)}%`:'';
+  if(st==='won') return `<span class="stp win"><i></i>זכה · <bdi dir="ltr">+${fmt(payout(b)-b.s)}</bdi></span>`;
+  if(st==='lost') return `<span class="stp lose"><i></i>הפסד</span>`;
+  if(st==='live-win') return `<span class="stp win"><i></i>כרגע זוכה${pct}</span>`;
+  if(st==='live-lose') return `<span class="stp lose"><i></i>כרגע מפסיד${pct}</span>`;
+  if(st==='void') return `<span class="stp void">↩ הוחזר</span>`;
+  return `<span class="stp open">פתוח · אפשרי <bdi dir="ltr">${fmt(payout(b))}</bdi></span>`; }
 function fxCard(f){
-  const L=isLocked(f), mine=myBets().filter(([id,b])=>b.e===f.id), o=f.odds||{}, lg=LEAGUES[f.lg]||{};
-  const mid = f.st==='live'||f.st==='finished' ? `<div class="score">${f.h} - ${f.a}</div>${f.st==='live'?liveTag(f):'<span class="fin">הסתיים</span>'}`
-            : f.st==='postp' ? '<span class="fin">נדחה</span>' : `<div class="ko">${hm(f.ko)}</div>`;
-  const cd=f.ko-LOCK_BEFORE_MS-Date.now();
-  const lockTxt = f.st!=='none'?'' : cd<=0?'<span class="lock">🔒 ננעל</span>' : cd<3600e3?`<span class="lock">ננעל בעוד ${Math.ceil(cd/60e3)} דק'</span>`:'';
+  const L=isLocked(f), mine=myBets().filter(([id,b])=>b.e===f.id), o=f.odds||{}, live=f.st==='live', done=f.st==='finished';
+  const cd=f.ko-LOCK_BEFORE_MS-Date.now(), hh=Math.floor(cd/3600e3), mm=Math.floor(cd%3600e3/60e3);
+  const clock='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+  const right = live ? '' : f.st==='postp' ? '<span class="fin">נדחה</span>' : done ? '<span class="fin">הסתיים</span>'
+    : mine.some(([id,b])=>b.j) ? '<span class="badge2 jk">ג׳וקר הופעל</span>'
+    : cd<=0 ? `<span class="lock">${clock}ננעל</span>` : cd<6*3600e3 ? `<span class="lock">${clock}ננעל בעוד ${hh?hh+':'+String(mm).padStart(2,'0'):mm+' דק׳'}</span>` : '';
+  const left = live ? `<span class="lvl"><span class="pdot"></span>לייב · <bdi dir="ltr">${esc((f.min||'').replace('HT','מחצית'))}</bdi></span>` : `<span class="when">${dayLabel(dayKey(f.ko))} · ${hm(f.ko)}</span>`;
+  const mid = live||done ? `<div class="score"><span class="${live&&f.h>f.a?'hi':''}">${f.h}</span><span class="sep">:</span><span class="${live&&f.a>f.h?'hi':''}">${f.a}</span></div>` : `<span class="vs">נגד</span>`;
   const ob=(k,lab)=>{ const has=mine.some(([id,b])=>b.m==='W'&&b.p===k);
     return `<button class="ob ${has?'mine':''}" ${L||!o[k]||!A?'disabled':''} onclick="openBet('${f.id}','W','${k}')"><span class="l">${lab}</span><span class="v">${o[k]?o[k].toFixed(2):'–'}</span></button>`; };
-  let h=`<div class="card fx"><div class="top"><span>${lg.f||''} ${lg.n||''}</span><span>${lockTxt}</span></div>
-    <div class="teams"><div class="tm">${logo(f.hi)}${esc(he(f.home))}</div><div class="mid">${mid}</div><div class="tm">${logo(f.ai)}${esc(he(f.away))}</div></div>`;
+  let h=`<article class="fx ${live?'islive':''}"><div class="top"><span>${left}</span>${right}</div>
+    <div class="teams" style="direction:rtl"><div class="tm">${crest(f.hi,f.home)}${esc(he(f.home))}</div><div class="mid">${mid}</div><div class="tm">${crest(f.ai,f.away)}${esc(he(f.away))}</div></div>`;
+  if(live){ const [p1,px,p2]=outcomeProbs(f), mx=Math.max(p1,px,p2), P=v=>Math.round(v*100);
+    h+=`<div class="pbar"><div class="seg3"><span class="${p1===mx?'top':''}" style="width:${P(p1)}%"></span><span class="x ${px===mx?'top':''}" style="width:${P(px)}%"></span><span class="${p2===mx?'top':''}" style="width:${P(p2)}%"></span></div>
+      <div class="lbl"><span class="${p1===mx?'top':''}">${esc(he(f.home))} ${P(p1)}%</span><span class="${px===mx?'top':''}">תיקו ${P(px)}%</span><span class="${p2===mx?'top':''}">${esc(he(f.away))} ${P(p2)}%</span></div></div>`; }
   if(f.st==='none') h+=`<div class="odds">${ob('1',esc(he(f.home)))}${ob('X','תיקו')}${ob('2',esc(he(f.away)))}</div>
-    <button class="csb" ${L||!o.cs||!A?'disabled':''} onclick="openBet('${f.id}','CS','1-0')">${mine.length?'➕ הוסף הימור על תוצאה מדויקת':'🎯 הימור על תוצאה מדויקת'}</button>`;
-  QUEUE.filter(q=>q.e===f.id).forEach(q=>{ h+=`<div class="mybet"><span>${q.j?'🃏 ':''}${esc(pickLabel(f,q))} · ${fmt(q.s)} 🪙</span><span>⏳ ממתין לקליטה</span></div>`; });
-  mine.forEach(([id,b])=>{ const st=betState(id,b), cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
-    h+=`<div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)}</span><span>${stText(st,b,f)}</span></div>`;
-    if(!L) h+=`<div style="text-align:left;margin-top:2px"><a href="#" class="muted" onclick="cancelBet('${id}');return false">בטל הימור</a></div>`; });
-  const rv=Object.values(S.revealed[f.id]||{});
-  if(rv.length) h+=`<details class="who"><summary>👀 ${rv.length} הימורים על המשחק – מי הימר מה</summary>${rv.map(b=>{ const st=b.st;
-      return `<div class="wr"><span>${b.j?'🃏 ':''}${esc(b.n)}</span><span>${esc(pickLabel(f,b))} · ${fmt(b.s)} <span class="st-${st.startsWith('live')?'live':st==='void'?'open':st}">${stText(st,b,f)}</span></span></div>`}).join('')}</details>`;
-  else if(!L) h+=`<div class="muted" style="margin-top:8px">🔒 ההימורים של כולם ייחשפו בנעילה</div>`;
-  return h+`</div>`;
+    <button class="csb" ${L||!o.cs||!A?'disabled':''} onclick="openBet('${f.id}','CS','1-0')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>${mine.length?'הוסף הימור על תוצאה מדויקת':'הימור על תוצאה מדויקת'}</button>`;
+  QUEUE.filter(q=>q.e===f.id).forEach(q=>{ h+=`<div class="mybet"><span>${esc(pickLabel(f,q))} · <b>${fmt(q.s)}</b></span><span class="stp open">⏳ ממתין לקליטה</span></div>`; });
+  mine.forEach(([id,b])=>{ const st=betState(id,b);
+    h+=`<div class="mybet ${b.j?'jk':''}"><span>שלך: <b>${esc(pickLabel(f,b))} · ${fmt(b.s)}</b>${b.j?' <b style="color:var(--p2)">×2</b>':''} <span style="color:var(--mut)">ביחס ${b.o.toFixed(2)}</span></span>
+      <span style="display:flex;align-items:center;gap:8px">${statusPill(st,b,f)}${!L?`<button class="x" style="border:0;color:var(--mut);padding:2px 6px" title="בטל" onclick="cancelBet('${id}')">✕</button>`:''}</span></div>`; });
+  const rv=Object.values(S.revealed[f.id]||{}), cnt=(S.cnt&&S.cnt[f.id])||0;
+  if(rv.length) h+=`<details class="who"><summary>👀 מי הימר מה · ${rv.length}</summary>${rv.map(b=>`<div class="wr"><span>${b.j?'🃏 ':''}${esc(b.n)}</span><span>${esc(pickLabel(f,b))} · ${fmt(b.s)} ${statusPill(b.st,b,f)}</span></div>`).join('')}</details>`;
+  else if(!L && cnt) h+=`<div class="crowd"><span class="av">${Array.from({length:Math.min(3,cnt)},(_,i)=>`<span style="background:${['#3A4470','#5A4A8A','#2E6B5A'][i]}"></span>`).join('')}</span>${cnt} מהחבר׳ה כבר הימרו · נחשף בנעילה</div>`;
+  return h+`</article>`;
+}
+// "החבר׳ה על המשחק" – במקום פרסומת: איך כולם הימרו על המשחק הכי חם של היום
+function crowdBox(list){
+  const hot=list.map(f=>({f,rv:Object.values(S.revealed[f.id]||{})})).filter(x=>x.rv.filter(b=>b.m==='W').length>=2).sort((a,b)=>b.rv.length-a.rv.length)[0];
+  if(!hot) return '';
+  const f=hot.f, W=hot.rv.filter(b=>b.m==='W'), tot=W.length, c={'1':0,'X':0,'2':0}; W.forEach(b=>c[b.p]++);
+  const mx=Math.max(c['1'],c.X,c['2']), row=(lab,k)=>{ const pc=Math.round(100*c[k]/tot); return `<div class="row"><span>${esc(lab)}</span><span class="tr"><span class="${c[k]===mx?'top':''}" style="width:${pc}%"></span></span><b style="text-align:left;font-variant-numeric:tabular-nums">${pc}%</b></div>`; };
+  const cs=hot.rv.filter(b=>b.m==='CS'), rare=cs.length===1?`רק ${esc(cs[0].n)} הלך על ${cs[0].p.replace('-',':')}. אולי הוא יודע משהו.`:cs.length?`${cs.length} מהחבר׳ה הימרו על תוצאה מדויקת.`:'';
+  return `<section class="crowdbox"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px">החבר׳ה על ${esc(he(f.home))}–${esc(he(f.away))}</b><span class="muted" style="font-size:11px;font-weight:700">${tot} הימורים</span></div>
+    ${row(he(f.home),'1')}${row('תיקו','X')}${row(he(f.away),'2')}${rare?`<span class="muted" style="font-size:12px">${rare}</span>`:''}</section>`;
 }
 function viewGames(){
   const today=dayKey(Date.now()), list=fxList().filter(f=>dayKey(f.ko)>=addDays(today,-1)).sort((a,b)=>a.ko-b.ko);
   const days=[...new Set(list.map(f=>dayKey(f.ko)))], liveN=list.filter(f=>f.st==='live').length;
   if(!dayF||(dayF!=='live'&&!days.includes(dayF))) dayF=liveN?'live':(days.find(d=>d>=today)||days[days.length-1]);
-  let h=`<div class="chips">${liveN?`<button class="chip ${dayF==='live'?'on':''}" onclick="dayF='live';render()">🔴 חי עכשיו<span class="n">${liveN}</span></button>`:''}
+  let h=`<div class="chips">${liveN?`<button class="chip livec ${dayF==='live'?'on':''}" onclick="dayF='live';render()"><span class="pdot"></span>חי עכשיו<span class="n">${liveN}</span></button>`:''}
     ${days.map(d=>`<button class="chip ${dayF===d?'on':''}" onclick="dayF='${d}';render()">${dayLabel(d)}<span class="n">${list.filter(f=>dayKey(f.ko)===d).length}</span></button>`).join('')}</div>`;
   const shown=list.filter(f=>dayF==='live'?f.st==='live':dayKey(f.ko)===dayF);
   if(!loaded.fx) return h+`<div class="empty"><div class="e">⏳</div>טוען משחקים…</div>`;
-  if(!shown.length) return h+`<div class="empty"><div class="e">📅</div>אין משחקים ביום הזה.<br>המשחקים מתעדכנים לשבוע קדימה.</div>`+ad();
-  if(A && dayF!=='live' && !jokerUsed(dayF) && shown.some(f=>!isLocked(f))) h+=`<div class="muted" style="margin:4px 2px">🃏 הג'וקר היומי שלך פנוי – בחר הימור אחד היום עם רווח כפול</div>`;
-  const ord=f=>f.st==='live'?0:f.st==='none'?1:2;
-  Object.keys(LEAGUES).forEach((lg,i)=>{ const g=shown.filter(f=>f.lg===lg).sort((a,b)=>ord(a)-ord(b)||a.ko-b.ko); if(!g.length) return;
-    h+=`<div class="lghead">${LEAGUES[lg].f} ${LEAGUES[lg].n}</div>`+g.map(fxCard).join(''); if(i===1) h+=ad(); });
-  return h+ad();
+  if(!shown.length) return h+`<div class="empty"><div class="e">📅</div>אין משחקים ביום הזה.<br>המשחקים מתעדכנים לשבוע קדימה.</div>`;
+  if(A && dayF!=='live' && !jokerUsed(dayF) && shown.some(f=>!isLocked(f))) h+=`<div class="muted" style="margin:4px 2px">🃏 הג׳וקר היומי שלך פנוי – הימור אחד היום עם רווח כפול</div>`;
+  const ord=f=>f.st==='live'?0:f.st==='none'?1:2; let crowdDone=false;
+  Object.keys(LEAGUES).forEach(lg=>{ const g=shown.filter(f=>f.lg===lg).sort((a,b)=>ord(a)-ord(b)||a.ko-b.ko); if(!g.length) return;
+    h+=`<div class="lghead"><span class="lc">${LGCODE[lg]}</span>${LEAGUES[lg].n}<span class="cnt">${g.length} משחקים</span></div>`+g.map(fxCard).join('');
+    if(!crowdDone){ const c=crowdBox(shown); if(c){ h+=c; crowdDone=true; } } });
+  return h;
 }
 function viewMine(){
   const a=account(); if(!a) return '';

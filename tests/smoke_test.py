@@ -55,7 +55,7 @@ try:
         pg.evaluate(f"() => {{ go('games'); dayF = S.fixtures['{E}'].day; render(); }}")
         check(pg.locator('.mybet').count() >= 1, 'ההימור מוצג בכרטיס המשחק')
         pg.once('dialog', lambda d: d.accept())
-        pg.click("a[onclick^=\"cancelBet\"]")
+        pg.click("[onclick^=\"cancelBet\"]")
         pg.wait_for_function('() => A && A.wallet.bal === 500 && Object.keys(A.bets||{}).length === 0', timeout=20000)
         check(True, 'ביטול החזיר את הז\'יטונים (500)')
         sec, a = acct(); check(a and a['wallet']['bal'] == 500, 'הביטול נשמר בשרת')
