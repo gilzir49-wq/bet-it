@@ -163,6 +163,56 @@ tr.me td{background:rgba(198,244,50,.07)}
 .arr{font-size:11px;font-weight:900;margin-inline-start:5px}.arr.up{color:var(--em)}.arr.dn{color:var(--red)}
 .lt td{font-size:13px;padding:8px 2px}.lt td.n{display:flex;align-items:center;gap:7px}.lt img{width:20px;height:20px;object-fit:contain}
 .lt tr.lv td{background:rgba(255,90,95,.07)}
+/* טבלה + ארצית – לפי העיצוב */
+.thd{display:flex;align-items:center;gap:10px;margin:18px 2px 14px}.thd h1{margin:0;font-size:24px;font-weight:900}
+.scp{margin-inline-start:auto;max-width:62%;height:36px;padding:0 12px;border:1px solid var(--line2);border-radius:999px;background:var(--card);color:var(--txt2);font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer}
+.scp span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mehero{border-radius:24px;padding:20px;background:var(--gold);color:var(--on-accent);display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;margin-bottom:14px}
+.mehero .il{position:absolute;left:-20px;bottom:-40px;font-family:Karantina,Heebo,sans-serif;font-weight:700;font-size:200px;line-height:1;opacity:.1;pointer-events:none}
+.mehero>span{font-size:13px;font-weight:700;position:relative}.mehero b{font-size:56px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px;position:relative}
+.mehero .sub{font-size:15px}.mehero .mv{display:inline-flex;align-self:flex-start;background:var(--on-accent);color:var(--em);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:900;margin-top:6px}.mehero .mv.dn{color:var(--red2)}
+.bank2{position:relative;overflow:hidden;border-radius:24px;padding:20px;background:radial-gradient(120% 120% at 100% 0%,#24305F 0%,#121A3A 45%,#0F1426 100%);border:1px solid var(--line3);display:flex;flex-direction:column;gap:14px;margin-bottom:16px}
+.bank2:before{content:"";position:absolute;left:-30px;top:-30px;width:160px;height:160px;border-radius:50%;border:24px solid rgba(198,244,50,.06)}
+.bank2 .hd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--txt2)}
+.bank2 .vv{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.bank2 .vv b{font-size:52px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.bank2 .vv span{font-size:14px;font-weight:900;direction:ltr;unicode-bidi:isolate}
+.bank2 .tr{height:8px;border-radius:999px;background:#0A0E1E;overflow:hidden;display:flex}.bank2 .tr span{background:linear-gradient(90deg,var(--gold),#8FB51A)}
+.bank2 .ft{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--mut)}
+.podium2{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:8px;padding-top:30px;margin-top:4px}
+.podium2 .cf{position:absolute;border-radius:2px;pointer-events:none}
+.pd{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.pd>b{font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:18px;color:var(--txt);flex:0 0 auto}
+.pd .blk2{width:100%;border-radius:14px 14px 0 0;background:var(--card2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 2px}
+.pd .blk2 .rk{font-weight:900;font-size:26px}.pd .blk2 .vl{font-size:12px;font-weight:900;font-variant-numeric:tabular-nums;direction:ltr}
+.pd .blk2 small{font-size:11px;font-weight:700;text-align:center}
+.pd.p1 .av{width:64px;height:64px;font-size:22px;box-shadow:0 0 0 3px var(--warn),0 10px 30px rgba(255,201,77,.3)}.pd.p1 .blk2{height:118px;background:linear-gradient(180deg,rgba(255,201,77,.22),var(--card2))}.pd.p1 .rk{font-size:32px;color:var(--warn)}
+.pd.p2 .av{box-shadow:0 0 0 3px var(--txt2)}.pd.p2 .blk2{height:84px}.pd.p2 .rk{color:var(--txt2)}
+.pd.p3 .av{box-shadow:0 0 0 3px #C88A4A}.pd.p3 .blk2{height:64px}.pd.p3 .rk{color:#C88A4A}
+.av.me{background:var(--gold)!important;color:var(--on-accent)}
+.lb{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.lb .r{display:grid;grid-template-columns:28px minmax(0,1fr) 64px 44px;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.lb .r:last-child{border-bottom:0}.lb .r.h{padding:10px 14px;font-size:11px;color:var(--mut);font-weight:700}
+.lb .r>b:first-child{font-variant-numeric:tabular-nums}
+.lb .r .nm{display:flex;flex-direction:column;gap:2px;min-width:0}.lb .r .nm>span:first-child{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;min-width:0}
+.lb .r .nm .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lb .r .nm small{font-size:12px;color:var(--mut)}
+.lb .r .vl{text-align:left;font-weight:900;font-variant-numeric:tabular-nums;direction:ltr}.lb .r .pc{text-align:left;font-size:13px;color:var(--txt2);font-variant-numeric:tabular-nums}
+.lb .r.me{background:rgba(198,244,50,.07)}
+.lb .pz{background:rgba(255,90,106,.05)}.lb .pz .r{border-bottom:0;padding:10px 14px}.lb .pz .ttl{padding:10px 14px 4px;font-size:11px;font-weight:900;letter-spacing:1px;color:var(--red2)}
+.lb .pz .r:last-child small{color:var(--red2);font-weight:700}
+.mv2{font-size:11px;font-weight:700}.mv2.up{color:var(--em)}.mv2.dn{color:var(--red)}.mv2.eq{color:var(--mut)}
+.kingc{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:16px;font-size:13px;color:var(--txt2)}
+.kingc b{color:var(--txt)}
+.shbtn{height:52px;width:100%;border-radius:14px;border:1px solid var(--line3);background:var(--card2);color:var(--txt);font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;cursor:pointer}
+.mesticky{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom));z-index:5;display:grid;grid-template-columns:44px minmax(0,1fr) 72px;gap:8px;align-items:center;padding:14px;border-radius:18px;background:var(--card3);box-shadow:0 -10px 30px rgba(0,0,0,.4),inset 0 0 0 1.5px var(--gold);margin-top:16px}
+.mesticky b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mesticky b:first-child{font-size:12px;font-variant-numeric:tabular-nums}.mesticky b:last-child{text-align:left;color:var(--gold);font-variant-numeric:tabular-nums}
+.lgr{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:8px;cursor:pointer}
+.lgr.mine{border-color:rgba(198,244,50,.35)}
+.lgr .n{width:44px;height:44px;border-radius:12px;background:var(--card3);display:grid;place-items:center;font-weight:900;font-size:13px;flex:none;font-variant-numeric:tabular-nums}.lgr.mine .n{background:rgba(198,244,50,.12);color:var(--gold)}
+.lgr .tx{flex:1;display:flex;flex-direction:column;min-width:0}.lgr .tx b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lgr .tx span{font-size:12px;color:var(--mut)}
+.scpl{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.scpl button{display:flex;align-items:center;gap:12px;width:100%;text-align:right;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;color:var(--txt);font-size:15px;font-weight:700;cursor:pointer}
+.scpl button.on{border-color:var(--gold);background:rgba(198,244,50,.08)}.scpl button span{margin-inline-start:auto;font-size:12px;color:var(--mut);font-weight:500}
 .bank{position:relative;overflow:hidden;background:radial-gradient(400px 160px at 50% -40px,rgba(198,244,50,.22),transparent 70%),linear-gradient(180deg,#161D38,#0E1328);border:1px solid rgba(198,244,50,.45);border-radius:22px;padding:16px;margin:14px 0;text-align:center}
 .bank .v{font-size:36px;font-weight:900;color:var(--gold);direction:ltr;unicode-bidi:isolate;letter-spacing:.5px}
 .bank .d{font-size:13px;font-weight:700;margin-top:2px}
@@ -677,38 +727,86 @@ let tblScope=lsGet('bb_scope')||'all';
 const myLeagues=()=>Object.keys((A&&A.leagues)||{}).filter(l=>S.lg&&S.lg[l]);
 function rankRows(rows,key){ rows.sort((a,b)=>b[key]-a[key]||b.won-a.won||a.n.localeCompare(b.n,'he')); let prev=null;
   rows.forEach((r,i)=>{ r._rk = prev && prev[key]===r[key] ? prev._rk : i+1; prev=r; }); return rows; }
+// ===== טבלה: ארצית + ליגות חברים – לפי העיצוב (Leaderboard + National) =====
+let natSub=lsGet('bb_ns')||'players';
+const initial = n => esc([...String(n||'?').trim()][0]||'?');
+const avBg = (pid,me) => me?'':`background:hsl(${hueOf(pid)} 32% 32%)`;
+const CROWN='<svg width="20" height="16" viewBox="0 0 24 18" fill="#FFC94D" aria-hidden="true"><path d="M2 4l5 5 5-8 5 8 5-5-2 13H4z"/></svg>';
+const SHARE_I='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.6M8.2 13.2l7.6 4.6"/></svg>';
+function scopeMenu(){
+  const mine=myLeagues(), row=(id,lab,sub)=>`<button class="${tblScope===id?'on':''}" data-s="${esc(id)}" onclick="closeSheet();setScope(this.dataset.s)">${lab}<span>${sub}</span></button>`;
+  sheet(`<h2 style="margin:0 0 4px">איזו טבלה?</h2><div class="scpl">${row('all','🌍 ארצית',`${((S.standings&&S.standings.rows)||[]).length} שחקנים`)}
+    ${mine.map(l=>row(l,'👥 '+esc(S.lg[l].n),`${Object.keys(S.lg[l].m||{}).length} חברים`)).join('')}</div>
+    <button class="btn sec" style="margin-top:12px" onclick="leagueMenu()">➕ פתח ליגה או הצטרף עם קוד</button>`);
+}
+function setNS(k){ natSub=k; lsSet('bb_ns',k); render(); }
+// ליגות החברים החזקות בארץ – לפי ממוצע השווי של החברים (מחושב מהטבלה הציבורית)
+function leagueRanks(){
+  const V={}; ((S.standings&&S.standings.rows)||[]).forEach(r=>V[r.pid]=r.v);
+  return Object.entries(S.lg||{}).map(([id,L])=>{ const ps=Object.keys(L.m||{}).filter(p=>V[p]!=null); return {id,n:L.n,cnt:Object.keys(L.m||{}).length,avg:ps.length?ps.reduce((t,p)=>t+V[p],0)/ps.length:0}; })
+    .filter(x=>x.cnt>=2).sort((a,b)=>b.avg-a.avg||b.cnt-a.cnt).map((x,i)=>({...x,rk:i+1}));
+}
 function viewTable(){
   const st=S.standings, mode=tblMode, wk=weekKey(dayKey(Date.now())), me=A&&A.pid, mine=myLeagues();
   if(tblScope!=='all' && !mine.includes(tblScope)) tblScope='all';
-  const L=tblScope==='all'?null:S.lg[tblScope];
+  const L=tblScope==='all'?null:S.lg[tblScope], all=!L;
   let rows=(st&&st.rows?st.rows:[]).map(r=>({...r}));
   if(L) rows=rows.filter(r=>L.m&&L.m[r.pid]);
   const vk=mode==='week'?'wp':'v', gk=mode==='week'?'pw':'ps';
   rankRows(rows,vk);
   const prevRk={}; rows.forEach(r=>{ const pv=r[gk]||r._rk; prevRk[r.pid]=1+rows.filter(x=>(x[gk]||x._rk)<pv).length; });   // מיקום קודם בתוך הטבלה הזו (תיקו = אותו מקום)
-  const bank=st?st.bank:BANK_START, bd=bank-BANK_START;
-  let h=`<div class="chips"><button class="chip ${tblScope==='all'?'on':''}" onclick="setScope('all')">🌍 ארצית</button>
-    ${mine.map(l=>`<button class="chip ${tblScope===l?'on':''}" onclick="setScope('${l}')">👥 ${esc(S.lg[l].n)}<span class="n">${Object.keys(S.lg[l].m||{}).length}</span></button>`).join('')}
-    ${A?`<button class="chip" onclick="leagueMenu()">➕ ליגה</button>`:''}</div>`;
-  if(!L && A && !mine.length) h+=`<div class="invcta" onclick="leagueMenu()"><span style="font-size:30px">👥</span><div><b>שחקו עם החבר׳ה</b><span>פתחו ליגה פרטית ושלחו לינק לקבוצת הוואטסאפ – טבלה רק שלכם</span></div><span style="margin-inline-start:auto;font-weight:900;color:var(--gold)">פתח ←</span></div>`;
-  if(!L) h+=`<div class="bank"><div class="muted">🏦 קופת הבנק</div><div class="v">${fmt(bank)} 🪙</div>
-    <div class="d ${bd>0?'neg':bd<0?'pos':''}">${bd>0?`הבנק מרוויח ${fmt(bd)} – השחקנים בהפסד 😈`:bd<0?`השחקנים לקחו לבנק ${fmt(-bd)}! 🤑`:'הבנק מחכה להימור הראשון'}</div></div>`;
+  const bank=st?st.bank:BANK_START, bd=bank-BANK_START, my=rows.find(r=>r.pid===me);
+  let h=`<div class="thd"><h1>${all?'טבלה ארצית':'טבלה'}</h1>${A?`<button class="scp" onclick="scopeMenu()"><span>${all?'🌍 ארצית':'👥 '+esc(L.n)}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>`:''}</div>`;
+  if(all && my){ const N=rows.length, top=Math.max(1,Math.ceil(100*my._rk/N)), d=(prevRk[me]||my._rk)-my._rk;
+    h+=`<section class="mehero"><span class="il" aria-hidden="true">IL</span><span>אתה במקום</span><b>${fmt(my._rk)}</b>
+      <span class="sub">מתוך ${fmt(N)}${N>=10&&top<=50?` · טופ ${top}%`:''} · ${mode==='week'?'השבוע':'העונה'}</span>
+      ${d?`<span class="mv ${d<0?'dn':''}">${d>0?'▲':'▼'} ${Math.abs(d)} ${Math.abs(d)===1?'מקום':'מקומות'}</span>`:''}</section>`; }
+  if(all && A && !mine.length) h+=`<div class="invcta" onclick="leagueMenu()"><span style="font-size:30px">👥</span><div><b>שחקו עם החבר׳ה</b><span>פתחו ליגה פרטית ושלחו לינק לקבוצת הוואטסאפ – טבלה רק שלכם</span></div><span style="margin-inline-start:auto;font-weight:900;color:var(--gold)">פתח ←</span></div>`;
+  if(all){ const pctB=Math.max(4,Math.min(100,Math.round(100*bank/(2*BANK_START))));
+    h+=`<section class="bank2" aria-label="קופת הבנק"><div class="hd"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C6F432" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg>קופת הבנק</div>
+      <div class="vv"><b>${fmt(bank)}</b>${bd?`<span style="color:${bd<0?'var(--red)':'var(--em)'}">${bd>0?'+':'−'}${fmt(Math.abs(bd))}</span>`:''}</div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div class="tr"><span style="width:${pctB}%"></span></div>
+      <div class="ft"><span>התחילה ב-${fmt(BANK_START)}</span><span>${bd>0?'הבנק מנצח את החבר׳ה 😈':bd<0?'החבר׳ה מנצחים את הבנק 🤑':'הבנק מחכה להימור הראשון'}</span></div></div></section>`; }
   else h+=`<div class="card" style="text-align:center"><div style="font-size:22px;font-weight:900">👥 ${esc(L.n)}</div>
-    <div class="muted">${Object.keys(L.m||{}).length} חברים · קוד הצטרפות <b style="color:var(--gold);letter-spacing:2px">${tblScope}</b></div>
-    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="font-size:15px;padding:11px" onclick="inviteLeague('${tblScope}')">📲 הזמן חברים</button>
-      <button class="btn sec" onclick="manageLeague('${tblScope}')">${L.o===me?'⚙️ ניהול':'🚪 עזיבה'}</button></div></div>`;
-  h+=`<div class="seg"><button class="${mode==='week'?'on':''}" onclick="setTM('week')">📅 שבועית (${weekLabel(wk)})</button><button class="${mode==='season'?'on':''}" onclick="setTM('season')">🏆 עונתית</button></div>
-    <div class="muted">${mode==='week'?'רווח/הפסד מהימורים על משחקי השבוע (כולל לייב)':'יתרה + הימורים פתוחים (כולל לייב)'} · % = אחוז הימורים שזכו</div>`;
+    <div class="muted">${Object.keys(L.m||{}).length} חברים · קוד הצטרפות <b style="color:var(--gold);letter-spacing:2px">${esc(tblScope)}</b></div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="font-size:15px;padding:11px" data-lid="${esc(tblScope)}" onclick="inviteLeague(this.dataset.lid)">📲 הזמן חברים</button>
+      <button class="btn sec" data-lid="${esc(tblScope)}" onclick="manageLeague(this.dataset.lid)">${L.o===me?'⚙️ ניהול':'🚪 עזיבה'}</button></div></div>`;
+  if(all) h+=`<div class="chips" style="padding-top:0"><button class="chip ${natSub==='players'?'on':''}" onclick="setNS('players')">שחקנים</button><button class="chip ${natSub==='leagues'?'on':''}" onclick="setNS('leagues')">ליגות חברים</button></div>`;
+  if(all && natSub==='leagues'){
+    const lr=leagueRanks(), shown=lr.filter(x=>x.rk<=10||mine.includes(x.id));
+    h+=`<div class="dayh" style="margin-top:8px">ליגת החברים הכי חזקה בארץ</div>`;
+    if(!shown.length) h+=`<div class="empty"><div class="e">👥</div>עוד אין ליגות חברים עם 2 חברים ומעלה</div>`;
+    h+=shown.map(x=>{ const m=mine.includes(x.id); return `<div class="lgr ${m?'mine':''}" ${m?`data-s="${esc(x.id)}" onclick="setScope(this.dataset.s)"`:''}><span class="n">${fmt(x.rk)}</span><span class="tx"><b>${esc(x.n)}${m?' · הליגה שלך':''}</b><span>${x.cnt} חברים · ממוצע ${fmt(x.avg)}</span></span></div>`; }).join('');
+    return h+(my?`<div class="mesticky"><b>${fmt(my._rk)}</b><b>${esc(my.n)} (אתה)</b><b>${fmt(my.v)}</b></div>`:'');
+  }
+  h+=`<div class="mtabs" role="tablist" style="margin-top:4px"><button role="tab" aria-selected="${mode==='week'}" class="${mode==='week'?'on':''}" onclick="setTM('week')">שבועית <small style="font-weight:500;opacity:.7">${weekLabel(wk)}</small></button><button role="tab" aria-selected="${mode==='season'}" class="${mode==='season'?'on':''}" onclick="setTM('season')">עונתית</button></div>
+    <div class="muted" style="margin:0 2px 4px">${mode==='week'?'רווח/הפסד מהימורים על משחקי השבוע (כולל לייב)':'יתרה + הימורים פתוחים (כולל לייב)'} · % = אחוז הימורים שזכו</div>`;
+  if(!rows.length) return h+`<div class="empty"><div class="e">🏆</div>עוד אין משתתפים</div>`;
   const fromBottom=[...new Set(rows.map(r=>r._rk))].filter(x=>x>1).sort((a,b)=>b-a);
-  h+=`<div class="card" style="padding:4px 8px"><table><thead><tr><th>#</th><th style="text-align:right">שם</th><th>${mode==='week'?'רווח':'שווי 🪙'}</th><th>% הצלחה</th></tr></thead><tbody>`;
-  if(!rows.length) h+=`<tr><td colspan="4" class="muted">עוד אין משתתפים</td></tr>`;
-  rows.forEach(r=>{ const rank=r._rk, king=rank===1&&rows.length>1&&(mode==='season'||r.wp>0), pi=fromBottom.indexOf(rank), pen=mode==='week'&&pi>=0&&pi<3?PENALTIES[pi]:'';
-    const d=(prevRk[r.pid]||rank)-rank, arr=d>0?`<span class="arr up">▲${d}</span>`:d<0?`<span class="arr dn">▼${-d}</span>`:'';
-    const val=mode==='week'?`<span class="${r.wp>0?'pos':r.wp<0?'neg':''}">${sgn(r.wp)}</span>`:fmt(r.v);
-    h+=`<tr class="${r.pid===me?'me':''}"><td class="big">${king?'👑':rank}</td><td class="n">${esc(r.n)}${arr}${king?`<span class="tag k">${mode==='week'?'👑 אלוף השבוע':"👑 מלך הז'יטונים"}</span>`:''}${pen?`<span class="tag ${pi===0?'l':'p'}">${pen}</span>`:''}
-      ${r.pid===me?`<a href="#" class="tag" style="color:var(--gold)" onclick="shareRank(${rank},${rows.length});return false">📣 שתף מיקום</a>`:''}</td>
-      <td class="big">${val}</td><td>${r.dn?Math.round(100*r.won/r.dn)+'%':'–'}<div class="muted" style="font-size:11px">${r.won}/${r.dn}</div></td></tr>`; });
-  return h+`</tbody></table></div>`+ad();
+  const penOf=r=>{ const pi=fromBottom.indexOf(r._rk); return mode==='week'&&pi>=0&&pi<3?{pi,t:PENALTIES[pi]}:null; };
+  const valOf=r=>mode==='week'?`<span class="${r.wp>0?'pos':r.wp<0?'neg':''}">${sgn(r.wp).replace('-','−')}</span>`:fmt(r.v);
+  const mvOf=r=>{ const d=(prevRk[r.pid]||r._rk)-r._rk; return d>0?`<span class="mv2 up" dir="ltr">▲${d}</span>`:d<0?`<span class="mv2 dn" dir="ltr">▼${-d}</span>`:''; };
+  const king=r=>r._rk===1&&rows.length>1&&(mode==='season'||r.wp>0);
+  const pod=rows.length>=3?rows.slice(0,3):[], rest=rows.slice(pod.length);
+  if(pod.length){
+    const cf=[['right:40px;top:4px;width:6px;height:10px;background:var(--gold);transform:rotate(25deg)'],['right:150px;top:16px;width:6px;height:10px;background:var(--p);transform:rotate(-30deg)'],['left:120px;top:0;width:7px;height:7px;background:var(--warn);border-radius:50%'],['left:40px;top:20px;width:6px;height:10px;background:var(--em);transform:rotate(50deg)'],['left:180px;top:36px;width:5px;height:9px;background:var(--red);transform:rotate(-10deg)']];
+    const pc=(r,k)=>{ const isMe=r.pid===me, pen=penOf(r);
+      return `<div class="pd p${k}">${k===1?CROWN:''}<span class="av ${isMe?'me':''}" style="${avBg(r.pid,isMe)}">${initial(r.n)}</span><b>${esc(r.n)}${isMe?' (אתה)':''}</b>
+        <div class="blk2"><span class="rk">${r._rk}</span><span class="vl">${valOf(r)}</span>${k===1&&king(r)?`<small style="color:var(--warn)">${mode==='week'?'אלוף השבוע':'מלך הז׳יטונים'}</small>`:''}${pen?`<small style="color:var(--red2)">${esc(pen.t)}</small>`:''}</div></div>`; };
+    h+=`<section class="podium2" aria-label="פודיום">${cf.map(c=>`<span class="cf" style="${c[0]}" aria-hidden="true"></span>`).join('')}${pc(pod[1],2)}${pc(pod[0],1)}${pc(pod[2],3)}</section>`;
+  }
+  const rowH=r=>{ const pen=penOf(r), isMe=r.pid===me;
+    return `<div class="r ${isMe?'me':''}"><b>${r._rk}</b><span class="nm"><span><span class="t">${esc(r.n)}${isMe?' (אתה)':''}</span>${mvOf(r)}</span>${pen?`<small>${esc(pen.t)}</small>`:''}</span><span class="vl">${valOf(r)}</span><span class="pc">${r.dn?Math.round(100*r.won/r.dn):'–'}</span></div>`; };
+  const LIM=all?50:200, restShown=rest.filter((r,i)=>i<LIM||r.pid===me);
+  const norm=restShown.filter(r=>!penOf(r)), pz=restShown.filter(r=>penOf(r));
+  if(restShown.length) h+=`<div class="lb" style="${pod.length?'margin-top:-1px;border-radius:0 0 20px 20px':''}"><div class="r h"><span>#</span><span>שחקן</span><span style="text-align:left">${mode==='week'?'שבוע':'שווי'}</span><span style="text-align:left">%</span></div>
+    ${norm.map(rowH).join('')}${rest.length>LIM?`<div class="r h" style="justify-content:center;display:flex">· · ·</div>`:''}
+    ${pz.length?`<div class="pz"><div class="ttl">אזור העונשים</div>${pz.map(rowH).join('')}</div>`:''}</div>`;
+  const other=[...rows].sort((a,b)=>mode==='week'?b.v-a.v:b.wp-a.wp)[0];
+  if(other&&rows.length>1&&(mode==='week'||other.wp>0)) h+=`<div class="kingc">${CROWN}<span style="flex:1"><b>${mode==='week'?'מלך הז׳יטונים (עונתי):':'אלוף השבוע:'}</b> ${esc(other.n)} · <bdi>${mode==='week'?fmt(other.v):sgn(other.wp)}</bdi></span></div>`;
+  if(my) h+=`<button class="shbtn" onclick="shareRank(${my._rk},${rows.length})">${SHARE_I}שלח את הטבלה לקבוצה</button>`;
+  if(all && my && my._rk>8) h+=`<div class="mesticky"><b>${fmt(my._rk)}</b><b>${esc(my.n)} (אתה)</b><b>${valOf(my)}</b></div>`;
+  return h;
 }
 function setScope(x){ tblScope=x; lsSet('bb_scope',x); render(); }
 
