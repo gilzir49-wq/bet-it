@@ -1,0 +1,14 @@
+name: שומר-לילה BET-IT
+# כל 10 דקות: האתר, הרובוט, חוקי האבטחה והגיבוי. כישלון = מייל אוטומטי מ-GitHub.
+on:
+  schedule: [ { cron: '*/10 * * * *' } ]
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: git fetch -q origin backups
+      - run: python3 ops/watchdog.py
