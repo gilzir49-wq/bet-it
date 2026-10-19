@@ -143,6 +143,13 @@ check('פעולת מנהל עם מפתח מזויף', req('PUT', f'adminOps/k{rs
 check('רישום מפתח מנהל חדש', req('PUT', f'adminKeys/k{rs(40, AZM)}', True)[0], 401)
 check('בקשת שחזור לשם שלא קיים', req('PUT', f'recoverReq/s{rs(48, AZM)}', {'nk': 'nobody_here', 'at': SV})[0], 401)
 
+print('--- הצפה / ניפוח המסד (DoS על המכסה החינמית)')
+JUNK = 'x' * 50000
+check('ליגה עם שדה זבל ענק', req('PATCH', '', {f'lgdef/{rs(6, RCA)}': {'n': 'flood', 'at': SV, 'junk': JUNK}})[0], 401)
+check('בקשת שחזור עם שדה זבל ענק', req('PUT', f'recoverReq/s{rs(48, AZM)}', {'nk': Ank, 'at': SV, 'junk': JUNK})[0], 401)
+check('בקשת שחזור עם nk ענק', req('PUT', f'recoverReq/s{rs(48, AZM)}', {'nk': JUNK, 'at': SV})[0], 401)
+check('תפיסת שם עם מפתח ענק', req('PUT', f'names/{"y" * 300}', 'p' + rs(16, AZ))[0], 401)
+
 st, a = req('GET', f'acct/{A}')
 check('יתרה סופית של A נכונה (500−50−10 = 440)', (a or {}).get('wallet', {}).get('bal'), 440)
 
