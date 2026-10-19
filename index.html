@@ -499,6 +499,28 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 @media (max-width:430px){ .brand>div{display:none} .bar{gap:6px} .topr{gap:5px} .pill{padding:6px 8px;font-size:12px} .bal{font-size:15px;padding:6px 10px} }
 .modeT{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:10px;font-weight:700;font-size:13.5px;cursor:pointer}
 .modeT .sw{background:#3a3f5a}.modeT.on .sw{background:var(--gold)}.modeT.on .sw:after{right:21px}
+/* הישגים + פרופיל – לפי העיצוב */
+.meav{margin-inline-start:auto;display:flex;align-items:center;gap:8px;height:40px;padding:0 6px 0 12px;border:1px solid var(--line2);border-radius:999px;background:var(--card);color:var(--txt2);font-size:13px;font-weight:700;cursor:pointer}
+.meav span{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--on-accent);display:grid;place-items:center;font-weight:900;font-size:13px}
+.prof{display:flex;align-items:center;gap:14px;margin:18px 2px 16px}
+.prof .bigav{width:64px;height:64px;border-radius:50%;background:var(--gold);color:var(--on-accent);display:grid;place-items:center;font-weight:900;font-size:26px;box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--warn);flex:none}
+.prof h1{margin:0;font-size:22px;font-weight:900}.prof span{font-size:13px;color:var(--mut)}
+.stk2{background:linear-gradient(160deg,rgba(255,201,77,.18),var(--card) 60%);border:1px solid rgba(255,201,77,.35);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.stk2 .hd{display:flex;align-items:center;gap:12px}.stk2 .hd b{font-size:28px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;display:block}.stk2 .hd span{font-size:13px;color:#E8D7A8}
+.wk7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wk7>span{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--mut)}
+.wk7 i{width:30px;height:30px;border-radius:50%;background:var(--line);display:block}.wk7 i.w{background:var(--warn)}.wk7 i.l{background:var(--card3);box-shadow:inset 0 0 0 2px rgba(255,90,106,.45)}.wk7 i.t{background:transparent;border:2px dashed var(--warn)}
+.wk7 .td{color:var(--txt);font-weight:900}
+.achg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ach{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;min-width:0}
+.ach .bd{width:52px;height:52px;border-radius:16px;transform:rotate(-6deg);display:grid;place-items:center;font-weight:900;font-size:18px}
+.ach b{font-size:13px}.ach small{font-size:11px;color:var(--mut);line-height:1.3}
+.ach.lk{background:#0B0F1E;border-style:dashed;border-color:var(--line3)}.ach.lk .bd{transform:none;background:var(--card2)}.ach.lk b{color:var(--txt2)}
+.ach .pg{width:70%;height:4px;border-radius:999px;background:var(--line);overflow:hidden;display:flex}.ach .pg span{background:var(--gold)}
+.ntf{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.ntf>div{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--line)}.ntf>div:last-child{border-bottom:0}
+.ntf .tx{flex:1;display:flex;flex-direction:column;gap:2px}.ntf b{font-size:14px}.ntf .tx span{font-size:12px;color:var(--mut)}
+.soon{font-size:11px;font-weight:900;color:var(--p2);background:rgba(169,123,255,.14);border-radius:999px;padding:3px 9px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -837,11 +859,11 @@ function viewMine(){
   const doneAt=b=>(A.settled&&A.settled[b.id]&&A.settled[b.id].at)||(b.f&&b.f.ko)||b.at||0;
   const done=bets.filter(b=>!isOpen(b)).sort((x,y)=>doneAt(y)-doneAt(x));
   const pct=a.settled?Math.round(100*a.won/a.settled):0, lv=a.value!==a.avail, sk=winStreak();
-  let h=`<div class="ph"><h1>ההימורים שלי</h1></div>
+  let h=`<div class="ph"><h1>ההימורים שלי</h1><button class="meav" onclick="go('ach')" aria-label="ההישגים שלי">הישגים<span>${initial(A.name)}</span></button></div>
     <div class="kpis"><div class="kpi"><span>יתרה</span><b>${fmt(a.avail)}</b></div>
       <div class="kpi lv ${a.value<a.avail?'dn':''}"><span>${lv?'<span class="rdot"></span>':''}יתרה לייב</span><b>${fmt(a.value)}</b></div>
       <div class="kpi"><span>הצלחה${a.settled?` <bdi dir="ltr">${a.won}/${a.settled}</bdi>`:''}</span><b>${a.settled?pct+'%':'–'}</b></div></div>`;
-  if(sk>=2) h+=`<div class="streak">${IC.fire}<span><b>${sk>=HOT?`חם! רצף של ${sk} ניחושים`:`רצף של ${sk} ניחושים`}</b> · ${sk>=HOT?'שומר על התג "חם" 🔥':HOT-sk===1?'עוד אחד ומקבלים תג "חם"':`עוד ${HOT-sk} ומקבלים תג "חם"`}</span></div>`;
+  if(sk>=2) h+=`<div class="streak" style="cursor:pointer" onclick="go('ach')">${IC.fire}<span><b>${sk>=HOT?`חם! רצף של ${sk} ניחושים`:`רצף של ${sk} ניחושים`}</b> · ${sk>=HOT?'שומר על התג "חם" 🔥':HOT-sk===1?'עוד אחד ומקבלים תג "חם"':`עוד ${HOT-sk} ומקבלים תג "חם"`}</span></div>`;
   if(a.avail<=0&&!open.length) h+=`<div class="card" style="text-align:center">😵 נגמרו הז'יטונים! ביום שלישי תקבל ${WEEKLY_BONUS} מקופת הבנק.<br>בינתיים – תפרגן לחבר׳ה מהיציע 😅</div>`;
   const qN=QUEUE.length;
   h+=`<div class="mtabs" role="tablist"><button role="tab" aria-selected="${mineTab==='open'}" class="${mineTab==='open'?'on':''}" onclick="setMT('open')">פתוחים · ${open.length+qN}</button><button role="tab" aria-selected="${mineTab==='hist'}" class="${mineTab==='hist'?'on':''}" onclick="setMT('hist')">היסטוריה${done.length?` · ${done.length}`:''}</button></div>`;
@@ -983,6 +1005,48 @@ function leagueHub(lid,L,rows,prevRk,my){
   if(my) h+=`<button class="shbtn" onclick="shareRank(${my._rk},${rows.length})">${SHARE_I}שלח את הטבלה לקבוצה</button>`;
   return h;
 }
+// ===== הישגים – מחושב בצד הלקוח מהיסטוריית ההימורים (תצוגה בלבד, לא משנה כלום בשרת) =====
+const HDAY=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+function achData(){
+  const bets=(A&&A.bets)||{}, st=(A&&A.settled)||{}, list=Object.entries(st).filter(([,x])=>x&&x.st!=='void').map(([id,x])=>({id,...x,b:bets[id]})).sort((a,b)=>(a.at||0)-(b.at||0));
+  let cur=0,best=0; list.forEach(x=>{ if(x.st==='won'){ cur++; best=Math.max(best,cur); } else cur=0; });
+  const won=list.filter(x=>x.st==='won'), byDay={}; won.forEach(x=>{ const d=dayKey(x.at||0); byDay[d]=(byDay[d]||0)+((x.pay||0)-((x.b&&x.b.s)||0)); });
+  const ownM=Object.values(S.lg||{}).filter(L=>A&&L.o===A.pid).reduce((t,L)=>t+Math.max(0,Object.keys(L.m||{}).length-1),0);
+  const st0=((S.standings&&S.standings.rows)||[]).find(r=>A&&r.pid===A.pid);
+  if(st0&&st0.rw===1&&st0.wp>0) lsSet('bb_wkchamp','1');
+  const anyB=Object.keys(bets).length;
+  const L=[
+    {k:'cs',t:'אמרתי לכם',d:'תוצאה מדויקת',ok:won.some(x=>x.b&&x.b.m==='CS'),bg:'var(--gold)',ic:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0A0F00" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>'},
+    {k:'jk',t:'ג׳וקר זהב',d:'ג׳וקר שזכה ביחס 4+',ok:won.some(x=>x.b&&x.b.j&&x.b.o>=4),bg:'var(--p)',ic:'<span style="color:#14062E">×2</span>'},
+    {k:'wk',t:'אלוף השבוע',d:'מקום ראשון בשבועית',ok:lsGet('bb_wkchamp')==='1',bg:'var(--warn)',ic:'<svg width="26" height="22" viewBox="0 0 24 18" fill="#3A2600"><path d="M2 4l5 5 5-8 5 8 5-5-2 13H4z"/></svg>'},
+    {k:'bank',t:'שובר הבנק',d:'+500 ביום אחד',ok:Object.values(byDay).some(v=>v>=500),bg:'var(--em)',ic:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#03230F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg>'},
+    {k:'hot',t:'חם',d:`${HOT} ניחושים ברצף`,n:best,of:HOT,bg:'#FF8A3D',ic:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2A1000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.5 1 2.5 2 3 0-3 0-6 1-8.5z"/></svg>'},
+    {k:'dog',t:'אנדרדוג',d:'זכייה ביחס 5+',ok:won.some(x=>x.b&&x.b.o>=5),bg:'var(--red2)',ic:'<b style="color:#2A0006;font-size:17px">5+</b>'},
+    {k:'snp',t:'צלף',d:'10 ניחושים נכונים',n:won.length,of:10,bg:'#5AC8FA',ic:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#002233" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>'},
+    {k:'vet',t:'ותיק',d:'50 הימורים',n:anyB,of:50,bg:'var(--txt2)',ic:'<b style="color:#0A0E1C;font-size:17px">50</b>'},
+    {k:'inv',t:'גייס חברים',d:'5 חברים בליגה שלך',n:ownM,of:5,bg:'#25D366',ic:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#04210F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M17 8v6M14 11h6"/></svg>'}];
+  L.forEach(a=>{ if(a.of) a.ok=a.n>=a.of; });
+  return {cur:winStreak(),best:Math.max(best,winStreak()),list,L,byDay};
+}
+function viewAch(){
+  if(!A) return '';
+  const d=achData(), got=d.L.filter(a=>a.ok).length, j=A.joined?new Date(A.joined):null;
+  const MON=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  let h=`<div class="prof"><span class="bigav">${initial(A.name)}</span><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><h1>${esc(A.name)}</h1><span>${j?`משחק מ${MON[j.getMonth()]} · `:''}${got} מתוך ${d.L.length} הישגים</span></span>
+    <button class="sclose" style="margin-inline-start:auto" aria-label="חזרה להימורים שלי" onclick="go('mine')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button></div>`;
+  const today=dayKey(Date.now()), days=Array.from({length:7},(_,i)=>addDays(today,i-6));
+  const res=dk=>{ const xs=d.list.filter(x=>dayKey(x.at||0)===dk); return xs.some(x=>x.st==='won')?'w':xs.length?'l':''; };
+  h+=`<section class="stk2"><div class="hd"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFC94D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.5 1 2.5 2 3 0-3 0-6 1-8.5z"/></svg>
+      <span style="display:flex;flex-direction:column"><b>${d.cur} ברצף</b><span>ניחושים נכונים · השיא שלך: ${d.best}</span></span></div>
+    <div class="wk7">${days.map(dk=>{ const r=res(dk), t=dk===today; return `<span class="${t?'td':''}"><i class="${r||(t?'t':'')}"></i>${t?'היום':HDAY[dkToDate(dk).getUTCDay()]}</span>`; }).join('')}</div>
+    <span style="font-size:13px;color:#E8D7A8">${d.cur>=HOT?'אתה חם! 🔥 תמשיך ככה':`עוד ${HOT-d.cur===1?'ניחוש נכון אחד':`${HOT-d.cur} ניחושים נכונים`} ← תג "חם"`}</span></section>`;
+  h+=`<div class="dayh">הישגים</div><div class="achg">${d.L.map(a=>`<div class="ach ${a.ok?'':'lk'}"><span class="bd" style="${a.ok?`background:${a.bg}`:''}">${a.ok?a.ic:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5A6385" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'}</span>
+    <b>${a.t}</b>${!a.ok&&a.of?`<span class="pg"><span style="width:${Math.round(100*Math.min(a.n,a.of)/a.of)}%"></span></span><small>${Math.min(a.n,a.of)}/${a.of}</small>`:`<small>${a.d}</small>`}</div>`).join('')}</div>`;
+  const N=[['גולים במשחקים שהימרתי','כולל "כרגע זוכה / מפסיד"'],['תזכורת נעילה','15 דק׳ לפני משחק שעוד לא הימרת עליו'],['עקפו אותי בטבלה','בליגות החברים שלי'],['הבנק חילק +'+WEEKLY_BONUS,'כל יום שלישי']];
+  h+=`<div class="dayh">התראות</div><div class="ntf">${N.map(([t,s])=>`<div><span class="tx"><b>${t}</b><span>${s}</span></span><span class="soon">בקרוב</span></div>`).join('')}</div>
+    <div class="muted" style="margin:8px 4px 0;font-size:12px">בינתיים: כשהאפליקציה פתוחה מקבלים באנר על כל גול במשחקים שהימרת עליהם.</div>`;
+  return h;
+}
 function setScope(x){ tblScope=x; lsSet('bb_scope',x); render(); }
 
 // ================= ליגות חברים: יצירה, הזמנה, הצטרפות, ניהול =================
@@ -1048,34 +1112,91 @@ async function leaveLeague(lid){ const r=await write('DELETE',`acct/${SEC}/leagu
 
 function copyTxt(t,msg){ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast(msg||'הועתק 📋',true)).catch(()=>{ prompt('העתק:',t); }); }
 // ================= כרטיסי שיתוף (וואטסאפ / סטורי) =================
+// ===== כרטיסי שיתוף – לפי העיצוב (ShareCards): סטורי 1080×1920 · וואטסאפ 1080×1080 =====
 async function makeCard(o){
-  const c=document.createElement('canvas'); c.width=1080; c.height=1350; const x=c.getContext('2d');
-  try{ await document.fonts.load('900 80px Heebo'); }catch(e){}
-  const g=x.createLinearGradient(0,0,1080,1350); g.addColorStop(0,'#141a3a'); g.addColorStop(1,'#070A14'); x.fillStyle=g; x.fillRect(0,0,1080,1350);
-  x.fillStyle='rgba(198,244,50,.12)'; x.beginPath(); x.arc(900,180,360,0,7); x.fill();
-  x.fillStyle='#C6F432'; const rr=(X,Y,W,H,R)=>{x.beginPath();x.roundRect?x.roundRect(X,Y,W,H,R):x.rect(X,Y,W,H);x.fill();}; rr(80,80,330,96,30);
-  x.fillStyle='#0A0E1C'; x.font='900 50px Heebo, Arial'; x.direction='ltr'; x.textAlign='left'; x.fillText('LET IT | B',112,146);
-  x.direction='rtl'; x.textAlign='right'; x.fillStyle='#fff'; x.font='900 120px Heebo, Arial'; x.fillText(o.title,1000,420);
-  x.fillStyle='#C6F432'; x.font='900 92px Heebo, Arial'; x.fillText(o.big,1000,580);
-  x.fillStyle='#C9D1EA'; x.font='700 52px Heebo, Arial'; (o.lines||[]).forEach((t,i)=>x.fillText(t,1000,720+i*80));
-  x.fillStyle='#8E97B5'; x.font='700 42px Heebo, Arial'; x.fillText('BET-IT · משחק הניחושים של החבר׳ה',1000,1190);
-  x.fillStyle='#C6F432'; x.font='900 46px Heebo, Arial'; x.direction='ltr'; x.textAlign='right'; x.fillText('bet-it.web.app',1000,1260);
+  const kind=o.kind||'win', sq=kind==='table', W=1080, H=sq?1080:1920, c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  try{ await Promise.all([document.fonts.load('900 80px Heebo'),document.fonts.load('700 80px Heebo'),document.fonts.load('700 120px Karantina')]); }catch(e){}
+  const K='Karantina, Heebo, Arial', HB='Heebo, Arial', LIME='#C6F432', INK='#0A0F00';
+  const rr=(X,Y,w,h,r)=>{ x.beginPath(); x.roundRect?x.roundRect(X,Y,w,h,r):x.rect(X,Y,w,h); };
+  const T=(t,X,Y,font,col,dir='rtl',al='right')=>{ x.font=font; x.fillStyle=col; x.direction=dir; x.textAlign=al; x.fillText(t,X,Y); };
+  const fit=(t,font,max)=>{ x.font=font; let s=String(t); while(s.length>2&&x.measureText(s).width>max) s=s.slice(0,-2)+'…'; return s; };
+  const logo=(X,Y,s,inv)=>{ x.save(); x.translate(X+s*.55,Y+s*.64); x.rotate(-6*Math.PI/180); x.fillStyle=inv?INK:LIME; rr(-s*.55,-s*.64,s*1.1,s*1.28,s*.27); x.fill(); x.restore();
+    T('B',X+s*.55,Y+s*1.02,`900 ${s}px ${HB}`,inv?LIME:INK,'ltr','center'); T('ET-IT',X+s*1.2,Y+s*1.02,`900 ${s}px ${HB}`,inv?INK:'#F2F4FA','ltr','left'); };
+  const conf=pts=>pts.forEach(([X,Y,w,h,r,col])=>{ x.save(); x.translate(X,Y); x.rotate(r*Math.PI/180); x.fillStyle=col; rr(-w/2,-h/2,w,h,4); x.fill(); x.restore(); });
+  if(kind==='win'){
+    x.fillStyle=LIME; x.fillRect(0,0,W,H); T('!',W-60,1500,`700 1300px ${K}`,'rgba(10,15,0,.07)');
+    logo(W-90-260,90,80,true);
+    T('אמרתי',W-90,820,`700 380px ${K}`,INK); T('לכם!',W-90,1110,`700 380px ${K}`,INK);
+    x.fillStyle=INK; rr(90,1210,W-180,360,56); x.fill();
+    T(fit(o.sub||'',`500 44px ${HB}`,W-300),W-150,1300,`500 44px ${HB}`,'#8E97B5');
+    T(fit(o.match||'',`900 54px ${HB}`,W-300),W-150,1400,`900 54px ${HB}`,'#F2F4FA');
+    T(o.big||'',W-150,1500,`900 52px ${HB}`,'#3BE38B');
+    T(o.foot||'bet-it.web.app',W-90,1800,`700 42px ${HB}`,INK);
+  } else if(kind==='big'){
+    x.fillStyle='#0A1A12'; x.fillRect(0,0,W,H);
+    conf([[W-130,300,32,52,25,LIME],[160,460,32,52,-30,'#A97BFF'],[450,200,32,32,0,'#FFC94D'],[W-200,H-380,30,48,60,'#3BE38B'],[260,H-520,26,44,-15,'#FF5A6A']]);
+    logo(W-90-260,90,80);
+    T('הבנק בוכה',W-90,900,`700 54px ${HB}`,'#8FE6B5');
+    T(o.big||'',W-90,1200,`900 300px ${HB}`,'#3BE38B','ltr','right');
+    T(fit(o.sub||'',`700 60px ${HB}`,W-180),W-90,1320,`700 60px ${HB}`,'#F2F4FA');
+    if(o.jk){ x.fillStyle='rgba(169,123,255,.2)'; const w=300; rr(W-90-w,1380,w,84,42); x.fill(); T('ג׳וקר כפול',W-90-w/2,1438,`900 46px ${HB}`,'#C3A3FF','rtl','center'); }
+    T(o.foot||'חושב שאתה יותר טוב? bet-it.web.app',W-90,1800,`700 42px ${HB}`,'#8FE6B5');
+  } else if(kind==='lead'){
+    const g=x.createRadialGradient(W/2,H*.3,40,W/2,H*.3,W); g.addColorStop(0,'#24305F'); g.addColorStop(.7,'#070A14'); x.fillStyle=g; x.fillRect(0,0,W,H);
+    logo(W-90-260,90,80);
+    x.save(); x.translate(W/2,560); x.scale(7,7); x.fillStyle='#FFC94D'; x.fill(new Path2D('M-10 -7l5 5 5-8 5 8 5-5-2 13H-8z')); x.restore();
+    x.fillStyle='#FFC94D'; x.beginPath(); x.arc(W/2,820,190,0,7); x.fill(); x.fillStyle='#070A14'; x.beginPath(); x.arc(W/2,820,180,0,7); x.fill();
+    x.fillStyle=LIME; x.beginPath(); x.arc(W/2,820,165,0,7); x.fill(); T([...(o.name||'?')][0],W/2,885,`900 170px ${HB}`,INK,'rtl','center');
+    T(o.title1||'מוביל',W/2,1190,`700 250px ${K}`,'#F2F4FA','rtl','center'); T(o.title2||'בליגה',W/2,1400,`700 250px ${K}`,'#F2F4FA','rtl','center');
+    T(fit(o.sub||'',`500 54px ${HB}`,W-180),W/2,1500,`500 54px ${HB}`,'#B9C0D8','rtl','center');
+    const pills=o.pills||[]; x.font=`700 44px ${HB}`; const ws=pills.map(p=>x.measureText(p).width+70), tw=ws.reduce((a,b)=>a+b,0)+(pills.length-1)*24; let px=W/2+tw/2;
+    pills.forEach((p,i)=>{ x.fillStyle='#161C33'; rr(px-ws[i],1560,ws[i],84,42); x.fill(); T(p,px-35,1617,`700 44px ${HB}`,'#F2F4FA'); px-=ws[i]+24; });
+    T(fit(o.foot||'bet-it.web.app',`700 44px ${HB}`,W-180),W/2,1820,`700 44px ${HB}`,'#8E97B5','rtl','center');
+  } else {   // table – 1080×1080 לוואטסאפ
+    x.fillStyle='#070A14'; x.fillRect(0,0,W,H); x.strokeStyle='#1C2340'; x.lineWidth=3; rr(2,2,W-4,H-4,56); x.stroke();
+    T(o.title1||'הטבלה של',W-80,170,`700 120px ${K}`,'#F2F4FA'); T(o.title2||'השבוע',W-80,275,`700 120px ${K}`,'#F2F4FA');
+    logo(80,95,62);
+    const rows=o.rows||[]; let y=330; const rh=118;
+    rows.forEach((r,i)=>{ const last=r.last, top=r.rk===1; if(last) y=Math.max(y,H-90-rh-40);
+      x.fillStyle=top?'rgba(255,201,77,.12)':last?'rgba(255,90,106,.1)':r.me?'rgba(198,244,50,.1)':'#0F1426'; rr(70,y,W-140,rh-16,28); x.fill();
+      if(top){ x.save(); x.translate(W-130,y+rh/2-8); x.scale(2.6,2.6); x.fillStyle='#FFC94D'; x.fill(new Path2D('M-10 -7l5 5 5-8 5 8 5-5-2 13H-8z')); x.restore(); }
+      else T(String(r.rk),W-130,y+rh/2+10,`900 46px ${HB}`,'#F2F4FA','ltr','center');
+      T(fit(r.n,`900 50px ${HB}`,560),W-200,y+(r.pen?rh/2-4:rh/2+10),`900 50px ${HB}`,'#F2F4FA');
+      if(r.pen) T(fit(r.pen,`700 32px ${HB}`,560),W-200,y+rh/2+38,`700 32px ${HB}`,'#FF8A96');
+      T(r.v,110,y+rh/2+10,`900 50px ${HB}`,r.neg?'#FF5A6A':'#3BE38B','ltr','left');
+      y+=rh; });
+    T(fit(o.foot||'bet-it.web.app',`700 36px ${HB}`,W-160),W/2,H-40,`700 36px ${HB}`,'#8E97B5','rtl','center');
+  }
   return await new Promise(r=>c.toBlob(r,'image/png'));
 }
 async function shareCard(o, text){
   const blob=await makeCard(o), file=new File([blob],'bet-it.png',{type:'image/png'});
-  const msg=`${text}\n👉 ${APP_URL}`;
+  const msg=`${text}\n👉 ${o.link||APP_URL}`;
   if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file],text:msg}); return; }catch(e){ if(e.name==='AbortError') return; } }
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bet-it.png'; a.click();
   setTimeout(()=>window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank'),500);
   toast('התמונה נשמרה – צרף אותה להודעה 📸',true,null,3500);
 }
 function shareWin(bid){ const b=A.bets[bid], f=S.fixtures[b.e]; if(!b||!f) return;
-  shareCard({title:'אמרתי לכם! ✅', big:`+${fmt(payout(b)-b.s)} ז'יטונים`, lines:[`${he(f.home)} ${f.h}–${f.a} ${he(f.away)}`, `${pickLabel(f,b)} · יחס ${b.o.toFixed(2)}${b.j?' · 🃏 ג׳וקר':''}`]},
-    `אמרתי לכם! ✅ זכיתי ב-${fmt(payout(b)-b.s)} ז'יטונים ב-BET-IT על ${he(f.home)}–${he(f.away)} 😎`); }
+  const set=A.settled&&A.settled[bid], prof=Math.round((set&&set.pay!=null?set.pay:payout(b))-b.s);
+  const same=Object.values(S.revealed[b.e]||{}).filter(x=>x.m===b.m&&x.p===b.p).length, only=same===1&&Object.keys(S.revealed[b.e]||{}).length>2;
+  const match=`${he(f.home)} ${f.h}–${f.a} ${he(f.away)}`, what=b.m==='CS'?'תוצאה מדויקת':b.p==='X'?'תיקו':`ניצחון ${he(b.p==='1'?f.home:f.away)}`;
+  const o = (prof>=300||b.j&&b.o>=3) ? {kind:'big', big:`+${fmt(prof)}`, sub:`${b.j?'ג׳וקר':'הימור'} על ${b.m==='CS'?`${b.p.replace('-','–')} מדויק`:b.p==='X'?'תיקו':he(b.p==='1'?f.home:f.away)} ביחס ${b.o.toFixed(2)}`, jk:!!b.j}
+    : {kind:'win', sub:`${what} · ${LEAGUES[f.lg]?.n||''}`, match, big:`+${fmt(prof)} ז׳יטונים${only?' · רק אני ניחשתי':''}`};
+  shareCard(o, `אמרתי לכם! ✅ זכיתי ב-${fmt(prof)} ז'יטונים ב-BET-IT על ${he(f.home)}–${he(f.away)} 😎`); }
 function shareRank(rank,total){ const L=tblScope==='all'?null:S.lg[tblScope], where=L?`בליגת "${L.n}"`:'בטבלה הארצית', per=tblMode==='week'?'השבוע':'העונה';
-  shareCard({title:rank===1?'👑 אני במקום הראשון':`אני במקום ${rank}`, big:where, lines:[`מתוך ${total} שחקנים · ${per}`, 'מי מעז לעקוף? 😏']},
-    `${rank===1?'👑 אני מוביל':`אני במקום ${rank}`} ${where} ב-BET-IT ${per}. מי מעז לעקוף? 😏`); }
+  const link=L?`${APP_URL}/#join=${tblScope}`:APP_URL, me=A&&A.pid, wk=tblMode==='week';
+  let rows=((S.standings&&S.standings.rows)||[]).map(r=>({...r})); if(L) rows=rows.filter(r=>L.m&&L.m[r.pid]); rankRows(rows,wk?'wp':'v');
+  const my=rows.find(r=>r.pid===me), V=r=>wk?sgn(r.wp).replace('-','−'):fmt(r.v);
+  const text=`${rank===1?'👑 אני מוביל':`אני במקום ${rank}`} ${where} ב-BET-IT ${per}. מי מעז לעקוף? 😏`;
+  if(rank===1&&my){ const last=rows.length>2?rows[rows.length-1]:null;
+    return shareCard({kind:'lead', link, name:my.n, title1:'מוביל', title2:L?'בליגה':'בארץ', sub:L?`"${L.n}" · ${per}`:`הטבלה הארצית · ${per}`,
+      pills:[`${wk?sgn(my.wp):fmt(my.v)} ${wk?'השבוע':'ז׳יטונים'}`, ...(my.dn?[`${Math.round(100*my.won/my.dn)}% הצלחה`]:[])],
+      foot:last&&wk?`${last.n}, הקפה עליך.`:link.replace('https://','')}, text); }
+  const pick=rows.slice(0,3).map(r=>({rk:r._rk,n:r.n,v:V(r),neg:wk&&r.wp<0,me:r.pid===me}));
+  if(my&&my._rk>3) pick.push({rk:my._rk,n:my.n,v:V(my),neg:wk&&my.wp<0,me:true});
+  const last=rows[rows.length-1]; if(rows.length>4&&last&&!pick.some(p=>p.n===last.n&&p.rk===last._rk)) pick.push({rk:last._rk,n:last.n,v:V(last),neg:wk&&last.wp<0,last:true,pen:wk?PENALTIES[0]:''});
+  shareCard({kind:'table', link, title1:'הטבלה של', title2:L?L.n.slice(0,14):(wk?'השבוע':'העונה'), rows:pick, foot:link.replace('https://','')}, text); }
 function setTM(m){ tblMode=m; lsSet('bb_tm',m); render(); }
 function liveTable(lg){
   const base=(S.tables[lg]&&S.tables[lg].rows)||[], rows=base.map((r,i)=>({...r,base:i+1,live:null})), by=Object.fromEntries(rows.map(r=>[r.t,r]));
@@ -1428,14 +1549,14 @@ function renderNav(){
   const a=account(), openN=a?a.open:0;
   const tabs=[['games','משחקים'],['mine','ההימורים שלי'],['table','טבלה'],['leagues','ליגות']].filter(t=>A||t[0]!=='mine');
   if(AK) tabs.push(['admin','מנהל']);
-  document.getElementById('nav').innerHTML=(A||AK)?tabs.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')">${ICONS[k]}${l}${k==='mine'&&openN?`<span class="badge">${openN}</span>`:''}</button>`).join(''):'';
+  document.getElementById('nav').innerHTML=(A||AK)?tabs.map(([k,l])=>`<button class="${tab===k||(tab==='ach'&&k==='mine')?'on':''}" onclick="go('${k}')">${ICONS[k]}${l}${k==='mine'&&openN?`<span class="badge">${openN}</span>`:''}</button>`).join(''):'';
 }
 function go(k){ tab=k; lsSet('bb_tab',k); render(); window.scrollTo(0,0); }
 function render(){
   renderTop(); const app=document.getElementById('app'); document.body.classList.toggle('anon',!A&&!AK); hideSplash(); if(!A&&!AK&&loginUnchanged(app)) return;
   if(!A && !AK){ app.innerHTML=(SEC&&!loaded.me)?'<div class="empty"><div class="e">⏳</div>מתחבר…</div>':viewLogin()+footer(); renderNav(); return; }
-  if(!A && tab==='mine') tab='games'; if(tab==='admin'&&!AK) tab='games';
-  app.innerHTML=({games:viewGames,mine:viewMine,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
+  if(!A && (tab==='mine'||tab==='ach')) tab='games'; if(tab==='admin'&&!AK) tab='games';
+  app.innerHTML=({games:viewGames,mine:viewMine,ach:viewAch,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
 }
 // מסך הכניסה לא נבנה מחדש כשמגיעים נתונים (משחקים/טבלה) – אחרת השם שהמשתמש כבר הקליד נמחק
 function loginUnchanged(app){ if(SEC&&!loaded.me) return false; const h=viewLogin(); if(app._lh===h&&document.getElementById('nameIn')) return true; app._lh=h; return false; }
