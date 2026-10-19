@@ -286,47 +286,45 @@ function dayLabel(dk){ const t=dayKey(Date.now()); if(dk===t) return 'היום';
 function weekKey(dk){ const d=dkToDate(dk); return addDays(dk,-((d.getUTCDay()-2+7)%7)); }
 const weekLabel = wk => { const a=dkToDate(wk), b=dkToDate(addDays(wk,6)); return `<bdi dir="ltr">${a.getUTCDate()}.${a.getUTCMonth()+1}–${b.getUTCDate()}.${b.getUTCMonth()+1}</bdi>`; };
 
-// ================= האזנה חיה =================
-function applyAt(obj, path, data){
-  const parts=path.split('/').filter(Boolean); if(!parts.length) return data;
-  obj = (obj && typeof obj==='object') ? obj : {}; let o=obj;
-  for(let i=0;i<parts.length-1;i++){ if(typeof o[parts[i]]!=='object'||o[parts[i]]===null) o[parts[i]]={}; o=o[parts[i]]; }
-  const last=parts[parts.length-1]; if(data===null) delete o[last]; else o[last]=data; return obj;
-}
-const streams={};
-function stream(name, url, onData){
-  if(streams[name]) streams[name].close();
-  const es=new EventSource(url); streams[name]=es; let val=null;
-  const on = isPatch => ev => { const {path,data}=JSON.parse(ev.data);
-    if(isPatch) for(const k in data) val=applyAt(val, path.replace(/\/$/,'')+'/'+k, data[k]); else val=applyAt(val,path,data);
-    connected=true; onData(val, path); };
-  es.addEventListener('put',on(false)); es.addEventListener('patch',on(true));
-  es.onerror=()=>{ connected=false; renderTop(); };
+// ================= חיבור ל-Firebase =================
+// חיבור אחד (WebSocket) לכל ההאזנות והכתיבות – בלי מגבלת חיבורים של הדפדפן, גם עם כמה לשוניות פתוחות.
+const FBV='10.12.5';
+const fbReady=(async()=>{
+  const [appM,dbM]=await Promise.all([import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-app.js`),import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-database.js`)]);
+  const app=appM.initializeApp({databaseURL:DB});
+  const db=dbM.getDatabase(app);
+  dbM.onValue(dbM.ref(db,'.info/connected'), s=>{ connected=!!s.val(); renderTop(); });
+  return {...dbM, db};
+})();
+const unsubs={}, pendingBids=new Set();
+async function stream(name, path, onData, since){
+  const F=await fbReady; if(unsubs[name]) unsubs[name]();
+  let r=F.ref(F.db,path); if(since) r=F.query(r,F.orderByChild('ko'),F.startAt(since));
+  unsubs[name]=F.onValue(r, snap=>onData(snap.val()), err=>console.warn('listen',name,err&&err.message));
 }
 function listenAll(){
-  const since=Date.now()-3*86400e3;
-  stream('fx', `${DB}/fixtures.json?orderBy=%22ko%22&startAt=${since}`, v=>{ S.fixtures=v||{}; loaded.fx=true; detectGoals(); render(); if(sheetSt) renderSheet(); });
-  // חיבור אחד לכל הנתונים הציבוריים (דפדפן מגביל ~6 חיבורים לאתר – אחרת השמירות נתקעות)
-  stream('pub', `${DB}/pub.json`, (v,path)=>{ v=v||{}; S.tables=v.tables||{}; S.standings=v.standings||null; S.revealed=v.revealed||{}; S.meta=v.meta||{};
-    if(path.startsWith('/meta')){ if(tab==='admin') render(); return; } if(!sheetSt) render(); });
+  stream('fx','fixtures', v=>{ S.fixtures=v||{}; loaded.fx=true; detectGoals(); render(); if(sheetSt) renderSheet(); }, Date.now()-3*86400e3);
+  stream('tb','pub/tables', v=>{ S.tables=v||{}; if(tab==='leagues') render(); });
+  stream('st','pub/standings', v=>{ S.standings=v; if(!sheetSt) render(); });
+  stream('rv','pub/revealed', v=>{ S.revealed=v||{}; if(tab==='games'&&!sheetSt) render(); });
+  stream('mt','pub/meta', v=>{ S.meta=v||{}; if(tab==='admin') render(); });
   listenMine();
-  if(AK) stream('av', `${DB}/adminView/${AK}.json`, v=>{ AV=v||{}; if(tab==='admin') render(); });
+  if(AK) stream('av',`adminView/${AK}`, v=>{ AV=v||{}; if(tab==='admin') render(); });
 }
 function listenMine(){
-  if(SEC) stream('me', `${DB}/acct/${SEC}.json`, v=>{ A=v; loaded.me=true; if(!A){ SEC=null; lsSet('bb_sec',null); } else if(!A.rc && !ensureRc.busy) ensureRc(); render(); if(sheetSt) renderSheet(); });
-  else if(PENDING) stream('me', `${DB}/acct/${PENDING}.json`, v=>{ if(v){ SEC=PENDING; PENDING=null; lsSet('bb_sec',SEC); lsSet('bb_pending',null); A=v; toast('השחזור אושר! ברוך השב 🎉',true); listenMine(); } render(); });
+  if(SEC) stream('me',`acct/${SEC}`, v=>{ A=v; loaded.me=true; if(!A){ SEC=null; lsSet('bb_sec',null); } else if(!A.rc && !ensureRc.busy) ensureRc(); render(); if(sheetSt) renderSheet(); });
+  else if(PENDING) stream('me',`acct/${PENDING}`, v=>{ if(v){ SEC=PENDING; PENDING=null; lsSet('bb_sec',SEC); lsSet('bb_pending',null); A=v; toast('השחזור אושר! ברוך השב 🎉',true); listenMine(); } render(); });
 }
+async function readOnce(path){ const F=await fbReady; return Promise.race([F.get(F.ref(F.db,path)).then(s=>s.val()), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]); }
 
-// ================= כתיבה (עם ניסיון חוזר; דחייה של חוקי האבטחה לא חוזרת) =================
+// ================= כתיבה: אישור מהשרת בלבד; דחייה של חוקי האבטחה = 'denied', בלי קליטה = 'fail' =================
 async function write(method, path, body, quiet){
-  for(let i=1;i<=4;i++){
-    const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),8000);
-    try{ const r=await fetch(`${DB}/${path}.json`,{method,body:body===undefined?undefined:JSON.stringify(body),signal:ctl.signal});
-      if(r.ok) return 'ok'; if(r.status===401||r.status===403||r.status===400) return 'denied'; }
-    catch(e){} finally{ clearTimeout(t); }
-    if(i<4){ if(!quiet) toast(`אין קליטה 📶 מנסה שוב… (${i+1}/4)`,false,'err'); await new Promise(r=>setTimeout(r,1200*i)); }
-  }
-  return 'fail';
+  const F=await fbReady, r=path?F.ref(F.db,path):F.ref(F.db);
+  const op = method==='PATCH' ? F.update(r,body) : (method==='DELETE'||body===null) ? F.remove(r) : F.set(r,body);
+  const res = await Promise.race([ op.then(()=>'ok', e=>/permission/i.test(String(e&&(e.code||e.message)))?'denied':'fail'),
+                                   new Promise(x=>setTimeout(()=>x('fail'),12000)) ]);
+  if(res==='fail' && !quiet) toast('אין קליטה 📶 – לא נשמר עדיין',false,'err');
+  return res;
 }
 const SV = {'.sv':'timestamp'};
 
@@ -511,7 +509,7 @@ async function login(){
   if(v.length<2) return err.textContent='צריך לפחות 2 אותיות 🙂';
   if(/[.#$\[\]\/<>]/.test(v)) return err.textContent='בלי סימנים מיוחדים בשם 🙂';
   const nk=nkOf(v), btn=document.getElementById('loginBtn'); btn.disabled=true; btn.textContent='בודק...';
-  let taken=null; try{ taken=await (await fetch(`${DB}/names/${encodeURIComponent(nk)}.json`)).json(); }catch(e){ btn.disabled=false; btn.textContent='יאללה 🔥'; return err.textContent='אין חיבור – נסה שוב'; }
+  let taken=null; try{ taken=await readOnce(`names/${nk}`); }catch(e){ btn.disabled=false; btn.textContent='יאללה 🔥'; return err.textContent='אין חיבור – נסה שוב'; }
   if(taken){ btn.disabled=false; btn.textContent='יאללה 🔥'; lastTakenNk=nk;
     return err.innerHTML=`השם הזה כבר תפוס, נסה כינוי אחר<div style="margin-top:10px;font-weight:700;color:#fff">זה החשבון שלך ממכשיר אחר?</div>
       <div style="margin-top:6px;display:flex;flex-direction:column;gap:6px"><a href="#" style="color:var(--y)" onclick="loginWithCode();return false">🔑 כניסה עם קוד הכניסה שלך</a>
@@ -546,7 +544,7 @@ async function loginWithCode(){
   const raw=prompt('הקלד את קוד הכניסה האישי (12 תווים):'); if(!raw) return;
   const c=raw.toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!/^[A-HJ-NP-Z2-9]{12}$/.test(c)) return toast('קוד לא תקין – 12 תווים, אותיות ומספרים',false,'err',3500);
-  let sec=null; try{ sec=await (await fetch(`${DB}/rc/${c}.json`)).json(); }catch(e){ return toast('אין חיבור – נסה שוב',false,'err'); }
+  let sec=null; try{ sec=await readOnce(`rc/${c}`); }catch(e){ return toast('אין חיבור – נסה שוב',false,'err'); }
   if(!sec) return toast('הקוד לא נמצא 🤔 בדוק שהקלדת נכון',false,'err',3500);
   SEC=sec; lsSet('bb_sec',sec); PENDING=null; lsSet('bb_pending',null); tab='games'; listenMine(); toast('נכנסת לחשבון שלך ✅',true);
 }
@@ -601,14 +599,15 @@ function buildBet(it){   // בונה את העדכון לפי היתרה העד�
 async function sendBet(it, quiet){
   for(let attempt=0; attempt<3; attempt++){
     if(!A||!A.wallet) return 'fail';
-    if(A.bets&&A.bets[it.bid]) return 'ok';                       // כבר נשמר
+    if(A.bets&&A.bets[it.bid]&&connected&&!pendingBids.has(it.bid)) return 'ok';   // כבר נשמר ואושר
     const {upd,f,o}=buildBet(it);
     if(!f||isLocked(f)) return 'locked';
     if(!o) return 'noodds';
     if(it.s>A.wallet.bal) return 'nofunds';
-    const r=await write('PATCH','',upd, quiet);
+    pendingBids.add(it.bid); const r=await write('PATCH','',upd, true); if(r!=='fail') pendingBids.delete(it.bid);
     if(r==='ok') return 'ok';
     if(r==='fail') return 'fail';
+    try{ if(await readOnce(`acct/${SEC}/bets/${it.bid}`)){ pendingBids.delete(it.bid); return 'ok'; } }catch(e){}   // אולי כבר נשמר בשליחה קודמת
     await new Promise(x=>setTimeout(x,1500));                    // נדחה (למשל הרובוט עדכן יתרה באותו רגע) – מנסה שוב עם נתונים עדכניים
   }
   return 'denied';

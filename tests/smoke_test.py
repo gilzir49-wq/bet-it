@@ -40,6 +40,9 @@ try:
         check(True, 'משתמש חדש נכנס וקיבל 500')
         pg.wait_for_selector('#final.show', timeout=10000); code = pg.locator('#final div[style*="letter-spacing"]').inner_text().replace('-', '').strip()
         check(len(code) == 12, 'הוצג קוד כניסה אישי'); pg.click('#final .btn.sec')
+        extra = [pg.context.new_page() for _ in range(3)]                 # עוד 3 לשוניות פתוחות – השמירה חייבת לעבוד
+        for x in extra: x.goto('http://127.0.0.1:8765/index.html')
+        pg.bring_to_front()
         pg.evaluate(f"() => {{ dayF = S.fixtures['{E}'].day; render(); }}")
         pg.wait_for_selector(f"button.ob[onclick*=\"'{E}','W','1'\"]", timeout=15000)
         pg.click(f"button.ob[onclick*=\"'{E}','W','1'\"]")
