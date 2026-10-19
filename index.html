@@ -23,6 +23,12 @@ header .sub{font-size:12px;font-weight:700;opacity:.8;position:relative;z-index:
 .topbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;padding-bottom:8px}
 .bal{background:#000;border:2px solid var(--y);color:var(--y);border-radius:99px;padding:5px 12px;font-weight:900;font-size:16px;white-space:nowrap}
 .bal small{color:var(--mut);font-weight:700;font-size:11px}
+.bal{position:relative;transition:background .3s,border-color .3s}
+.bal.lv small{color:#ff8080;animation:pulse 1.4s infinite}
+.bal.up{background:rgba(34,197,94,.3);border-color:var(--g)}.bal.dn{background:rgba(239,68,68,.3);border-color:var(--r)}
+.delta{position:fixed;z-index:96;font-weight:900;font-size:22px;pointer-events:none;animation:floatUp 1.8s ease-out forwards;text-shadow:0 2px 8px #000}
+.delta.up{color:var(--g)}.delta.dn{color:var(--r)}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0) scale(.7)}15%{opacity:1;transform:translate(-50%,-6px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-60px) scale(1)}}
 .pill{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:5px 10px;font-size:12.5px;font-weight:700;white-space:nowrap}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mut);margin-inline-end:5px}.dot.on{background:var(--g);box-shadow:0 0 8px var(--g)}
 h2{font-weight:900;font-size:20px;margin:16px 0 6px}
@@ -330,12 +336,26 @@ const jokerUsed = (p, dk) => Object.values((p&&p.bets)||{}).some(b=>b.j && S.fix
 // ================= רינדור =================
 function ad(){ adIdx=(adIdx+1)%ADS.length; return `<div class="ad">📢 ${ADS[adIdx]}</div>`; }
 function liveTag(f){ const m=(f.min||'').trim(); const t=!m?'':m==='HT'?' · מחצית':` · <bdi dir="ltr">${esc(m.replace(/'$/,''))}'</bdi>`; return `<span class="live">חי${t}</span>`; }
+// יתרה חיה: כולל הימורים שכרגע זוכים במשחקים שרצים – עולה ויורדת עם כל גול
+let shownBal=null, balAnim=null;
+function animateBal(to){
+  if(shownBal===null || !me){ shownBal=to; return; }
+  const from=shownBal; if(Math.round(from)===Math.round(to)) { shownBal=to; return; }
+  const el=document.getElementById('bal'); const d=to-from;
+  if(el){ el.classList.remove('up','dn'); el.classList.add(d>0?'up':'dn'); setTimeout(()=>el&&el.classList.remove('up','dn'),1600);
+    const r=el.getBoundingClientRect(), f=document.createElement('div'); f.className='delta '+(d>0?'up':'dn'); f.textContent=(d>0?'+':'')+fmt(d)+' 🪙';
+    f.style.left=(r.left+r.width/2)+'px'; f.style.top=(r.bottom+4)+'px'; document.body.appendChild(f); setTimeout(()=>f.remove(),1900); }
+  cancelAnimationFrame(balAnim); const t0=performance.now();
+  (function step(t){ const k=Math.min(1,(t-t0)/900), v=from+(to-from)*(1-Math.pow(1-k,3)); shownBal=v;
+    const n=document.getElementById('balV'); if(n) n.textContent=fmt(v); if(k<1) balAnim=requestAnimationFrame(step); else shownBal=to; })(t0);
+}
 function renderTop(){
   const p=myP(), a=p?account(p):null;
   document.getElementById('top').innerHTML = `
     <span class="pill"><span class="dot ${connected?'on':''}"></span>${connected?'חי':'מתחבר…'}</span>
-    ${a?`<span class="bal" onclick="go('mine')">🪙 ${fmt(a.avail)} <small>זמין</small></span>`:''}
+    ${a?`<span class="bal ${a.value!==a.avail?'lv':''}" id="bal" onclick="go('mine')">🪙 <span id="balV">${fmt(shownBal??a.value)}</span> <small>${a.value!==a.avail?'🔴 לייב':'יתרה'}</small></span>`:''}
     <span class="pill" onclick="go('table')">🏦 ${fmt(bank())}</span>`;
+  if(a) animateBal(a.value); else shownBal=null;
 }
 function fxCard(f){
   const L=isLocked(f), p=myP(), mine=Object.entries((p&&p.bets)||{}).filter(([id,b])=>b.e===f.id);
@@ -386,7 +406,8 @@ function viewMine(){
   const a=account(p), bets=Object.entries(p.bets||{}).map(([id,b])=>({id,...b,f:S.fixtures[b.e]})).sort((x,y)=>(y.f?y.f.ko:0)-(x.f?x.f.ko:0));
   const open=bets.filter(b=>{const s=betState(b);return s==='open'||s.startsWith('live')}), done=bets.filter(b=>!open.includes(b));
   let h = `<h2>🧾 ההימורים של ${esc(me)}</h2>
-    <div class="sum"><div><b>${fmt(a.avail)}</b><span>🪙 זמין להימור</span></div><div><b>${fmt(a.value)}</b><span>💼 שווי כולל (חי)</span></div><div><b>${a.won}/${a.settled}</b><span>✅ הימורים שזכו</span></div></div>
+    <div class="sum"><div><b>${fmt(a.avail)}</b><span>🪙 זמין להימור</span></div><div><b>${fmt(a.value)}</b><span>${a.value!==a.avail?'🔴 יתרה לייב':'💼 יתרה כוללת'}</span></div><div><b>${a.won}/${a.settled}</b><span>✅ הימורים שזכו</span></div></div>
+    ${a.value!==a.avail?`<div class="card" style="text-align:center;border-color:var(--r)">🔴 <b>יתרה לייב: ${fmt(a.value)} 🪙</b><br><span class="muted">ככה תיראה היתרה שלך אם המשחקים ייגמרו בתוצאה של עכשיו. כל גול מזיז אותה!</span></div>`:''}
     <div class="muted" style="margin-top:6px">כל יום שלישי מקבלים ${WEEKLY_BONUS} ז'יטונים מקופת הבנק 🎁 – גם מי שהפסיד הכול חוזר למשחק</div>`;
   if(a.avail<=0 && !open.length) h += `<div class="card" style="text-align:center">😵 פשטת רגל! ביום שלישי תקבל ${WEEKLY_BONUS} ז'יטונים.<br>בינתיים – <b>20 ברפיז ב-BUX</b></div>`;
   const row = b => { const st=betState(b), f=b.f; const cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
@@ -576,9 +597,12 @@ function detectGoals(){
 }
 function showGoal(f){
   const F0=prevFixtures(), prev=F0?rankMap('week',F0):{}, up=standings('week').filter(r=>prev[r.k]!=null&&prev[r.k]>r.rank).length;
-  const p=myP(), mineOn=p&&Object.values(p.bets||{}).some(b=>b.e===f.id);
+  const p=myP(), myB=p?Object.values(p.bets||{}).filter(b=>b.e===f.id):[];
+  let mineMsg='';
+  if(myB.length){ const win=myB.filter(b=>betState(b)==='live-win'), lose=myB.length-win.length;
+    mineMsg = win.length ? `<br>🤑 ההימור שלך כרגע זוכה! +${fmt(win.reduce((t,b)=>t+payout(b)-b.s,0))} 🪙` : `<br>😬 ההימור שלך כרגע מפסיד – יש עוד זמן!`; }
   const el=document.getElementById('goalbar');
-  el.innerHTML=`<span class="bg">⚽ גול!</span>${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} <bdi dir="ltr">${f.h}–${f.a}</bdi> ${esc(he(f.away))}${up?` · ${up} עלו בטבלה`:''}${mineOn?'<br>💰 יש לך הימור על המשחק הזה!':''}`;
+  el.innerHTML=`<span class="bg">⚽ גול!</span>${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} <bdi dir="ltr">${f.h}–${f.a}</bdi> ${esc(he(f.away))}${up?` · ${up} עלו בטבלה`:''}${mineMsg}`;
   el.classList.add('show'); try{ navigator.vibrate&&navigator.vibrate([120,60,120]) }catch(e){}
   clearTimeout(goalTimer); goalTimer=setTimeout(()=>el.classList.remove('show'),6000);
 }
