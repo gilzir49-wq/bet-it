@@ -82,7 +82,7 @@ def calc_odds(table, home, away):
             else: p2 += p
             if i <= 4 and j <= 4: cs[f'{i}-{j}'] = p
     o = lambda p, lo=1.05, hi=15: round(min(hi, max(lo, 1 / (p * MARGIN))), 2)
-    return {'1': o(p1), 'X': o(px), '2': o(p2), 'cs': {k: o(p, 3.0, 80) for k, p in cs.items()}}
+    return {'1': o(p1), 'X': o(px), '2': o(p2), 'cs': {k: o(p, 3.0, 80) for k, p in cs.items()}, 'lam': {'h': round(lh, 3), 'a': round(la, 3)}}
 
 # ---------- מצב ----------
 fixtures, tables = {}, {}
@@ -128,7 +128,7 @@ def refresh():
                 if stt == 'postp': nf['st'] = 'postp'
                 elif nf.get('st') == 'postp' and stt == 'none': nf['st'] = 'none'
             if nf.get('st') == 'none' and ko - now > LOCK_MS and rows:
-                nf['odds'] = calc_odds(rows, nf['home'], nf['away'])
+                od = calc_odds(rows, nf['home'], nf['away']); nf['lam'] = od.pop('lam'); nf['odds'] = od   # lam = צפי שערים (לסיכוי זכייה לייב)
             if nf.get('st') == 'finished' and not nf.get('inT') and nf.get('bh') is not None:
                 p = pld_of(lg, nf['home'])
                 if p is not None and p > nf['bh']: nf['inT'] = True

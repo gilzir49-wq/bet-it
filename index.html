@@ -84,6 +84,7 @@ h2{font-weight:900;font-size:21px;margin:18px 2px 8px;letter-spacing:-.2px}
 .who{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
 .who summary{cursor:pointer;font-weight:700;font-size:13px;color:#cfe0d4;list-style:none}
 .wr{display:flex;justify-content:space-between;font-size:13px;padding:6px 2px;border-bottom:1px solid var(--line)}
+.pct{display:inline-block;min-width:44px;text-align:center;border-radius:99px;padding:1px 8px;font-weight:900;background:linear-gradient(90deg,rgba(52,210,123,.35) var(--p),rgba(255,255,255,.08) var(--p));color:#fff}
 .st-won{color:var(--em)}.st-lost{color:var(--red)}.st-open{color:var(--mut)}.st-live{color:var(--gold)}
 /* גיליון הימור */
 #sheetBg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:40;display:none}
@@ -321,6 +322,16 @@ function betState(bid, b){
   if(f.st==='live') return legWins(f,b)?'live-win':'live-lose';
   return 'open';
 }
+// סיכוי זכייה לייב: לפי התוצאה עכשיו, הדקה, וצפי השערים של שתי הקבוצות (מודל פואסון)
+function minuteOf(f){ const m=(f.min||'').trim(); if(m==='HT') return 45; const n=parseInt(m,10); return isNaN(n)?45:Math.min(90,n); }
+const pois=(k,l)=>{ let p=Math.exp(-l); for(let i=1;i<=k;i++) p*=l/i; return p; };
+function winProb(f,b){
+  if(!f||f.st!=='live') return null;
+  const lam=f.lam||{h:1.4,a:1.1}, r=Math.max(0,(90-minuteOf(f))/90), lh=lam.h*r, la=lam.a*r; let p=0;
+  for(let i=0;i<=8;i++) for(let j=0;j<=8;j++){ const q=pois(i,lh)*pois(j,la); if(legWins({h:f.h+i,a:f.a+j},b)) p+=q; }
+  return Math.max(0,Math.min(1,p));
+}
+const pctTag = p => p==null?'':`<span class="pct" style="--p:${Math.round(p*100)}%">${Math.round(p*100)}%</span>`;
 const myBets = () => Object.entries((A&&A.bets)||{});
 // היתרה האמיתית מגיעה מהשרת; "לייב" = כאילו המשחקים נגמרים עכשיו (לתצוגה בלבד)
 function account(){
@@ -335,7 +346,7 @@ function account(){
 const jokerUsed = dk => !!(A && A.jokers && A.jokers[dk]);
 
 // ================= רינדור =================
-function ad(){ adIdx=(adIdx+1)%ADS.length; return `<div class="ad"><span style="font-size:18px">🏋️</span><span>${ADS[adIdx]}</span></div>`; }
+function ad(){ return ''; }   // הוסר לבקשת גל – מקום לתוכן בעל ערך בהמשך
 function liveTag(f){ const m=(f.min||'').trim(); const t=!m?'':m==='HT'?' · מחצית':` · <bdi dir="ltr">${esc(m.replace(/'$/,''))}'</bdi>`; return `<span class="live">חי${t}</span>`; }
 let shownBal=null, balAnim=null;
 function animateBal(to){
@@ -357,7 +368,9 @@ function renderTop(){
     ${a?`<span class="bal ${a.value!==a.avail?'lv':''}" id="bal" onclick="go('mine')">🪙 <span id="balV">${fmt(shownBal??a.value)}</span>${a.value!==a.avail?'<small>לייב</small>':''}</span>`:''}`;
   if(a) animateBal(a.value); else shownBal=null;
 }
-function stText(st,b){ return st==='won'?`✅ +${fmt(payout(b)-b.s)}`:st==='lost'?'❌ הפסד':st==='live-win'?'🟢 כרגע זוכה':st==='live-lose'?'🔴 כרגע מפסיד':st==='void'?'↩️ הוחזר':'⏳ פתוח'; }
+function stText(st,b,f){ const p=f?winProb(f,b):null;
+  if(p!=null) return `${st==='live-win'?'🟢':'🔴'} סיכוי ${pctTag(p)}`;
+  return st==='won'?`✅ +${fmt(payout(b)-b.s)}`:st==='lost'?'❌ הפסד':st==='live-win'?'🟢 כרגע זוכה':st==='live-lose'?'🔴 כרגע מפסיד':st==='void'?'↩️ הוחזר':'⏳ פתוח'; }
 function fxCard(f){
   const L=isLocked(f), mine=myBets().filter(([id,b])=>b.e===f.id), o=f.odds||{}, lg=LEAGUES[f.lg]||{};
   const mid = f.st==='live'||f.st==='finished' ? `<div class="score">${f.h} - ${f.a}</div>${f.st==='live'?liveTag(f):'<span class="fin">הסתיים</span>'}`
@@ -371,11 +384,11 @@ function fxCard(f){
   if(f.st==='none') h+=`<div class="odds">${ob('1',esc(he(f.home)))}${ob('X','תיקו')}${ob('2',esc(he(f.away)))}</div>
     <button class="csb" ${L||!o.cs||!A?'disabled':''} onclick="openBet('${f.id}','CS','1-0')">${mine.length?'➕ הוסף הימור על תוצאה מדויקת':'🎯 הימור על תוצאה מדויקת'}</button>`;
   mine.forEach(([id,b])=>{ const st=betState(id,b), cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
-    h+=`<div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)}</span><span>${stText(st,b)}</span></div>`;
+    h+=`<div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)}</span><span>${stText(st,b,f)}</span></div>`;
     if(!L) h+=`<div style="text-align:left;margin-top:2px"><a href="#" class="muted" onclick="cancelBet('${id}');return false">בטל הימור</a></div>`; });
   const rv=Object.values(S.revealed[f.id]||{});
   if(rv.length) h+=`<details class="who"><summary>👀 ${rv.length} הימורים על המשחק – מי הימר מה</summary>${rv.map(b=>{ const st=b.st;
-      return `<div class="wr"><span>${b.j?'🃏 ':''}${esc(b.n)}</span><span>${esc(pickLabel(f,b))} · ${fmt(b.s)} <span class="st-${st.startsWith('live')?'live':st==='void'?'open':st}">${stText(st,b)}</span></span></div>`}).join('')}</details>`;
+      return `<div class="wr"><span>${b.j?'🃏 ':''}${esc(b.n)}</span><span>${esc(pickLabel(f,b))} · ${fmt(b.s)} <span class="st-${st.startsWith('live')?'live':st==='void'?'open':st}">${stText(st,b,f)}</span></span></div>`}).join('')}</details>`;
   else if(!L) h+=`<div class="muted" style="margin-top:8px">🔒 ההימורים של כולם ייחשפו בנעילה</div>`;
   return h+`</div>`;
 }
@@ -408,7 +421,7 @@ function viewMine(){
   const row=b=>{ const st=betState(b.id,b), f=b.f, cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
     return `<div class="card" style="padding:10px"><div class="muted">${f?`${LEAGUES[f.lg]?.f||''} ${dayLabel(dayKey(f.ko))} ${hm(f.ko)} · ${esc(he(f.home))} – ${esc(he(f.away))}`:'משחק'}
       ${f&&(f.st==='live'||f.st==='finished')?` · <b style="color:#fff;direction:rtl;unicode-bidi:isolate">${f.h} - ${f.a}</b> ${f.st==='live'?liveTag(f):''}`:''}</div>
-      <div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)} = ${fmt(payout(b))}</span><span>${stText(st,b)}</span></div>
+      <div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)} = ${fmt(payout(b))}</span><span>${stText(st,b,f)}</span></div>
       ${f&&!isLocked(f)?`<div style="text-align:left;margin-top:4px"><a href="#" class="muted" onclick="cancelBet('${b.id}');return false">בטל הימור</a></div>`:''}</div>`; };
   h+=`<h2>⏳ פתוחים (${open.length})</h2>`+(open.length?open.map(row).join(''):`<div class="empty"><div class="e">🎰</div>אין הימורים פתוחים. <a href="#" style="color:var(--y)" onclick="go('games');return false">ללוח המשחקים</a></div>`);
   h+=ad()+`<h2>📜 היסטוריה (${done.length})</h2>`+done.slice(0,40).map(row).join('');
