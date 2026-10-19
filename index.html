@@ -989,7 +989,7 @@ function showGoal(f){
   if(mine.length){ const win=mine.filter(([id,b])=>betState(id,b)==='live-win');
     msg=win.length?`<br>🤑 ההימור שלך כרגע זוכה! +${fmt(win.reduce((t,[id,b])=>t+payout(b)-b.s,0))} 🪙`:'<br>😬 ההימור שלך כרגע מפסיד – יש עוד זמן!'; }
   const el=document.getElementById('goalbar');
-  el.innerHTML=`<span class="bg">⚽ גול!</span>${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} <bdi dir="ltr">${f.h}–${f.a}</bdi> ${esc(he(f.away))}${msg}`;
+  el.innerHTML=`<span class="bg">⚽ גול!</span>${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} <bdi dir="rtl">${f.h}–${f.a}</bdi> ${esc(he(f.away))}${msg}`;
   el.classList.add('show'); try{ navigator.vibrate&&navigator.vibrate([120,60,120]) }catch(e){}
   clearTimeout(goalTimer); goalTimer=setTimeout(()=>el.classList.remove('show'),6000);
 }
