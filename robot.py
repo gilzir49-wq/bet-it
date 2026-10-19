@@ -2,7 +2,7 @@
 # מביא משחקים (היום + 3 ימים) מ-4 ליגות, יחסים, תוצאות לייב וטבלאות; סוגר הימורים ומשלם זכיות;
 # מחלק מענק שבועי; מפרסם טבלאות דירוג, קופת בנק והימורים שנחשפו; מבצע פעולות מנהל.
 # כותב ל-Firebase עם מפתח שירות (נשמר בכספת של GitHub, לא בקוד).
-import json, time, math, os, sys, datetime, hashlib, urllib.request, urllib.error
+import json, time, math, os, sys, copy, threading, datetime, hashlib, urllib.request, urllib.error
 from zoneinfo import ZoneInfo
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
@@ -19,6 +19,7 @@ RUN_FOR = 5 * 3600 + 40 * 60
 MARGIN = 1.07
 START, WEEKLY, BANK_START = 500, 50, 10000
 LOCK_MS = 120000
+REVEAL_MS = 4 * 86400 * 1000   # 'מי הימר מה' נשמר לכולם רק 4 ימים אחורה
 
 # ---------- הרשאות ----------
 _info = json.loads(os.environ['FIREBASE_SA']) if os.environ.get('FIREBASE_SA') else json.load(open(os.path.expanduser('~/.config/buxbet/sa.json')))
@@ -29,6 +30,9 @@ def tok():
     return _creds.token
 
 def fb(path, method='GET', body=None, etag=False, if_match=None):
+    if method == 'GET' and not etag and path in MIRRORS:          # נתיב גדול שיש לו מראה חיה – בלי להוריד שוב מהשרת
+        snap = MIRRORS[path].snapshot()
+        if snap is not None: return snap
     if method == 'PUT' and body is None: method = 'DELETE'      # כתיבת "ריק" = מחיקה
     h = {'Authorization': 'Bearer ' + tok(), 'Content-Type': 'application/json'}
     if etag: h['X-Firebase-ETag'] = 'true'
@@ -42,6 +46,53 @@ def fb(path, method='GET', body=None, etag=False, if_match=None):
     except urllib.error.HTTPError as e:
         if e.code == 412: return 'CONFLICT'
         raise
+
+# ---------- מראה חיה (סקייל) ----------
+# במקום להוריד את כל החשבונות כל 20 שניות (10,000 שחקנים = מאות מגה בכל סבב), הרובוט פותח ערוץ האזנה אחד
+# (REST streaming) ומקבל פעם אחת את הכול ואחר כך רק שינויים. אם הערוץ נופל/שותק – חוזרים אוטומטית לקריאה רגילה.
+MIRRORS = {}
+class Mirror:
+    STALE = 120                                                  # Firebase שולח keep-alive כל ~30 שניות
+    def __init__(self, path):
+        self.path, self.data, self.ready, self.last = path, None, False, 0.0
+        self.lock = threading.Lock(); MIRRORS[path] = self
+        threading.Thread(target=self._run, daemon=True).start()
+    def snapshot(self):
+        with self.lock:
+            if not self.ready or time.time() - self.last > self.STALE: return None
+            return copy.deepcopy(self.data) if self.data is not None else {}
+    @staticmethod
+    def _set(node, ks, val):                                     # כמו Firebase: ריק = מחיקה, וצמתים ריקים נעלמים
+        if not ks: return val if val not in ({}, None) else None
+        node = node if isinstance(node, dict) else {}
+        child = Mirror._set(node.get(ks[0]), ks[1:], val)
+        if child is None: node.pop(ks[0], None)
+        else: node[ks[0]] = child
+        return node or None
+    def _apply(self, kind, msg):
+        ks = [k for k in (msg.get('path') or '/').split('/') if k]; val = msg.get('data')
+        with self.lock:
+            if kind == 'put' and not ks: self.data = val if isinstance(val, dict) else None; self.ready = True; return
+            if not self.ready: return
+            if kind == 'put': self.data = self._set(self.data, ks, val)
+            else:
+                for k, v in (val or {}).items(): self.data = self._set(self.data, ks + [x for x in k.split('/') if x], v)
+    def _run(self):
+        while True:
+            try:
+                req = urllib.request.Request(f'{DB}/{self.path}.json', headers={'Authorization': 'Bearer ' + tok(), 'Accept': 'text/event-stream'})
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    kind = None
+                    for raw in r:
+                        line = raw.decode('utf-8').rstrip('\r\n')
+                        if line.startswith('event:'): kind = line[6:].strip()
+                        elif line.startswith('data:'):
+                            self.last = time.time()
+                            if kind in ('put', 'patch'): self._apply(kind, json.loads(line[5:]))
+                            elif kind in ('cancel', 'auth_revoked'): break       # הטוקן פג (כל שעה) – מתחברים מחדש
+            except Exception as ex: print('mirror', self.path, repr(ex), flush=True)
+            with self.lock: self.ready = False
+            time.sleep(3)
 
 def ls(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -60,7 +111,7 @@ def esd_ms(esd):
 def status_of(eps):
     eps = (eps or '').strip()
     if eps in ('FT', 'AET', 'AP', 'Ended'): return 'finished'
-    if eps in ('Postp.', 'Canc.', 'Abd.', 'Susp.'): return 'postp'
+    if eps in ('Postp.', 'Canc.', 'Abd.', 'Susp.', 'Aband.', 'Abd', 'Canc', 'Cancl.', 'Postp', 'AWD', 'WO', 'Awarded'): return 'postp'
     if eps in ('NS', '', 'TBA', 'Delayed'): return 'none'
     return 'live'
 
@@ -113,27 +164,30 @@ def refresh():
     for lg, (c, s) in LEAGUES.items():
         try: st = ls(f'{LS}/stage/soccer/{c}/{s}/0?MD=1')['Stages'][0]
         except Exception as ex: print('stage error', lg, ex, flush=True); continue
-        rows = table_rows(st)
+        try: rows = table_rows(st)
+        except Exception as ex: print('table error', lg, repr(ex), flush=True); rows = []
         if rows: tables[lg] = rows; upd[f'pub/tables/{lg}'] = {'rows': rows, 'at': now}
         for e in st.get('Events', []):
-            eid = str(e['Eid']); ko = esd_ms(e['Esd']); f = fixtures.get(eid)
-            if not f and not (lo <= ko < hi): continue
-            nf = dict(f or {})
-            nf.update({'lg': lg, 'home': e['T1'][0]['Nm'], 'away': e['T2'][0]['Nm'], 'hi': e['T1'][0].get('Img') or '',
-                       'ai': e['T2'][0].get('Img') or '', 'ko': ko, 'day': day_key(ko)})
-            stt = status_of(e.get('Eps'))
-            if not f:
-                nf.update({'st': stt, 'h': int(e.get('Tr1') or 0), 'a': int(e.get('Tr2') or 0)})
-                if stt == 'finished': nf['inT'] = True
-            elif not nf.get('manual'):
-                if stt == 'postp': nf['st'] = 'postp'
-                elif nf.get('st') == 'postp' and stt == 'none': nf['st'] = 'none'
-            if nf.get('st') == 'none' and ko - now > LOCK_MS and rows:
-                od = calc_odds(rows, nf['home'], nf['away']); nf['lam'] = od.pop('lam'); nf['odds'] = od   # lam = צפי שערים (לסיכוי זכייה לייב)
-            if nf.get('st') == 'finished' and not nf.get('inT') and nf.get('bh') is not None:
-                p = pld_of(lg, nf['home'])
-                if p is not None and p > nf['bh']: nf['inT'] = True
-            if nf != f: fixtures[eid] = nf; upd[f'fixtures/{eid}'] = nf
+            try:
+                eid = str(e['Eid']); ko = esd_ms(e['Esd']); f = fixtures.get(eid)
+                if not f and not (lo <= ko < hi): continue
+                nf = dict(f or {})
+                nf.update({'lg': lg, 'home': e['T1'][0]['Nm'], 'away': e['T2'][0]['Nm'], 'hi': e['T1'][0].get('Img') or '',
+                           'ai': e['T2'][0].get('Img') or '', 'ko': ko, 'day': day_key(ko)})
+                stt = status_of(e.get('Eps'))
+                if not f:
+                    nf.update({'st': stt, 'h': int(e.get('Tr1') or 0), 'a': int(e.get('Tr2') or 0)})
+                    if stt == 'finished': nf['inT'] = True
+                elif not nf.get('manual'):
+                    if stt == 'postp': nf['st'] = 'postp'
+                    elif nf.get('st') == 'postp' and stt == 'none': nf['st'] = 'none'
+                if nf.get('st') == 'none' and ko - now > LOCK_MS and rows:
+                    od = calc_odds(rows, nf['home'], nf['away']); nf['lam'] = od.pop('lam'); nf['odds'] = od   # lam = צפי שערים (לסיכוי זכייה לייב)
+                if nf.get('st') == 'finished' and not nf.get('inT') and nf.get('bh') is not None:
+                    p = pld_of(lg, nf['home'])
+                    if p is not None and p > nf['bh']: nf['inT'] = True
+                if nf != f: fixtures[eid] = nf; upd[f'fixtures/{eid}'] = nf
+            except Exception as ex: print('event error', lg, e.get('Eid'), repr(ex), flush=True)   # משחק אחד שבור לא עוצר את הבנק
     if upd: fb('', 'PATCH', upd)
     return sum(1 for k in upd if k.startswith('fixtures/'))
 
@@ -143,24 +197,28 @@ def live_tick():
             and f['ko'] <= now + 60000 and f['ko'] > now - 5 * 3600 * 1000]
     if not need: return {}
     ev = {}
-    for dd in sorted({datetime.datetime.fromtimestamp(fixtures[e]['ko'] / 1000, datetime.timezone.utc).strftime('%Y%m%d') for e in need}):
-        for s in ls(f'{LS}/date/soccer/{dd}/0?MD=1').get('Stages', []):
-            for e in s.get('Events', []): ev[str(e['Eid'])] = e
+    try:
+        for dd in sorted({datetime.datetime.fromtimestamp(fixtures[e]['ko'] / 1000, datetime.timezone.utc).strftime('%Y%m%d') for e in need}):
+            for s in ls(f'{LS}/date/soccer/{dd}/0?MD=1').get('Stages', []):
+                for e in s.get('Events', []): ev[str(e['Eid'])] = e
+    except Exception as ex: print('livescore error', repr(ex), flush=True); return {}   # בלי LiveScore – ממשיכים לסגור הימורים ולבצע פעולות מנהל
     upd, prev = {}, {}
     for eid in need:
         e = ev.get(eid)
         if not e: continue
-        f = fixtures[eid]; st = status_of(e.get('Eps'))
-        h = int(e.get('Tr1') or 0) if st in ('live', 'finished') else 0
-        a = int(e.get('Tr2') or 0) if st in ('live', 'finished') else 0
-        nf = dict(f)
-        if st == 'live' and f.get('bh') is None: nf['bh'] = pld_of(f['lg'], f['home']); nf['ba'] = pld_of(f['lg'], f['away'])
-        if (h, a, st) != (f.get('h'), f.get('a'), f.get('st')): prev[eid] = {'h': f.get('h', 0), 'a': f.get('a', 0), 'st': f.get('st')}
-        nf.update({'st': st, 'h': h, 'a': a})
-        if st == 'live': nf['min'] = (e.get('Eps') or '').strip()
-        else: nf.pop('min', None)
-        if st == 'finished' and nf.get('odds'): nf['odds'] = {k: v for k, v in nf['odds'].items() if k != 'cs'}
-        if nf != f: fixtures[eid] = nf; upd[f'fixtures/{eid}'] = nf
+        try:
+            f = fixtures[eid]; st = status_of(e.get('Eps'))
+            h = int(e.get('Tr1') or 0) if st in ('live', 'finished') else 0
+            a = int(e.get('Tr2') or 0) if st in ('live', 'finished') else 0
+            nf = dict(f)
+            if st == 'live' and f.get('bh') is None: nf['bh'] = pld_of(f['lg'], f['home']); nf['ba'] = pld_of(f['lg'], f['away'])
+            if (h, a, st) != (f.get('h'), f.get('a'), f.get('st')): prev[eid] = {'h': f.get('h', 0), 'a': f.get('a', 0), 'st': f.get('st')}
+            nf.update({'st': st, 'h': h, 'a': a})
+            if st == 'live': nf['min'] = (e.get('Eps') or '').strip()
+            else: nf.pop('min', None)
+            if st == 'finished' and nf.get('odds'): nf['odds'] = {k: v for k, v in nf['odds'].items() if k != 'cs'}
+            if nf != f: fixtures[eid] = nf; upd[f'fixtures/{eid}'] = nf
+        except Exception as ex: print('live event error', eid, repr(ex), flush=True)   # תוצאה לא קריאה – לא סוגרים לפיה
     if upd: fb('', 'PATCH', upd)
     return prev
 
@@ -169,7 +227,8 @@ sign = lambda n: (n > 0) - (n < 0)
 def wins(f, b):
     if b['m'] == 'CS': return f"{f['h']}-{f['a']}" == b['p']
     return {'1': 1, 'X': 0, '2': -1}[b['p']] == sign(f['h'] - f['a'])
-def payout(b): return round(b['s'] + 2 * (b['s'] * b['o'] - b['s'])) if b.get('j') else round(b['s'] * b['o'])
+jsround = lambda x: int(math.floor(x + 0.5))   # בדיוק כמו Math.round באתר – השחקן מקבל את מה שהוצג לו
+def payout(b): return jsround(b['s'] + 2 * (b['s'] * b['o'] - b['s'])) if b.get('j') else jsround(b['s'] * b['o'])
 def state(b, F=None):
     f = (F or fixtures).get(b['e'])
     if not f: return 'open'
@@ -244,7 +303,7 @@ def publish(accts, prev_fx):
             f = fixtures.get(b['e']); s = settled.get(bid); st = s['st'] if s else state(b)
             if st in ('lost', 'live-lose'): bank += b['s']
             elif st in ('won', 'live-win'): bank -= payout(b) - b['s']
-            if f and (f['st'] != 'none' or now >= f['ko'] - LOCK_MS):           # נחשף רק אחרי הנעילה
+            if f and (f['st'] != 'none' or now >= f['ko'] - LOCK_MS) and f['ko'] > now - REVEAL_MS:   # נחשף רק אחרי הנעילה; ישנים לא נשלחים לכולם
                 revealed.setdefault(b['e'], {})[f"{a['pid']}_{bid}"] = {'n': a['name'], 'm': b['m'], 'p': b['p'], 's': b['s'], 'j': bool(b.get('j')), 'st': st}
     rw, rs = ranks('wp', rows), ranks('v', rows)
     if prev_fx:   # חצים: הדירוג לפני השינוי האחרון בתוצאות
@@ -271,6 +330,8 @@ def publish(accts, prev_fx):
     if published.get('profiles') != json.dumps(profiles, sort_keys=True): upd['pub/profiles'] = profiles
     for e, v in revealed.items():
         if published.get('rv' + e) != json.dumps(v, sort_keys=True): upd[f'pub/revealed/{e}'] = v
+    for k in [k for k in published if k.startswith('rv') and k[2:] not in revealed]:
+        upd[f'pub/revealed/{k[2:]}'] = None; published.pop(k)       # משחק ישן – יוצא מהרשימה שכל טלפון מוריד (ההימורים עצמם נשארים בחשבונות)
     if upd_cnt != 'same': upd['pub/cnt'] = upd_cnt or None; published['cnt'] = json.dumps(cnt, sort_keys=True)
     if upd:
         fb('', 'PATCH', upd)
@@ -302,11 +363,13 @@ def leagues_tick(accts):
                     if pid in by_pid: fb(f'acct/{by_pid[pid]}/leagues/{lid}', 'DELETE')
             fb(f'acct/{sec}/lgkick/{lid}', 'DELETE')
     # ליגה בלי בעלים (ספאם/נטושה) – נמחקת אחרי 10 דקות
-    t = time.time()
+    t = time.time(); dead = {}
     for lid in defs:
         if lid in out and out[lid]['o']: lg_first_seen.pop(lid, None); continue
         if t - lg_first_seen.setdefault(lid, t) > 600:
-            fb(f'lgdef/{lid}', 'DELETE'); out.pop(lid, None); lg_first_seen.pop(lid, None)
+            dead[f'lgdef/{lid}'] = None; out.pop(lid, None); lg_first_seen.pop(lid, None)
+    for i in range(0, len(dead), 500):
+        fb('', 'PATCH', dict(list(dead.items())[i:i + 500]))
     out = {k: v for k, v in out.items() if v['o']}
     sig = json.dumps(out, sort_keys=True)
     if published.get('lg') != sig: fb('pub/lg', 'PUT', out or None); published['lg'] = sig
@@ -334,9 +397,12 @@ def admin_tick(accts):
                         old = by_nk.get(reqs[s2].get('nk'))
                         if not old: res = 'not found'
                         else:
-                            fb(f'acct/{s2}', 'PUT', old[1])
-                            if old[1].get('rc'): fb(f"rc/{old[1]['rc']}", 'PUT', s2)       # קוד הכניסה עובר לטלפון החדש
-                            fb(f'acct/{old[0]}', 'DELETE'); fb(f'recoverReq/{s2}', 'DELETE')
+                            cur = fb(f'acct/{old[0]}') or old[1]                          # העותק הכי עדכני (לא מהסריקה)
+                            fb(f'acct/{s2}', 'PUT', cur)
+                            if fb(f'acct/{s2}') != cur: res = 'copy failed – nothing deleted'   # העתקה → אימות → רק אז מחיקה
+                            else:
+                                if cur.get('rc'): fb(f"rc/{cur['rc']}", 'PUT', s2)       # קוד הכניסה עובר לטלפון החדש
+                                fb(f'acct/{old[0]}', 'DELETE'); fb(f'recoverReq/{s2}', 'DELETE')
                     else: fb(f'recoverReq/{s2}', 'DELETE')
                 elif t == 'delete':
                     hit = next(((s, a) for s, a in accts.items() if a and a.get('pid') == op.get('pid')), None)
@@ -371,15 +437,21 @@ def admin_tick(accts):
 def cleanup_names(accts):
     """שמות שנתפסו בלי חשבון (ספאם) – נמחקים אחרי 3 דקות."""
     names = fb('names') or {}; pids = {a.get('pid') for a in accts.values() if a}; t = time.time()
+    dead = {}
     for nk, pid in names.items():
         if pid in pids: orphan_seen.pop(nk, None); continue
-        if t - orphan_seen.setdefault(nk, t) > 180: fb(f'names/{nk}', 'DELETE'); orphan_seen.pop(nk, None)
+        if t - orphan_seen.setdefault(nk, t) > 180: dead[f'names/{nk}'] = None; orphan_seen.pop(nk, None)
+    for i in range(0, len(dead), 500):          # מחיקה בקבוצות – גם הצפה של אלפי שמות לא תוקעת את הרובוט
+        fb('', 'PATCH', dict(list(dead.items())[i:i + 500]))
 
 # ---------- לולאה ----------
 if __name__ == '__main__':
     once = '--once' in sys.argv; started = time.time()
     fixtures.update(fb('fixtures') or {})
     for lg, v in (fb('pub/tables') or {}).items(): tables[lg] = v.get('rows', [])
+    for e in (fb('pub/revealed') or {}): published['rv' + e] = ''        # כך ישנים יימחקו בסבב הראשון
+    if not once:
+        for p in ('acct', 'names', 'lgdef'): Mirror(p)
     last_refresh = 0
     while True:
         try:
