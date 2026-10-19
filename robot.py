@@ -29,6 +29,7 @@ def tok():
     return _creds.token
 
 def fb(path, method='GET', body=None, etag=False, if_match=None):
+    if method == 'PUT' and body is None: method = 'DELETE'      # כתיבת "ריק" = מחיקה
     h = {'Authorization': 'Bearer ' + tok(), 'Content-Type': 'application/json'}
     if etag: h['X-Firebase-ETag'] = 'true'
     if if_match: h['if-match'] = if_match
