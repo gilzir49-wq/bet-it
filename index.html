@@ -394,6 +394,46 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 .linkbox button{border:0;border-radius:9px;background:var(--card3);color:var(--txt);font-weight:900;padding:8px 12px;cursor:pointer}
 .invcta{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(198,244,50,.14),rgba(169,123,255,.1));border:1px solid rgba(198,244,50,.35);border-radius:18px;padding:14px;margin:12px 0;cursor:pointer}
 .invcta b{display:block;font-size:15px}.invcta span{font-size:12.5px;color:var(--txt2)}
+/* ליגות חברים (LeagueHub / LeagueJoin) + טבלאות ליגה (Leagues) – לפי העיצוב */
+.lsw{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:14px -14px 14px;padding:0 14px}.lsw::-webkit-scrollbar{display:none}
+.lsw button{flex:none;width:150px;border:1px solid var(--line2);border-radius:18px;background:var(--card);color:var(--txt);padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:right;cursor:pointer}
+.lsw button b{font-size:15px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lsw button span{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.lsw button.on{background:var(--gold);border-color:var(--gold);color:var(--on-accent)}.lsw button.on span{color:var(--on-accent);font-weight:700}
+.lsw button.add{width:auto;border-style:dashed;justify-content:center;color:var(--txt2)}
+.hub{border-radius:24px;padding:18px;background:radial-gradient(120% 120% at 0% 0%,#24305F 0%,#0F1426 70%);border:1px solid var(--line3);display:flex;flex-direction:column;gap:14px;margin-bottom:16px}
+.hub .t{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.hub h1{margin:0;font-size:24px;font-weight:900;word-break:break-word}.hub .t span{font-size:13px;color:var(--txt2)}
+.hub .more{width:44px;height:44px;border:0;border-radius:14px;background:rgba(255,255,255,.06);color:var(--txt);display:grid;place-items:center;cursor:pointer;flex:none}
+.avs{display:flex}.avs span{width:30px;height:30px;border-radius:50%;box-shadow:0 0 0 2px #121A3A;margin-inline-start:-8px;display:grid;place-items:center;font-size:11px;font-weight:900;color:var(--txt)}.avs span:first-child{margin:0}
+.wabtn{margin-inline-start:auto;height:40px;padding:0 14px;border:0;border-radius:12px;background:#25D366;color:#04210F;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.hcode{display:flex;align-items:center;justify-content:space-between;background:rgba(7,10,20,.5);border-radius:12px;padding:8px 12px;font-size:13px;border:0;color:var(--txt);width:100%;cursor:pointer}.hcode span{color:var(--mut)}.hcode b{letter-spacing:3px;direction:ltr}
+.lb.c3 .r{grid-template-columns:28px minmax(0,1fr) 64px}.lb .r.me{box-shadow:inset -3px 0 0 var(--gold)}
+.feed{display:flex;flex-direction:column;gap:8px}
+.fi{display:flex;gap:10px;align-items:flex-start;background:var(--card);border-radius:16px;padding:12px;font-size:14px;line-height:1.5}
+.fi .av{width:32px;height:32px;font-size:13px}.fi .tm2{color:var(--mut);font-size:12.5px}
+.fi.warn{align-items:center;background:rgba(255,201,77,.08);border:1px solid rgba(255,201,77,.25)}
+.lj h2.display{margin:4px 0 16px;font-size:52px}
+.lj .box{display:flex;flex-direction:column;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:16px}
+.lj label{font-size:14px;font-weight:700}
+.lj input{height:54px;width:100%;border:1.5px solid var(--line3);border-radius:14px;background:var(--bg);color:var(--txt);font-family:inherit;font-size:17px;font-weight:700;padding:0 14px;outline:none}
+.lj input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(198,244,50,.15)}
+.lj .or{display:flex;align-items:center;gap:12px;color:var(--mut2);font-size:13px;margin:18px 0}.lj .or:before,.lj .or:after{content:"";flex:1;height:1px;background:var(--line)}
+.lj .jr{display:flex;gap:8px}.lj .jr input{flex:1;min-width:0;font-size:18px;font-weight:900;letter-spacing:3px;direction:ltr;text-align:center;background:var(--card)}
+.lj .jr button{height:54px;padding:0 18px;border:0;border-radius:14px;background:var(--card3);color:var(--txt);font-weight:900;font-size:15px;cursor:pointer}
+.lgt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 12px}
+.lgt button{height:64px;border:1px solid var(--line2);border-radius:14px;background:var(--card);color:var(--txt2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;padding:0 2px;min-width:0}
+.lgt button b{font-size:13px;white-space:nowrap}.lgt button span{font-size:11px;color:var(--mut);display:flex;align-items:center;gap:4px}
+.lgt button.on{background:var(--txt);color:var(--bg);border-color:var(--txt)}.lgt button.on b{font-weight:900}.lgt button .lvn{color:#C8102E;font-weight:900}
+.ltl{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin-bottom:12px}.ltl i{width:10px;height:10px;border-radius:3px;background:rgba(255,90,106,.25);box-shadow:inset 0 0 0 1px var(--red)}
+.lt2{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.lt2 .r{display:grid;grid-template-columns:30px minmax(0,1fr) 28px 36px 40px;gap:6px;align-items:center;padding:12px;border-bottom:1px solid var(--line)}.lt2 .r:last-child{border-bottom:0}
+.lt2 .r.h{padding:10px 12px;font-size:11px;color:var(--mut);font-weight:700}
+.lt2 .r.eu{box-shadow:inset -3px 0 0 var(--em)}.lt2 .r.rl{box-shadow:inset -3px 0 0 var(--red)}.lt2 .r.lv{background:rgba(255,90,106,.08)}
+.lt2 .r>b:first-child{font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:2px}.lt2 .r>b:first-child span{font-size:10px}
+.lt2 .tn{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;min-width:0}.lt2 .tn>span:not(.cr){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lt2 .cr{width:24px;height:24px;border-radius:50%;background:var(--card3);font-size:9px;font-weight:900;display:grid;place-items:center;flex:none;overflow:hidden}.lt2 .cr img{width:20px;height:20px;object-fit:contain}
+.lt2 .lvc{font-size:10px;font-weight:900;color:var(--red);background:rgba(255,90,106,.15);border-radius:6px;padding:1px 5px;font-variant-numeric:tabular-nums;flex:none;direction:ltr}
+.lt2 .c{text-align:center;font-size:13px;color:var(--txt2);font-variant-numeric:tabular-nums}.lt2 .pt{text-align:left;font-variant-numeric:tabular-nums}
+.ltleg{display:flex;gap:16px;font-size:12px;color:var(--mut);margin-top:12px}.ltleg span{display:flex;align-items:center;gap:6px}.ltleg i{width:3px;height:14px}
 .display{font-family:Karantina,Heebo,sans-serif;font-weight:700;letter-spacing:-.5px;line-height:.9}
 @media (max-width:430px){ .brand>div{display:none} .bar{gap:6px} .topr{gap:5px} .pill{padding:6px 8px;font-size:12px} .bal{font-size:15px;padding:6px 10px} }
 .modeT{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:10px;font-weight:700;font-size:13.5px;cursor:pointer}
@@ -787,6 +827,7 @@ function viewTable(){
   rankRows(rows,vk);
   const prevRk={}; rows.forEach(r=>{ const pv=r[gk]||r._rk; prevRk[r.pid]=1+rows.filter(x=>(x[gk]||x._rk)<pv).length; });   // מיקום קודם בתוך הטבלה הזו (תיקו = אותו מקום)
   const bank=st?st.bank:BANK_START, bd=bank-BANK_START, my=rows.find(r=>r.pid===me);
+  if(L) return leagueHub(tblScope,L,rows,prevRk,my);
   let h=`<div class="thd"><h1>${all?'טבלה ארצית':'טבלה'}</h1>${A?`<button class="scp" onclick="scopeMenu()"><span>${all?'🌍 ארצית':'👥 '+esc(L.n)}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>`:''}</div>`;
   if(all && my){ const N=rows.length, top=Math.max(1,Math.ceil(100*my._rk/N)), d=(prevRk[me]||my._rk)-my._rk;
     h+=`<section class="mehero"><span class="il" aria-hidden="true">IL</span><span>אתה במקום</span><b>${fmt(my._rk)}</b>
@@ -798,10 +839,6 @@ function viewTable(){
       <div class="vv"><b>${fmt(bank)}</b>${bd?`<span style="color:${bd<0?'var(--red)':'var(--em)'}">${bd>0?'+':'−'}${fmt(Math.abs(bd))}</span>`:''}</div>
       <div style="display:flex;flex-direction:column;gap:6px"><div class="tr"><span style="width:${pctB}%"></span></div>
       <div class="ft"><span>התחילה ב-${fmt(BANK_START)}</span><span>${bd>0?'הבנק מנצח את החבר׳ה 😈':bd<0?'החבר׳ה מנצחים את הבנק 🤑':'הבנק מחכה להימור הראשון'}</span></div></div></section>`; }
-  else h+=`<div class="card" style="text-align:center"><div style="font-size:22px;font-weight:900">👥 ${esc(L.n)}</div>
-    <div class="muted">${Object.keys(L.m||{}).length} חברים · קוד הצטרפות <b style="color:var(--gold);letter-spacing:2px">${esc(tblScope)}</b></div>
-    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="font-size:15px;padding:11px" data-lid="${esc(tblScope)}" onclick="inviteLeague(this.dataset.lid)">📲 הזמן חברים</button>
-      <button class="btn sec" data-lid="${esc(tblScope)}" onclick="manageLeague(this.dataset.lid)">${L.o===me?'⚙️ ניהול':'🚪 עזיבה'}</button></div></div>`;
   if(all) h+=`<div class="chips" style="padding-top:0"><button class="chip ${natSub==='players'?'on':''}" onclick="setNS('players')">שחקנים</button><button class="chip ${natSub==='leagues'?'on':''}" onclick="setNS('leagues')">ליגות חברים</button></div>`;
   if(all && natSub==='leagues'){
     const lr=leagueRanks(), shown=lr.filter(x=>x.rk<=10||mine.includes(x.id));
@@ -839,19 +876,61 @@ function viewTable(){
   if(all && my && my._rk>8) h+=`<div class="mesticky"><b>${fmt(my._rk)}</b><b>${esc(my.n)} (אתה)</b><b>${valOf(my)}</b></div>`;
   return h;
 }
+// ===== ליגת חברים (LeagueHub) =====
+function weekRankIn(lid){ const L=S.lg[lid], rows=((S.standings&&S.standings.rows)||[]).filter(r=>L&&L.m&&L.m[r.pid]).map(r=>({...r})); rankRows(rows,'wp'); const me=rows.find(r=>A&&r.pid===A.pid); return {rk:me?me._rk:null,n:rows.length}; }
+const agoTxt = ms => { const m=Math.round((Date.now()-ms)/60e3); return m<60?`לפני ${Math.max(1,m)} דק׳`:m<24*60?`לפני ${Math.round(m/60)} שע׳`:dayLabel(dayKey(ms)); };
+// מה קורה בליגה: מתוך ההימורים שנחשפו (אחרי נעילה) של חברי הליגה
+function leagueFeed(L){
+  const out=[];
+  Object.entries(S.revealed||{}).forEach(([e,bs])=>{ const f=S.fixtures[e]; if(!f) return;
+    const mem=Object.entries(bs||{}).map(([k,b])=>({pid:k.split('_')[0],...b})).filter(b=>L.m&&L.m[b.pid]);
+    mem.forEach(b=>{ const nm=L.m[b.pid], o=b.m==='W'?((f.odds||{})[b.p]):(((f.odds||{}).cs||{})[b.p]);
+      if(b.st==='won' && o){ const prof=Math.round((b.j?b.s+2*(b.s*o-b.s):b.s*o)-b.s); out.push({t:f.ko+2*3600e3,pid:b.pid,big:prof,h:`<b>${esc(nm)}</b> לקח <b style="color:var(--em)">+${fmt(prof)}</b> על ${b.m==='CS'?`<bdi dir="ltr">${esc(b.p.replace('-','–'))}</bdi> מדויק`:esc(b.p==='X'?'תיקו':he(b.p==='1'?f.home:f.away))} ב${esc(he(f.home))}–${esc(he(f.away))}.`}); }
+      else if(b.m==='W' && mem.length>=3 && mem.filter(x=>x.m==='W'&&x.p===b.p).length===1 && (f.st==='live'||f.st==='none')) out.push({t:f.ko,pid:b.pid,big:b.s,h:`<b>${esc(nm)}</b> שם ${fmt(b.s)} על ${esc(b.p==='X'?'תיקו':he(b.p==='1'?f.home:f.away))} ב${esc(he(f.home))}–${esc(he(f.away))}. היחיד בליגה.`});
+    }); });
+  return out.sort((a,b)=>b.t-a.t).slice(0,5);
+}
+function leagueHub(lid,L,rows,prevRk,my){
+  const me=A&&A.pid, mode=tblMode, mine=myLeagues(), mem=Object.entries(L.m||{}), nat=((S.standings&&S.standings.rows)||[]).map(r=>({...r}));
+  rankRows(nat,mode==='week'?'wp':'v'); const natMe=nat.find(r=>r.pid===me);
+  let h=`<div class="lsw">${mine.map(l=>{ const r=weekRankIn(l); return `<button class="${l===lid?'on':''}" data-s="${esc(l)}" onclick="setScope(this.dataset.s)"><b>${esc(S.lg[l].n)}</b><span>${r.rk?`מקום ${r.rk} מתוך ${r.n}`:`${r.n} חברים`}</span></button>`; }).join('')}
+    <button style="width:120px" onclick="setScope('all')"><b>ארצית</b><span>${natMe?`מקום ${fmt(natMe._rk)}`:'כל השחקנים'}</span></button><button class="add" onclick="leagueMenu()"><b>➕</b><span>ליגה</span></button></div>`;
+  h+=`<section class="hub"><div class="t"><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1>${esc(L.n)}</h1><span>${mem.length} חברים · עונש: ${esc(PENALTIES[0].replace(/ [^ ]+$/,''))}</span></div>
+      <button class="more" aria-label="${L.o===me?'ניהול ליגה':'עזיבת ליגה'}" data-lid="${esc(lid)}" onclick="manageLeague(this.dataset.lid)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button></div>
+    <div style="display:flex;align-items:center;gap:10px"><span class="avs">${mem.slice(0,4).map(([p,n])=>`<span class="${p===me?'me':''}" style="${p===me?'background:var(--gold);color:var(--on-accent)':avBg(p)}">${initial(n)}</span>`).join('')}${mem.length>4?`<span style="background:var(--card3)">+${mem.length-4}</span>`:''}</span>
+      <button class="wabtn" data-lid="${esc(lid)}" onclick="inviteLeague(this.dataset.lid)">הזמן בוואטסאפ</button></div>
+    <button class="hcode" data-t="${esc(lid)}" onclick="copyTxt(this.dataset.t,'קוד ההזמנה הועתק 📋')"><span>קוד הזמנה</span><b>${esc(lid)}</b></button></section>`;
+  h+=`<div class="mtabs" role="tablist" style="margin-top:0"><button role="tab" aria-selected="${mode==='week'}" class="${mode==='week'?'on':''}" onclick="setTM('week')">שבועית</button><button role="tab" aria-selected="${mode==='season'}" class="${mode==='season'?'on':''}" onclick="setTM('season')">עונתית</button></div>`;
+  if(rows.length<2) h+=`<div class="empty" style="padding:20px 10px"><div class="e">👥</div>עוד אין כאן חברים. שלח את הלינק לקבוצה – ברגע שמישהו מצטרף הוא מופיע בטבלה.</div>`;
+  const fromBottom=[...new Set(rows.map(r=>r._rk))].filter(x=>x>1).sort((a,b)=>b-a);
+  const val=r=>mode==='week'?`<b class="vl ${r.wp>0?'pos':r.wp<0?'neg':''}">${sgn(r.wp).replace('-','−')}</b>`:`<b class="vl">${fmt(r.v)}</b>`;
+  if(rows.length) h+=`<div class="lb c3">${rows.map(r=>{ const pi=fromBottom.indexOf(r._rk), pen=mode==='week'&&rows.length>=3&&pi===0, isMe=r.pid===me, d=(prevRk[r.pid]||r._rk)-r._rk;
+      const k=r._rk===1&&rows.length>1&&(mode==='season'||r.wp>0);
+      return `<div class="r ${isMe?'me':''}">${k?CROWN:`<b>${r._rk}</b>`}<span class="nm"><span><span class="t">${esc(r.n)}${isMe?' (אתה)':''}</span>${d>0?`<span class="mv2 up" dir="ltr">▲${d}</span>`:d<0?`<span class="mv2 dn" dir="ltr">▼${-d}</span>`:''}${pen?`<span style="font-size:12px;color:var(--red2);font-weight:500">· ${esc(PENALTIES[0].replace(/ [^ ]+$/,''))}</span>`:''}</span></span>${val(r)}</div>`; }).join('')}</div>`;
+  const feed=leagueFeed(L), last=rows.length>=3?rows[rows.length-1]:null;
+  if(feed.length||last){ h+=`<div class="dayh">מה קורה בליגה</div><div class="feed">`+feed.map(x=>`<div class="fi"><span class="av" style="${avBg(x.pid,x.pid===me)}${x.pid===me?';background:var(--gold);color:var(--on-accent)':''}">${initial(L.m[x.pid])}</span><span style="flex:1">${x.h} <span class="tm2">${agoTxt(x.t)}</span></span></div>`).join('');
+    if(last&&mode==='week') h+=`<div class="fi warn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFC94D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>השבוע נסגר ביום שני 23:59. ${esc(last.n)} — ${last.pid===me?'אתה בתחתית, יש עוד זמן!':'תכין ארנק.'}</span></div>`;
+    h+=`</div>`; }
+  if(my) h+=`<button class="shbtn" onclick="shareRank(${my._rk},${rows.length})">${SHARE_I}שלח את הטבלה לקבוצה</button>`;
+  return h;
+}
 function setScope(x){ tblScope=x; lsSet('bb_scope',x); render(); }
 
 // ================= ליגות חברים: יצירה, הזמנה, הצטרפות, ניהול =================
 const APP_URL='https://bet-it.web.app';
-function sheet(html){ sheetSt={custom:true}; const sh=document.getElementById('sheet'); sh.innerHTML=`<div style="display:flex;justify-content:flex-end"><button class="x" style="border-color:#555;color:#ccc" onclick="closeSheet()">✕</button></div>`+html;
+function sheet(html){ sheetSt={custom:true}; const sh=document.getElementById('sheet'); sh.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:-8px"><button class="sclose" aria-label="סגירה" onclick="closeSheet()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`+html;
   sh.classList.add('show'); document.getElementById('sheetBg').classList.add('show'); }
 function leagueMenu(){
-  sheet(`<h2 style="margin-top:0">👥 ליגות חברים</h2><div class="muted">ליגה פרטית עם טבלה משלכם. הז'יטונים וההימורים אותם הימורים – רק הטבלה שלכם.</div>
-    <input class="name" id="lgName" placeholder="שם הליגה (למשל: החבר׳ה מהעבודה)" maxlength="24">
-    <button class="btn" onclick="createLeague()">➕ פתח ליגה חדשה</button>
-    <div style="text-align:center;margin:14px 0 6px;font-weight:900">או</div>
-    <input class="name" id="lgCode" placeholder="קוד הצטרפות (6 תווים)" maxlength="7" style="letter-spacing:3px;direction:ltr">
-    <button class="btn sec" onclick="joinLeague(document.getElementById('lgCode').value)">הצטרף לליגה</button>`);
+  sheet(`<div class="lj"><div style="font-size:20px;font-weight:900;margin-bottom:6px">ליגה חדשה</div>
+    <h2 class="display">הקבוצה בוואטסאפ<br>צריכה <span style="color:var(--gold)">טבלה.</span></h2>
+    <div class="box"><label for="lgName">שם הליגה</label>
+      <input id="lgName" placeholder="למשל: שישי בצהריים" maxlength="24" autocomplete="off" enterkeyhint="go" onkeydown="if(event.key==='Enter')createLeague()">
+      <div class="muted" style="font-size:12.5px">טבלה פרטית רק לכם – אותם ז׳יטונים ואותם הימורים. האחרון בשבועית: ${esc(PENALTIES[0])}</div>
+      <button class="btn" onclick="createLeague()">פתח ליגה ושלח הזמנה</button></div>
+    <div class="or">או</div>
+    <label for="lgCode">יש לך קוד הזמנה?</label>
+    <div class="jr" style="margin-top:10px"><input id="lgCode" placeholder="SHISHI" maxlength="7" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter')joinLeague(this.value)"><button onclick="joinLeague(document.getElementById('lgCode').value)">הצטרף</button></div>
+    <div class="muted" style="font-size:12px;margin-top:10px">לינק הזמנה מוואטסאפ פותח את האפליקציה ישר לליגה.</div></div>`);
 }
 async function createLeague(){
   const n=(document.getElementById('lgName').value||'').trim(); if(n.length<2) return toast('שם של לפחות 2 תווים',false,'err');
@@ -932,18 +1011,28 @@ function setTM(m){ tblMode=m; lsSet('bb_tm',m); render(); }
 function liveTable(lg){
   const base=(S.tables[lg]&&S.tables[lg].rows)||[], rows=base.map((r,i)=>({...r,base:i+1,live:null})), by=Object.fromEntries(rows.map(r=>[r.t,r]));
   fxList().filter(f=>f.lg===lg&&(f.st==='live'||(f.st==='finished'&&!f.inT&&f.bh!=null))).forEach(f=>{ const H=by[f.home], X=by[f.away]; if(!H||!X) return;
-    [[H,f.h,f.a],[X,f.a,f.h]].forEach(([t,gf,ga])=>{ t.pld++; t.gf+=gf; t.ga+=ga; if(gf>ga){t.w++;t.pts+=3} else if(gf===ga){t.d++;t.pts++} else t.l++; if(f.st==='live') t.live=`${f.h}-${f.a}`; }); });
+    [[H,f.h,f.a],[X,f.a,f.h]].forEach(([t,gf,ga])=>{ t.pld++; t.gf+=gf; t.ga+=ga; if(gf>ga){t.w++;t.pts+=3} else if(gf===ga){t.d++;t.pts++} else t.l++; if(f.st==='live'){ t.live=`${gf}–${ga}`; t.lmin=(f.min||'').replace('HT','מחצית').replace("'",'′'); t.ld=sign(gf-ga); } }); });
   return rows.sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);
 }
+// אזורים בטבלה: [מקומות למעלה, תווית, מקומות למטה]
+const ZONES={isr1:[3,'אירופה',2],isr2:[2,'עלייה',2],eng:[4,'ליגת האלופות',3],ita:[4,'ליגת האלופות',3]};
+const LGSHORT={isr1:'ליגת העל',isr2:'לאומית',eng:'פרמייר',ita:'סרייה A'};
 function viewLeagues(){
-  let h=`<div class="chips">${Object.entries(LEAGUES).map(([k,l])=>`<button class="chip ${lgF===k?'on':''}" onclick="lgF='${k}';lsSet('bb_lg','${k}');render()">${l.f} ${l.n}</button>`).join('')}</div>`;
+  const liveBy=lg=>fxList().filter(f=>f.lg===lg&&f.st==='live').length;
+  let h=`<div class="thd" style="margin-bottom:12px"><h1>ליגות</h1></div><div class="lgt">${Object.keys(LEAGUES).map(k=>{ const n=liveBy(k), c=((S.tables[k]&&S.tables[k].rows)||[]).length;
+    return `<button class="${lgF===k?'on':''}" onclick="lgF='${k}';lsSet('bb_lg','${k}');render()"><b>${LGSHORT[k]||LEAGUES[k].n}</b><span class="${n?'lvn':''}">${n?`<span class="rdot"></span>${n} חי`:c?`${c} קבוצות`:'–'}</span></button>`; }).join('')}</div>`;
   const rows=liveTable(lgF); if(!rows.length) return h+`<div class="empty"><div class="e">📊</div>הטבלה תופיע ברגע שהרובוט יביא אותה</div>`;
-  h+=`<div class="muted">${rows.some(r=>r.live)?'🔴 טבלה חיה – כולל המשחקים שרצים עכשיו':'מתעדכן אוטומטית אחרי כל מחזור'}</div>
-    <div class="card lt" style="padding:4px 6px"><table><thead><tr><th>#</th><th style="text-align:right">קבוצה</th><th>מש'</th><th>נ-ת-ה</th><th>הפרש</th><th>נק'</th></tr></thead><tbody>`;
-  rows.forEach((r,i)=>{ const d=r.base-(i+1), arr=d>0?`<span class="arr up">▲${d}</span>`:d<0?`<span class="arr dn">▼${-d}</span>`:'';
-    h+=`<tr class="${r.live?'lv':''}"><td>${i+1}</td><td class="n">${logo(r.img)}<span>${esc(he(r.t))}${arr}${r.live?` <span class="live" style="direction:rtl;unicode-bidi:isolate">${r.live.replace('-',' - ')}</span>`:''}</span></td>
-      <td>${r.pld}</td><td style="font-size:12px">${r.w}-${r.d}-${r.l}</td><td style="direction:ltr;unicode-bidi:isolate">${r.gf-r.ga>0?'+':''}${r.gf-r.ga}</td><td class="big">${r.pts}</td></tr>`; });
-  return h+`</tbody></table></div>`+ad();
+  const z=ZONES[lgF]||[0,'',0], anyLive=rows.some(r=>r.live);
+  h+=`<div class="ltl">${anyLive?'<i></i>מחושב לפי התוצאה החיה · מתעדכן בכל גול':'מתעדכן אוטומטית אחרי כל מחזור'}</div>
+    <div class="lt2"><div class="r h"><span>#</span><span>קבוצה</span><span style="text-align:center">מש׳</span><span style="text-align:center">הפרש</span><span style="text-align:left">נק׳</span></div>`;
+  rows.forEach((r,i)=>{ const d=r.base-(i+1), gd=r.gf-r.ga, zc=i<z[0]?'eu':i>=rows.length-z[2]?'rl':'';
+    const cr=r.img?`<span class="cr" data-i="${esc(he(r.t).slice(0,2))}"><img src="https://lsm-static-prod.livescore.com/medium/${esc(r.img)}" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode(this.parentNode.dataset.i||''))"></span>`:`<span class="cr" style="background:hsl(${hueOf(r.t)} 45% 34%)">${esc(he(r.t).slice(0,2))}</span>`;
+    h+=`<div class="r ${zc} ${r.live?'lv':''}"><b>${i+1}${d>0?'<span style="color:var(--em)">▲</span>':d<0?'<span style="color:var(--red)">▼</span>':''}</b>
+      <span class="tn">${cr}<span>${esc(he(r.t))}</span>${r.live?`<span class="lvc">${esc(r.lmin)} ${r.live}</span>`:''}</span>
+      <span class="c">${r.pld}</span><span class="c" dir="ltr">${gd>0?'+':gd<0?'−':''}${Math.abs(gd)}</span><b class="pt" style="${r.live&&r.ld>0?'color:var(--em)':r.live&&r.ld<0?'color:var(--red2)':''}">${r.pts}</b></div>`; });
+  h+=`</div>`;
+  if(z[0]||z[2]) h+=`<div class="ltleg">${z[0]?`<span><i style="background:var(--em)"></i>${z[1]}</span>`:''}${z[2]?`<span><i style="background:var(--red)"></i>ירידה</span>`:''}</div>`;
+  return h;
 }
 
 // ================= כניסה + שחזור =================
