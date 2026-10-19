@@ -171,13 +171,51 @@ tr.me td{background:rgba(198,244,50,.07)}
 .seg button.on{background:var(--gold);color:#0A0E1C}
 .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
 .sum div{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 4px}.sum b{display:block;font-size:21px;color:var(--gold)}.sum span{font-size:11.5px;color:var(--mut);font-weight:700}
+/* ההימורים שלי – לפי העיצוב */
+.ph{display:flex;align-items:center;gap:10px;margin:18px 2px 14px}.ph h1{margin:0;font-size:24px;font-weight:900;line-height:1.2}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.kpi span{font-size:12px;color:var(--mut);font-weight:500;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.kpi b{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi.lv{border-color:rgba(59,227,139,.35)}.kpi.lv.dn{border-color:rgba(255,90,106,.35)}.kpi.lv b{color:var(--em)}.kpi.lv.dn b{color:var(--red2)}
+.rdot{width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block;flex:0 0 auto}
+.streak{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(255,201,77,.12),rgba(255,201,77,0));border-radius:16px;padding:12px 14px;margin-top:12px;font-size:14px}
+.streak span{color:var(--txt2)}.streak b{color:var(--txt)}
+.mtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;background:#0A0E1E;border-radius:14px;padding:4px;margin:16px 0 12px}
+.mtabs button{height:44px;border:0;border-radius:11px;background:transparent;color:var(--mut);font-weight:700;font-size:15px;cursor:pointer;font-variant-numeric:tabular-nums}
+.mtabs button.on{background:var(--card3);color:var(--txt);font-weight:900}
+.bets{display:flex;flex-direction:column;gap:10px}
+.bc{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.bc.jk{border-color:rgba(169,123,255,.4)}.bc.islive{border-color:rgba(255,90,106,.3)}
+.bc .r1{display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0}
+.bc .r1>span:first-child{font-size:12px;font-weight:700;color:var(--txt2);font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bc .lvt{color:var(--red)!important;font-weight:900!important;display:flex;align-items:center;gap:6px}
+.bc .pills{display:flex;gap:6px;flex:0 0 auto}
+.bc>b{font-size:15px;line-height:1.3}
+.bc .r3{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--txt2)}
+.bc .r3 b{color:var(--txt);font-variant-numeric:tabular-nums}.bc .r3 .g{color:var(--em)}
+.jx{display:flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;background:rgba(169,123,255,.16);color:var(--p2);font-size:12px;font-weight:900}
+.cbtn{height:36px;padding:0 12px;border:1px solid rgba(255,90,106,.4);border-radius:10px;background:transparent;color:var(--red);font-size:13px;font-weight:700;cursor:pointer;flex:0 0 auto}
+.dayh{margin:20px 2px 8px;font-size:13px;font-weight:700;letter-spacing:1.5px;color:var(--mut)}
+.hist{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.hr{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--line)}.hr:last-child{border-bottom:0}
+.hr .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex:none;box-sizing:border-box}
+.hr .ic.won{background:var(--em);color:#03230F}.hr .ic.lost{border:1.5px solid rgba(255,90,106,.6);color:var(--red)}.hr .ic.void{background:var(--card3);color:var(--mut)}.hr .ic.q{border:1.5px dashed #3A4470;color:var(--mut)}
+.hr .tx{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.hr .tx b{font-size:14px}.hr .tx span{font-size:12px;color:var(--mut)}
+.hr .am{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;direction:ltr;color:var(--mut)}.hr .am.won{color:var(--em)}.hr .am.lost{color:var(--red)}
+.hr .sh{width:34px;height:34px;border-radius:10px;border:0;background:var(--card3);color:var(--txt2);display:grid;place-items:center;cursor:pointer;flex:none}
+.codec{display:flex;align-items:center;gap:14px;background:var(--card);border:1px dashed var(--line3);border-radius:18px;padding:14px;margin-top:16px}
+.codec .ki{width:44px;height:44px;border-radius:12px;background:var(--card3);display:grid;place-items:center;flex:none}
+.codec .tx{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.codec .tx b{font-size:14px}
+.codec .tx span{font-size:13px;color:var(--mut);direction:ltr;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:2px}
+.codec button{height:40px;padding:0 14px;border:0;border-radius:12px;background:var(--card3);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer}
 /* ניווט תחתון */
 nav{position:fixed;bottom:0;left:0;right:0;background:rgba(5,12,8,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:30}
 nav button{flex:1;background:none;border:0;color:var(--mut);font-weight:700;font-size:11px;padding:9px 0 8px;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;gap:3px}
 nav button svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:var(--gold)}
 nav button.on:before{content:"";position:absolute;top:0;width:28px;height:3px;border-radius:0 0 3px 3px;background:var(--gold)}
-nav .badge{position:absolute;top:5px;left:calc(50% - 22px);background:var(--red);color:#fff;border-radius:99px;font-size:10px;padding:0 5px;font-weight:900;line-height:16px}
+nav .badge{position:absolute;top:3px;left:calc(50% - 24px);min-width:18px;height:18px;background:var(--gold);color:var(--on-accent);border-radius:99px;font-size:11px;padding:0 5px;font-weight:900;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 footer{text-align:center;color:var(--mut);font-size:11.5px;margin:26px 0 12px;line-height:1.6}footer a{color:var(--mut)}
 input.name{width:100%;font-size:20px;padding:14px;border-radius:16px;border:1.5px solid rgba(198,244,50,.6);background:rgba(0,0,0,.35);color:#fff;font-family:inherit;font-weight:700;text-align:center;margin:12px 0 6px;outline:none}
 input.name:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(198,244,50,.15)}
@@ -493,9 +531,6 @@ function renderTop(){
     ${a?`<span class="bal ${a.value!==a.avail?'lv':''}" id="bal" onclick="go('mine')"><span class="coin"></span><span id="balV">${fmt(shownBal??a.value)}</span>${a.value!==a.avail?'<small>לייב</small>':''}</span>`:''}`;
   if(a) animateBal(a.value); else shownBal=null;
 }
-function stText(st,b,f){ const p=f?winProb(f,b):null;
-  if(p!=null) return `${st==='live-win'?'🟢':'🔴'} סיכוי ${pctTag(p)}`;
-  return st==='won'?`✅ +${fmt(payout(b)-b.s)}`:st==='lost'?'❌ הפסד':st==='live-win'?'🟢 כרגע זוכה':st==='live-lose'?'🔴 כרגע מפסיד':st==='void'?'↩️ הוחזר':'⏳ פתוח'; }
 // ===== כרטיס משחק – לפי העיצוב =====
 const LGCODE={isr1:'IL',isr2:'IL',eng:'EN',ita:'IT'};
 const hueOf=t=>{ let h=0; for(const c of String(t)) h=(h*31+c.charCodeAt(0))%360; return h; };
@@ -564,29 +599,75 @@ function viewGames(){
     if(!crowdDone){ const c=crowdBox(shown); if(c){ h+=c; crowdDone=true; } } });
   return h;
 }
+// ===== ההימורים שלי – לפי העיצוב =====
+let mineTab=lsGet('bb_mt')||'open';
+function setMT(k){ mineTab=k; lsSet('bb_mt',k); render(); }
+const IC={
+  ok:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+  no:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  back:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>',
+  clock:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  share:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
+  key:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C6F432" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg>',
+  fire:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFC94D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.5 1 2.5 2 3 0-3 0-6 1-8.5z"/></svg>'};
+// בחירה קצרה: "ארסנל" / "תיקו" / "תוצאה 2–0"
+function shortPick(f,b){ if(b.m==='CS') return `תוצאה <bdi dir="ltr">${esc(b.p.replace('-','–'))}</bdi>`; return b.p==='X'?'תיקו':esc(he(f?(b.p==='1'?f.home:f.away):'')); }
+const scoreTxt = f => `<bdi dir="ltr" style="font-variant-numeric:tabular-nums">${f.h}–${f.a}</bdi>`;   // כמו באנר הגול: בית–חוץ
+// רצף ניחושים נכונים (מההכרעה האחרונה אחורה, בלי הימורים שהוחזרו)
+function winStreak(){ const ss=Object.values((A&&A.settled)||{}).filter(x=>x.st!=='void').sort((a,b)=>(b.at||0)-(a.at||0)); let n=0; for(const x of ss){ if(x.st!=='won') break; n++; } return n; }
+const HOT=5;
+function lockIn(f){ const cd=f.ko-LOCK_BEFORE_MS-Date.now(); if(cd<=0) return 'ננעל'; const h=Math.floor(cd/3600e3), m=Math.floor(cd%3600e3/60e3);
+  return h>=24?`${dayLabel(dayKey(f.ko))} ${hm(f.ko)}`:`נעילה בעוד <bdi dir="ltr">${h?h+':'+String(m).padStart(2,'0'):m+' דק׳'}</bdi>`; }
+function openCard(b){
+  const f=b.f, st=betState(b.id,b), live=f&&f.st==='live', L=!f||isLocked(f);
+  const r1=live?`<span class="lvt"><span class="rdot"></span>לייב <bdi dir="ltr">${esc((f.min||'').replace('HT','מחצית').replace("'",'′'))}</bdi> · ${scoreTxt(f)}</span>`
+    : f?`<span>${dayLabel(dayKey(f.ko))} ${hm(f.ko)} · ${lockIn(f)}</span>`:'<span>משחק</span>';
+  const pill=live?statusPill(st,b,f):`<span class="stp open">פתוח</span>`;
+  const win=payout(b), right=!L?`<button class="cbtn" onclick="cancelBet('${b.id}')">ביטול</button>`
+    :`<span>זכייה <b class="${st==='live-win'?'g':''}">${fmt(win)}</b></span>`;
+  return `<article class="bc ${b.j?'jk':''} ${live?'islive':''}"><div class="r1">${r1}<span class="pills">${b.j?'<span class="jx">×2</span>':''}${pill}</span></div>
+    <b>${f?`${esc(he(f.home))} נגד ${esc(he(f.away))}`:'משחק'}</b>
+    <div class="r3"><span>${shortPick(f,b)} · <b>${fmt(b.s)}</b> ביחס <bdi style="font-variant-numeric:tabular-nums">${b.o.toFixed(2)}</bdi>${!L?` · אפשרי <b>${fmt(win)}</b>`:''}</span>${right}</div></article>`;
+}
+function histRow(b){
+  const f=b.f, st=betState(b.id,b), set=A.settled&&A.settled[b.id];
+  const k=st==='won'?'won':st==='lost'?'lost':'void', ic={won:IC.ok,lost:IC.no,void:IC.back}[k];
+  const amt=k==='won'?`+${fmt((set&&set.pay!=null?set.pay:payout(b))-b.s)}`:k==='lost'?`−${fmt(b.s)}`:fmt(b.s);
+  const sub=k==='void'?'המשחק נדחה · הז׳יטונים חזרו':`${shortPick(f,b)} · ${fmt(b.s)}${b.j?' · ×2':''}${f?` · נגמר ${scoreTxt(f)}`:''}`;
+  return `<div class="hr"><span class="ic ${k}">${ic}</span><span class="tx"><b>${f?`${esc(he(f.home))} — ${esc(he(f.away))}`:'משחק'}</b><span>${sub}</span></span>
+    ${k==='won'?`<button class="sh" title="שתף זכייה" aria-label="שתף זכייה" onclick="shareWin('${b.id}')">${IC.share}</button>`:''}<b class="am ${k}">${amt}</b></div>`;
+}
 function viewMine(){
   const a=account(); if(!a) return '';
-  const bets=myBets().map(([id,b])=>({id,...b,f:S.fixtures[b.e]})).sort((x,y)=>(y.at||0)-(x.at||0));
+  const bets=myBets().map(([id,b])=>({id,...b,f:S.fixtures[b.e]}));
   const isOpen=b=>{ const s=betState(b.id,b); return s==='open'||s.startsWith('live'); };
-  const open=bets.filter(isOpen), done=bets.filter(b=>!isOpen(b));
-  const pct=a.settled?Math.round(100*a.won/a.settled):0;
-  let h=`<h2>🧾 ההימורים של ${esc(A.name)}</h2>
-    <div class="sum"><div><b>${fmt(a.avail)}</b><span>🪙 יתרה</span></div><div><b>${fmt(a.value)}</b><span>${a.value!==a.avail?'🔴 יתרה לייב':'💼 יתרה לייב'}</span></div><div><b>${pct}%</b><span>🎯 הצלחה (${a.won}/${a.settled})</span></div></div>
-    ${POKER?`<div class="card" style="text-align:center"><div class="muted" style="margin-bottom:8px">🎰 הקופה שלך על השולחן</div>${stacksHTML(a.avail,true)}<div class="muted" style="margin-top:6px">כל 1,000 ז'יטונים = מטיל זהב 🥇</div></div>`:''}
-    <div class="modeT ${POKER?'on':''}" onclick="togglePoker()"><span>🎰 מצב פוקר – ז'יטונים, ערימות וזריקה לקופה</span><span class="sw"></span></div>
-    ${a.value!==a.avail?`<div class="card" style="text-align:center;border-color:var(--r)">🔴 <b>יתרה לייב: ${fmt(a.value)} 🪙</b><br><span class="muted">ככה תיראה היתרה אם המשחקים ייגמרו בתוצאה של עכשיו. כל גול מזיז אותה!</span></div>`:''}
-    <div class="muted" style="margin-top:6px">כל יום שלישי מקבלים ${WEEKLY_BONUS} ז'יטונים מקופת הבנק 🎁 – גם מי שהפסיד הכול חוזר למשחק</div>`;
-  if(a.avail<=0&&!open.length) h+=`<div class="card" style="text-align:center">😵 נגמרו הז'יטונים! ביום שלישי תקבל ${WEEKLY_BONUS}.<br>בינתיים – תפרגן לחבר׳ה מהיציע 😅</div>`;
-  const row=b=>{ const st=betState(b.id,b), f=b.f, cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
-    return `<div class="card" style="padding:10px"><div class="muted">${f?`${LEAGUES[f.lg]?.f||''} ${dayLabel(dayKey(f.ko))} ${hm(f.ko)} · ${esc(he(f.home))} – ${esc(he(f.away))}`:'משחק'}
-      ${f&&(f.st==='live'||f.st==='finished')?` · <b style="color:#fff;direction:rtl;unicode-bidi:isolate">${f.h} - ${f.a}</b> ${f.st==='live'?liveTag(f):''}`:''}</div>
-      <div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)} = ${fmt(payout(b))}</span><span>${stText(st,b,f)}</span></div>
-      ${f&&!isLocked(f)?`<div style="text-align:left;margin-top:4px"><a href="#" class="muted" onclick="cancelBet('${b.id}');return false">בטל הימור</a></div>`:''}
-      ${st==='won'?`<button class="btn sec" style="margin-top:8px;font-size:14px;padding:9px" onclick="shareWin('${b.id}')">📣 שתף זכייה – אמרתי לכם!</button>`:''}</div>`; };
-  h+=`<h2>⏳ פתוחים (${open.length})</h2>`+(open.length?open.map(row).join(''):`<div class="empty"><div class="e">🎰</div>אין הימורים פתוחים. <a href="#" style="color:var(--y)" onclick="go('games');return false">ללוח המשחקים</a></div>`);
-  h+=ad()+`<h2>📜 היסטוריה (${done.length})</h2>`+done.slice(0,40).map(row).join('');
-  h+=`<div class="card" style="text-align:center"><b>🔑 קוד הכניסה שלך</b><div class="muted">לכניסה מטלפון או מחשב נוסף. אל תשתף.</div>
-    <button class="btn sec" style="margin-top:10px" onclick="showCode(A.rc)">הצג קוד</button></div>`;
+  const open=bets.filter(isOpen).sort((x,y)=>{ const lx=x.f&&x.f.st==='live'?0:1, ly=y.f&&y.f.st==='live'?0:1; return lx-ly||((x.f&&x.f.ko)||0)-((y.f&&y.f.ko)||0); });
+  const doneAt=b=>(A.settled&&A.settled[b.id]&&A.settled[b.id].at)||(b.f&&b.f.ko)||b.at||0;
+  const done=bets.filter(b=>!isOpen(b)).sort((x,y)=>doneAt(y)-doneAt(x));
+  const pct=a.settled?Math.round(100*a.won/a.settled):0, lv=a.value!==a.avail, sk=winStreak();
+  let h=`<div class="ph"><h1>ההימורים שלי</h1></div>
+    <div class="kpis"><div class="kpi"><span>יתרה</span><b>${fmt(a.avail)}</b></div>
+      <div class="kpi lv ${a.value<a.avail?'dn':''}"><span>${lv?'<span class="rdot"></span>':''}יתרה לייב</span><b>${fmt(a.value)}</b></div>
+      <div class="kpi"><span>הצלחה${a.settled?` <bdi dir="ltr">${a.won}/${a.settled}</bdi>`:''}</span><b>${a.settled?pct+'%':'–'}</b></div></div>`;
+  if(sk>=2) h+=`<div class="streak">${IC.fire}<span><b>${sk>=HOT?`חם! רצף של ${sk} ניחושים`:`רצף של ${sk} ניחושים`}</b> · ${sk>=HOT?'שומר על התג "חם" 🔥':HOT-sk===1?'עוד אחד ומקבלים תג "חם"':`עוד ${HOT-sk} ומקבלים תג "חם"`}</span></div>`;
+  if(a.avail<=0&&!open.length) h+=`<div class="card" style="text-align:center">😵 נגמרו הז'יטונים! ביום שלישי תקבל ${WEEKLY_BONUS} מקופת הבנק.<br>בינתיים – תפרגן לחבר׳ה מהיציע 😅</div>`;
+  const qN=QUEUE.length;
+  h+=`<div class="mtabs" role="tablist"><button role="tab" aria-selected="${mineTab==='open'}" class="${mineTab==='open'?'on':''}" onclick="setMT('open')">פתוחים · ${open.length+qN}</button><button role="tab" aria-selected="${mineTab==='hist'}" class="${mineTab==='hist'?'on':''}" onclick="setMT('hist')">היסטוריה${done.length?` · ${done.length}`:''}</button></div>`;
+  if(mineTab==='open'){
+    if(qN) h+=`<div class="hist" style="margin-bottom:10px">${QUEUE.map(q=>{ const f=S.fixtures[q.e]; return `<div class="hr"><span class="ic q">${IC.clock}</span><span class="tx"><b>${f?`${esc(he(f.home))} — ${esc(he(f.away))}`:'משחק'}</b><span>ממתין לקליטה — יישלח כשתחזור הקליטה</span></span><b class="am">${fmt(q.s)}</b></div>`; }).join('')}</div>`;
+    h+=open.length?`<div class="bets">${open.map(openCard).join('')}</div>`
+      :qN?'':`<div class="empty"><div class="e">🎰</div>אין הימורים פתוחים.<br><a href="#" style="color:var(--gold);font-weight:700" onclick="go('games');return false">ללוח המשחקים ←</a></div>`;
+  } else {
+    if(!done.length) h+=`<div class="empty"><div class="e">📜</div>עוד אין הימורים שהוכרעו</div>`;
+    let cur=null, grp=[]; const flush=()=>{ if(grp.length) h+=`<div class="dayh">${cur}</div><div class="hist">${grp.join('')}</div>`; grp=[]; };
+    done.slice(0,60).forEach(b=>{ const d=dayLabel(dayKey(doneAt(b))); if(d!==cur){ flush(); cur=d; } grp.push(histRow(b)); }); flush();
+    if(done.length>60) h+=`<div class="muted" style="text-align:center;margin-top:10px">מוצגים 60 ההימורים האחרונים</div>`;
+  }
+  h+=`<div class="muted" style="margin-top:16px">🎁 כל יום שלישי מקבלים ${WEEKLY_BONUS} ז'יטונים מקופת הבנק – גם מי שהפסיד הכול חוזר למשחק</div>`;
+  h+=`<div class="modeT ${POKER?'on':''}" onclick="togglePoker()"><span>🎰 מצב פוקר – ז'יטונים, ערימות וזריקה לקופה</span><span class="sw"></span></div>
+    ${POKER?`<div class="card" style="text-align:center"><div class="muted" style="margin-bottom:8px">הקופה שלך על השולחן</div>${stacksHTML(a.avail,true)}<div class="muted" style="margin-top:6px">כל 1,000 ז'יטונים = מטיל זהב 🥇</div></div>`:''}`;
+  h+=`<div class="codec"><span class="ki">${IC.key}</span><span class="tx"><b>קוד הכניסה שלך</b><span>${esc(fmtRc(A.rc||'').slice(0,4))}${A.rc?'-••••-••••':'…'}</span></span><button onclick="showCode(A.rc)" ${A.rc?'':'disabled'}>הצג</button></div>
+    <div class="muted" style="margin:6px 4px 0;font-size:12px">לכניסה מטלפון או מחשב נוסף. אל תשתף.</div>`;
   return h+`<footer>מחובר כ-${esc(A.name)} 🔐</footer>`;
 }
 // ================= טבלאות: ארצית + ליגות חברים =================
@@ -958,7 +1039,7 @@ function fixFx(id){ const f=S.fixtures[id]; const v=prompt(`תוצאה סופי�
 // ================= ניווט =================
 const ICONS={
   games:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7l4 3-1.5 4.5h-5L8 10z"/><path d="M12 3v4M16 10l4.5-1.5M14.5 14.5l2.5 4M9.5 14.5l-2.5 4M8 10L3.5 8.5"/></svg>',
-  mine:'<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+  mine:'<svg viewBox="0 0 24 24"><path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z"/></svg>',
   table:'<svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
   leagues:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   admin:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'};
