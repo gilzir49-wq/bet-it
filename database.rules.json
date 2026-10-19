@@ -4,11 +4,7 @@
     ".write": false,
 
     "fixtures": { ".read": true, ".indexOn": ["ko"] },
-    "tables":   { ".read": true },
-    "standings":{ ".read": true },
-    "revealed": { ".read": true },
-    "profiles": { ".read": true },
-    "meta":     { ".read": true },
+    "pub":      { ".read": true },
 
     "names": {
       ".read": true,

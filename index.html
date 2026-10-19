@@ -281,10 +281,9 @@ function stream(name, url, onData){
 function listenAll(){
   const since=Date.now()-3*86400e3;
   stream('fx', `${DB}/fixtures.json?orderBy=%22ko%22&startAt=${since}`, v=>{ S.fixtures=v||{}; loaded.fx=true; detectGoals(); render(); if(sheetSt) renderSheet(); });
-  stream('tb', `${DB}/tables.json`, v=>{ S.tables=v||{}; if(tab==='leagues') render(); });
-  stream('st', `${DB}/standings.json`, v=>{ S.standings=v; if(tab!=='games'||!sheetSt) render(); });
-  stream('rv', `${DB}/revealed.json`, v=>{ S.revealed=v||{}; if(tab==='games') render(); });
-  stream('mt', `${DB}/meta.json`, v=>{ S.meta=v||{}; });
+  // חיבור אחד לכל הנתונים הציבוריים (דפדפן מגביל ~6 חיבורים לאתר – אחרת השמירות נתקעות)
+  stream('pub', `${DB}/pub.json`, (v,path)=>{ v=v||{}; S.tables=v.tables||{}; S.standings=v.standings||null; S.revealed=v.revealed||{}; S.meta=v.meta||{};
+    if(path.startsWith('/meta')){ if(tab==='admin') render(); return; } if(!sheetSt) render(); });
   listenMine();
   if(AK) stream('av', `${DB}/adminView/${AK}.json`, v=>{ AV=v||{}; if(tab==='admin') render(); });
 }

@@ -113,7 +113,7 @@ def refresh():
         try: st = ls(f'{LS}/stage/soccer/{c}/{s}/0?MD=1')['Stages'][0]
         except Exception as ex: print('stage error', lg, ex, flush=True); continue
         rows = table_rows(st)
-        if rows: tables[lg] = rows; upd[f'tables/{lg}'] = {'rows': rows, 'at': now}
+        if rows: tables[lg] = rows; upd[f'pub/tables/{lg}'] = {'rows': rows, 'at': now}
         for e in st.get('Events', []):
             eid = str(e['Eid']); ko = esd_ms(e['Esd']); f = fixtures.get(eid)
             if not f and not (lo <= ko < hi): continue
@@ -258,10 +258,10 @@ def publish(accts, prev_fx):
         r['pw'] = last_ranks.get('w', {}).get(r['pid'], r['rw']); r['ps'] = last_ranks.get('s', {}).get(r['pid'], r['rs'])
     st_body = {'rows': rows, 'wk': wk, 'bank': round(bank)}
     upd = {}
-    if published.get('standings') != json.dumps(st_body, sort_keys=True): upd['standings'] = {**st_body, 'at': now}
-    if published.get('profiles') != json.dumps(profiles, sort_keys=True): upd['profiles'] = profiles
+    if published.get('standings') != json.dumps(st_body, sort_keys=True): upd['pub/standings'] = {**st_body, 'at': now}
+    if published.get('profiles') != json.dumps(profiles, sort_keys=True): upd['pub/profiles'] = profiles
     for e, v in revealed.items():
-        if published.get('rv' + e) != json.dumps(v, sort_keys=True): upd[f'revealed/{e}'] = v
+        if published.get('rv' + e) != json.dumps(v, sort_keys=True): upd[f'pub/revealed/{e}'] = v
     if upd:
         fb('', 'PATCH', upd)
         published['standings'] = json.dumps(st_body, sort_keys=True); published['profiles'] = json.dumps(profiles, sort_keys=True)
@@ -293,7 +293,7 @@ def admin_tick(accts):
                     else: fb(f'recoverReq/{s2}', 'DELETE')
                 elif t == 'delete':
                     hit = next(((s, a) for s, a in accts.items() if a and a.get('pid') == op.get('pid')), None)
-                    if hit: fb('', 'PATCH', {f'acct/{hit[0]}': None, f"names/{hit[1]['nk']}": None, f"profiles/{hit[1]['pid']}": None})
+                    if hit: fb('', 'PATCH', {f'acct/{hit[0]}': None, f"names/{hit[1]['nk']}": None, f"pub/profiles/{hit[1]['pid']}": None})
                     else: res = 'not found'
                 elif t == 'adjust':
                     hit = next((s for s, a in accts.items() if a and a.get('pid') == op.get('pid')), None)
@@ -331,7 +331,7 @@ def cleanup_names(accts):
 if __name__ == '__main__':
     once = '--once' in sys.argv; started = time.time()
     fixtures.update(fb('fixtures') or {})
-    for lg, v in (fb('tables') or {}).items(): tables[lg] = v.get('rows', [])
+    for lg, v in (fb('pub/tables') or {}).items(): tables[lg] = v.get('rows', [])
     last_refresh = 0
     while True:
         try:
@@ -345,7 +345,7 @@ if __name__ == '__main__':
             publish(accts, prev)
             admin_tick(accts)
             cleanup_names(accts)
-            fb('meta/robotAt', 'PUT', now_ms())
+            fb('pub/meta/robotAt', 'PUT', now_ms())
             print(datetime.datetime.now(IL).strftime('%d.%m %H:%M:%S'), ' · '.join(msg) or 'ok', flush=True)
         except Exception as ex:
             print('error:', repr(ex), flush=True)
