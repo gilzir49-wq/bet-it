@@ -103,13 +103,13 @@ h2{font-weight:900;font-size:21px;margin:18px 2px 8px;letter-spacing:-.2px}
 .st-won{color:var(--em)}.st-lost{color:var(--red)}.st-open{color:var(--mut)}.st-live{color:var(--gold)}
 /* גיליון הימור */
 #sheetBg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:40;display:none}
-#sheet{position:fixed;left:0;right:0;bottom:0;overflow-x:hidden;z-index:41;background:linear-gradient(180deg,#141A33,#0C1020);border-top:1px solid rgba(198,244,50,.5);border-radius:24px 24px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.9,.3,1);max-width:560px;margin:0 auto;max-height:90vh;overflow:auto;box-shadow:0 -20px 50px rgba(0,0,0,.6)}
-#sheet:before{content:"";display:block;width:42px;height:5px;border-radius:99px;background:var(--line2);margin:0 auto 10px}
+#sheet{position:fixed;left:0;right:0;bottom:0;overflow-x:hidden;z-index:41;background:#121831;border-top:0;border-radius:28px 28px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.9,.3,1);max-width:560px;margin:0 auto;max-height:90vh;overflow:auto;box-shadow:0 -20px 50px rgba(0,0,0,.6)}
+#sheet:before{content:"";display:block;width:40px;height:5px;border-radius:99px;background:var(--line3);margin:0 auto 12px}
 #sheet.show{transform:none}#sheetBg.show{display:block}
 .pick{background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center;margin-top:10px}
 .pick .t{font-weight:900;font-size:18px}.pick .o{font-size:30px;font-weight:900;color:var(--gold)}
 .stake{display:flex;align-items:center;gap:8px;margin:14px 0 8px}
-.stake input{flex:1;font-size:28px;font-weight:900;text-align:center;background:rgba(0,0,0,.4);color:#fff;border:1.5px solid rgba(198,244,50,.6);border-radius:16px;padding:10px;font-family:inherit;width:100%;outline:none}
+.stake input{flex:1;height:56px;font-size:24px;font-weight:900;text-align:center;background:var(--bg);color:var(--txt);border:1.5px solid var(--line3);border-radius:14px;padding:0 16px;font-variant-numeric:tabular-nums;font-family:inherit;width:100%;outline:none}
 .stake input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(198,244,50,.15)}
 .rng{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin:14px 0 2px;direction:rtl;--fill:0%}
 .rng::-webkit-slider-runnable-track{height:8px;border-radius:99px;background:linear-gradient(to left,var(--gold) var(--fill),var(--card3) var(--fill))}
@@ -136,12 +136,12 @@ h2{font-weight:900;font-size:21px;margin:18px 2px 8px;letter-spacing:-.2px}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 .qs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .qs button{background:var(--card2);color:#fff;border:1px solid var(--line2);border-radius:12px;padding:10px 0;font-weight:900;cursor:pointer}
-.win{text-align:center;font-size:15px;margin:12px 0;font-weight:700;color:#cfd6ee}
-.win b{color:var(--em);font-size:24px}
+.win{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:16px;padding:12px 14px;margin:12px 0;font-size:14px;color:var(--txt2)}
+.win b{color:var(--em);font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
 .jk{display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(135deg,rgba(178,107,255,.18),rgba(236,72,153,.14));border:1px solid rgba(178,107,255,.5);border-radius:14px;padding:10px 12px;margin:10px 0;font-weight:700;font-size:14px;cursor:pointer}
-.jk.on{background:linear-gradient(135deg,#8b5cf6,#ec4899);border-color:transparent}
+.jk.on{background:rgba(169,123,255,.2);border-color:var(--p);box-shadow:0 0 0 4px rgba(169,123,255,.12)}
 .sw{width:44px;height:26px;border-radius:99px;background:#3a3a4a;position:relative;flex:0 0 auto}.sw:after{content:"";position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
-.jk.on .sw{background:rgba(255,255,255,.3)}.jk.on .sw:after{right:21px}
+.jk.on .sw{background:var(--p)}.jk.on .sw:after{right:21px}
 .csgrid{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:4px}
 .step{display:flex;align-items:center;justify-content:center;gap:8px}
 .step button{width:44px;height:44px;border-radius:12px;border:0;font-size:24px;font-weight:900;cursor:pointer}
@@ -258,6 +258,15 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 .crowdbox{background:linear-gradient(180deg,#121A3A,#0F1426);border:1px solid var(--line2);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px;margin:14px 0}
 .crowdbox .row{display:grid;grid-template-columns:76px minmax(0,1fr) 40px;align-items:center;gap:10px;font-size:13px}
 .crowdbox .tr{height:8px;border-radius:999px;background:var(--line);overflow:hidden;display:flex}.crowdbox .tr span{background:var(--mut2)}.crowdbox .tr span.top{background:var(--gold)}
+.shd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.shd>div{display:flex;flex-direction:column;gap:2px}.shd b{font-size:18px}.shd span{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.sclose{width:44px;height:44px;border:0;border-radius:14px;background:var(--card3);color:var(--txt2);display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
+.stabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#0A0E1E;border-radius:14px;padding:4px;margin-bottom:12px}
+.stabs button{height:40px;border:0;border-radius:10px;background:transparent;color:var(--txt2);font-weight:700;font-size:14px;cursor:pointer}
+.stabs button.on{background:var(--gold);color:var(--on-accent);font-weight:900}
+#sheet .jk{display:flex;width:100%;align-items:center;gap:12px;background:rgba(169,123,255,.08);border:1px solid rgba(169,123,255,.35);border-radius:16px;padding:12px 14px;margin:12px 0;color:var(--txt);text-align:right;font-weight:400}
+#sheet .jk.on{background:rgba(169,123,255,.2);border-color:var(--p);box-shadow:0 0 0 4px rgba(169,123,255,.12)}
+#sheet .jk.on .sw{background:var(--p)}
 .display{font-family:Karantina,Heebo,sans-serif;font-weight:700;letter-spacing:-.5px;line-height:.9}
 @media (max-width:430px){ .brand>div{display:none} .bar{gap:6px} .topr{gap:5px} .pill{padding:6px 8px;font-size:12px} .bal{font-size:15px;padding:6px 10px} }
 .modeT{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:10px;font-weight:700;font-size:13.5px;cursor:pointer}
@@ -813,12 +822,13 @@ function renderSheet(){
   const L=isLocked(f), a=account(), dk=f.day||dayKey(f.ko), jkFree=!jokerUsed(dk);
   if(sheetSt.m==='CS') sheetSt.p=`${sheetSt.ch}-${sheetSt.ca}`;
   const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)), win=o?(sheetSt.j?s+2*(s*o-s):s*o):0;
-  let h=`<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">🎰 הימור חדש</b><button class="x" style="border-color:#555;color:#ccc" onclick="closeSheet()">✕</button></div>
-    <div class="muted" style="margin:4px 0 10px">${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} – ${esc(he(f.away))} · ${dayLabel(dk)} ${hm(f.ko)}</div>
-    <div class="seg"><button class="${sheetSt.m==='W'?'on':''}" onclick="sheetSt.m='W';sheetSt.p=sheetSt.p.includes('-')?'1':sheetSt.p;renderSheet()">🏆 מי מנצח</button><button class="${sheetSt.m==='CS'?'on':''}" onclick="sheetSt.m='CS';sheetSt.ch=sheetSt.ch??1;sheetSt.ca=sheetSt.ca??0;renderSheet()">🎯 תוצאה מדויקת</button></div>`;
+  const cdm=f.ko-LOCK_BEFORE_MS-Date.now(), cdh=Math.floor(cdm/3600e3), cdmm=Math.floor(cdm%3600e3/60e3);
+  let h=`<div class="shd"><div><b>${esc(he(f.home))} נגד ${esc(he(f.away))}</b><span>${LEAGUES[f.lg]?.n||''} · ${dayLabel(dk)} ${hm(f.ko)}${cdm>0&&cdm<6*3600e3?` · ננעל בעוד ${cdh?cdh+':'+String(cdmm).padStart(2,'0'):cdmm+' דק׳'}`:''}</span></div>
+    <button class="sclose" aria-label="סגירה" onclick="closeSheet()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="stabs"><button class="${sheetSt.m==='W'?'on':''}" onclick="sheetSt.m='W';sheetSt.p=sheetSt.p.includes('-')?'1':sheetSt.p;renderSheet()">מי מנצח</button><button class="${sheetSt.m==='CS'?'on':''}" onclick="sheetSt.m='CS';sheetSt.ch=sheetSt.ch??1;sheetSt.ca=sheetSt.ca??0;renderSheet()">תוצאה מדויקת</button></div>`;
   if(sheetSt.m==='CS') h+=`<div class="pick"><div class="csgrid"><div><div style="font-weight:900;font-size:13px;margin-bottom:6px">${esc(he(f.home))}</div><div class="step"><button class="minus" onclick="csB('ch',-1)">−</button><span class="val">${sheetSt.ch}</span><button class="plus" onclick="csB('ch',1)">+</button></div></div>
       <div style="font-weight:900;color:var(--o)">:</div><div><div style="font-weight:900;font-size:13px;margin-bottom:6px">${esc(he(f.away))}</div><div class="step"><button class="minus" onclick="csB('ca',-1)">−</button><span class="val">${sheetSt.ca}</span><button class="plus" onclick="csB('ca',1)">+</button></div></div></div>
-      <div class="o" style="margin-top:8px">${o?'× '+o.toFixed(2):'–'}</div></div>`;
+      </div><div class="muted" style="text-align:center;margin-top:-6px">יחס לתוצאה הזו: <b style="color:var(--gold);font-variant-numeric:tabular-nums">${o?o.toFixed(2):'–'}</b></div>`;
   else h+=`<div class="odds" style="margin-top:0">${['1','X','2'].map(k=>`<button class="ob ${sheetSt.p===k?'mine':''}" onclick="sheetSt.p='${k}';renderSheet()"><span class="l">${k==='X'?'תיקו':esc(he(k==='1'?f.home:f.away))}</span><span class="v">${f.odds&&f.odds[k]?f.odds[k].toFixed(2):'–'}</span></button>`).join('')}</div>`;
   h+= POKER ? `<div class="pot" id="pot"><button class="clr" onclick="sheetSt.s=0;updStake()">נקה ✕</button><div id="potStk">${stacksHTML(s)}</div><div class="amt" id="potAmt">${fmt(s)}</div></div>
     <div class="muted" style="text-align:center;margin-top:6px">החלק ז'יטון למעלה (או גע בו) כדי לזרוק אותו לקופה 👆</div>
@@ -828,9 +838,9 @@ function renderSheet(){
     ${POKER?'':`<div class="qs">${[10,25,50,100].map(v=>`<button onclick="setStake(${v})">${v}</button>`).join('')}<button onclick="setStake(${Math.floor(a.avail)})">הכול</button></div>`}
     <input type="range" class="rng" id="stakeRng" min="1" max="${Math.max(1,Math.floor(a.avail))}" step="1" value="${Math.min(s||1,Math.max(1,Math.floor(a.avail)))}" oninput="sheetSt.s=+this.value;updStake()">
     <div class="muted" style="text-align:center;margin-top:6px">יתרה: ${fmt(a.avail)} 🪙</div>
-    ${jkFree?`<div class="jk ${sheetSt.j?'on':''}" onclick="sheetSt.j=!sheetSt.j;renderSheet()"><span>🃏 ג'וקר יומי – הרווח כפול!<br><small style="opacity:.8">פעם אחת ל${dayLabel(dk)}</small></span><span class="sw"></span></div>`:`<div class="muted" style="text-align:center;margin:8px 0">🃏 כבר השתמשת בג'וקר של ${dayLabel(dk)}</div>`}
-    <div class="win" id="winTxt">זכייה אפשרית: <b>${fmt(win)} 🪙</b></div>
-    <button class="btn" id="betBtn" ${L||!o?'disabled':''} onclick="placeBet()">${L?'🔒 ננעל':'הימור! 🎰'}</button>
+    ${jkFree?`<button class="jk ${sheetSt.j?'on':''}" aria-pressed="${!!sheetSt.j}" onclick="sheetSt.j=!sheetSt.j;renderSheet()"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#A97BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M12 8l1.2 2.6 2.8.3-2.1 1.9.6 2.8-2.5-1.4-2.5 1.4.6-2.8-2.1-1.9 2.8-.3z"/></svg><span style="display:flex;flex-direction:column;gap:1px;flex:1;text-align:right"><b style="font-size:15px">ג׳וקר יומי · רווח כפול</b><span style="font-size:12px;color:var(--mut)">פעם אחת ל${dayLabel(dk)}</span></span><span class="sw"></span></button>`:`<div class="muted" style="text-align:center">🃏 כבר השתמשת בג׳וקר של ${dayLabel(dk)}</div>`}
+    <div class="win" id="winTxt">${winHTML(win,s)}</div>
+    <button class="btn" id="betBtn" ${L||!o?'disabled':''} onclick="placeBet()">${L?'ננעל':'הימור!'}</button>
     <div class="muted" style="text-align:center;margin-top:8px">אפשר לבטל עד הנעילה · אפשר כמה הימורים על אותו משחק</div>
     <div style="text-align:center;margin-top:10px"><a href="#" class="muted" style="text-decoration:underline" onclick="togglePoker();return false">${POKER?'עבור למצב רגיל (בלי ז\'יטונים)':'עבור למצב פוקר 🎰'}</a></div>`;
   const sh=document.getElementById('sheet'), foc=document.activeElement&&document.activeElement.id==='stakeIn'; sh.innerHTML=h;
@@ -839,7 +849,8 @@ function renderSheet(){
   bindTray();
 }
 function paintRng(r){ const p=(r.value-r.min)/Math.max(1,(r.max-r.min))*100; r.style.setProperty('--fill',p+'%'); }
-function updWin(){ const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)); document.getElementById('winTxt').innerHTML=`זכייה אפשרית: <b>${fmt(o?(sheetSt.j?s+2*(s*o-s):s*o):0)} 🪙</b>`; }
+function winHTML(win,s){ return `<span>זכייה אפשרית</span><span style="display:flex;align-items:baseline;gap:8px"><b>${fmt(win)}</b><small style="color:var(--mut);font-weight:700;direction:ltr">+${fmt(Math.max(0,win-s))}</small></span>`; }
+function updWin(){ const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)); document.getElementById('winTxt').innerHTML=winHTML(o?(sheetSt.j?s+2*(s*o-s):s*o):0,s); }
 function setStake(v){ sheetSt.s=Math.max(0,v); renderSheet(); }
 function csB(k,d){ sheetSt[k]=Math.max(0,Math.min(4,sheetSt[k]+d)); renderSheet(); }
 // ===== תור הימורים: בלי קליטה ההימור נשמר בטלפון ונשלח אוטומטית כשהקליטה חוזרת =====
@@ -890,7 +901,7 @@ async function placeBet(){
   const r=await sendBet(it,false);
   if(r==='ok'){ closeSheet(); toast('ההימור נשמר בשרת ✅ בהצלחה 🍀',true); confetti(60); }
   else if(r==='fail'){ QUEUE.push(it); saveQ(); closeSheet(); toast('אין קליטה – ההימור נשמר בטלפון ⏳ יישלח אוטומטית כשהקליטה תחזור',true,null,5000); render(); }
-  else { btn.disabled=false; btn.textContent='הימור! 🎰';
+  else { btn.disabled=false; btn.textContent='הימור!';
     toast(r==='locked'?'המשחק ננעל 🔒':r==='nofunds'?"אין מספיק ז'יטונים":'ההימור נדחה – היחס התעדכן. בדוק ונסה שוב',false,'err',4000); renderSheet(); }
 }
 async function cancelBet(bid){
