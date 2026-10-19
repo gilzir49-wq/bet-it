@@ -2,7 +2,7 @@
 # מביא משחקים (היום + 3 ימים) מ-4 ליגות, יחסים, תוצאות לייב וטבלאות; סוגר הימורים ומשלם זכיות;
 # מחלק מענק שבועי; מפרסם טבלאות דירוג, קופת בנק והימורים שנחשפו; מבצע פעולות מנהל.
 # כותב ל-Firebase עם מפתח שירות (נשמר בכספת של GitHub, לא בקוד).
-import json, time, math, os, sys, datetime, hashlib, urllib.request, urllib.error
+import json, time, math, os, sys, copy, threading, datetime, hashlib, urllib.request, urllib.error
 from zoneinfo import ZoneInfo
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
@@ -19,6 +19,7 @@ RUN_FOR = 5 * 3600 + 40 * 60
 MARGIN = 1.07
 START, WEEKLY, BANK_START = 500, 50, 10000
 LOCK_MS = 120000
+REVEAL_MS = 4 * 86400 * 1000   # 'מי הימר מה' נשמר לכולם רק 4 ימים אחורה
 
 # ---------- הרשאות ----------
 _info = json.loads(os.environ['FIREBASE_SA']) if os.environ.get('FIREBASE_SA') else json.load(open(os.path.expanduser('~/.config/buxbet/sa.json')))
@@ -29,6 +30,9 @@ def tok():
     return _creds.token
 
 def fb(path, method='GET', body=None, etag=False, if_match=None):
+    if method == 'GET' and not etag and path in MIRRORS:          # נתיב גדול שיש לו מראה חיה – בלי להוריד שוב מהשרת
+        snap = MIRRORS[path].snapshot()
+        if snap is not None: return snap
     if method == 'PUT' and body is None: method = 'DELETE'      # כתיבת "ריק" = מחיקה
     h = {'Authorization': 'Bearer ' + tok(), 'Content-Type': 'application/json'}
     if etag: h['X-Firebase-ETag'] = 'true'
@@ -42,6 +46,53 @@ def fb(path, method='GET', body=None, etag=False, if_match=None):
     except urllib.error.HTTPError as e:
         if e.code == 412: return 'CONFLICT'
         raise
+
+# ---------- מראה חיה (סקייל) ----------
+# במקום להוריד את כל החשבונות כל 20 שניות (10,000 שחקנים = מאות מגה בכל סבב), הרובוט פותח ערוץ האזנה אחד
+# (REST streaming) ומקבל פעם אחת את הכול ואחר כך רק שינויים. אם הערוץ נופל/שותק – חוזרים אוטומטית לקריאה רגילה.
+MIRRORS = {}
+class Mirror:
+    STALE = 120                                                  # Firebase שולח keep-alive כל ~30 שניות
+    def __init__(self, path):
+        self.path, self.data, self.ready, self.last = path, None, False, 0.0
+        self.lock = threading.Lock(); MIRRORS[path] = self
+        threading.Thread(target=self._run, daemon=True).start()
+    def snapshot(self):
+        with self.lock:
+            if not self.ready or time.time() - self.last > self.STALE: return None
+            return copy.deepcopy(self.data) if self.data is not None else {}
+    @staticmethod
+    def _set(node, ks, val):                                     # כמו Firebase: ריק = מחיקה, וצמתים ריקים נעלמים
+        if not ks: return val if val not in ({}, None) else None
+        node = node if isinstance(node, dict) else {}
+        child = Mirror._set(node.get(ks[0]), ks[1:], val)
+        if child is None: node.pop(ks[0], None)
+        else: node[ks[0]] = child
+        return node or None
+    def _apply(self, kind, msg):
+        ks = [k for k in (msg.get('path') or '/').split('/') if k]; val = msg.get('data')
+        with self.lock:
+            if kind == 'put' and not ks: self.data = val if isinstance(val, dict) else None; self.ready = True; return
+            if not self.ready: return
+            if kind == 'put': self.data = self._set(self.data, ks, val)
+            else:
+                for k, v in (val or {}).items(): self.data = self._set(self.data, ks + [x for x in k.split('/') if x], v)
+    def _run(self):
+        while True:
+            try:
+                req = urllib.request.Request(f'{DB}/{self.path}.json', headers={'Authorization': 'Bearer ' + tok(), 'Accept': 'text/event-stream'})
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    kind = None
+                    for raw in r:
+                        line = raw.decode('utf-8').rstrip('\r\n')
+                        if line.startswith('event:'): kind = line[6:].strip()
+                        elif line.startswith('data:'):
+                            self.last = time.time()
+                            if kind in ('put', 'patch'): self._apply(kind, json.loads(line[5:]))
+                            elif kind in ('cancel', 'auth_revoked'): break       # הטוקן פג (כל שעה) – מתחברים מחדש
+            except Exception as ex: print('mirror', self.path, repr(ex), flush=True)
+            with self.lock: self.ready = False
+            time.sleep(3)
 
 def ls(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -252,7 +303,7 @@ def publish(accts, prev_fx):
             f = fixtures.get(b['e']); s = settled.get(bid); st = s['st'] if s else state(b)
             if st in ('lost', 'live-lose'): bank += b['s']
             elif st in ('won', 'live-win'): bank -= payout(b) - b['s']
-            if f and (f['st'] != 'none' or now >= f['ko'] - LOCK_MS):           # נחשף רק אחרי הנעילה
+            if f and (f['st'] != 'none' or now >= f['ko'] - LOCK_MS) and f['ko'] > now - REVEAL_MS:   # נחשף רק אחרי הנעילה; ישנים לא נשלחים לכולם
                 revealed.setdefault(b['e'], {})[f"{a['pid']}_{bid}"] = {'n': a['name'], 'm': b['m'], 'p': b['p'], 's': b['s'], 'j': bool(b.get('j')), 'st': st}
     rw, rs = ranks('wp', rows), ranks('v', rows)
     if prev_fx:   # חצים: הדירוג לפני השינוי האחרון בתוצאות
@@ -279,6 +330,8 @@ def publish(accts, prev_fx):
     if published.get('profiles') != json.dumps(profiles, sort_keys=True): upd['pub/profiles'] = profiles
     for e, v in revealed.items():
         if published.get('rv' + e) != json.dumps(v, sort_keys=True): upd[f'pub/revealed/{e}'] = v
+    for k in [k for k in published if k.startswith('rv') and k[2:] not in revealed]:
+        upd[f'pub/revealed/{k[2:]}'] = None; published.pop(k)       # משחק ישן – יוצא מהרשימה שכל טלפון מוריד (ההימורים עצמם נשארים בחשבונות)
     if upd_cnt != 'same': upd['pub/cnt'] = upd_cnt or None; published['cnt'] = json.dumps(cnt, sort_keys=True)
     if upd:
         fb('', 'PATCH', upd)
@@ -396,6 +449,9 @@ if __name__ == '__main__':
     once = '--once' in sys.argv; started = time.time()
     fixtures.update(fb('fixtures') or {})
     for lg, v in (fb('pub/tables') or {}).items(): tables[lg] = v.get('rows', [])
+    for e in (fb('pub/revealed') or {}): published['rv' + e] = ''        # כך ישנים יימחקו בסבב הראשון
+    if not once:
+        for p in ('acct', 'names', 'lgdef'): Mirror(p)
     last_refresh = 0
     while True:
         try:
