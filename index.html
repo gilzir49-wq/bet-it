@@ -662,7 +662,7 @@ function crowdBox(list){
   if(!hot) return '';
   const f=hot.f, W=hot.rv.filter(b=>b.m==='W'), tot=W.length, c={'1':0,'X':0,'2':0}; W.forEach(b=>c[b.p]++);
   const mx=Math.max(c['1'],c.X,c['2']), row=(lab,k)=>{ const pc=Math.round(100*c[k]/tot); return `<div class="row"><span>${esc(lab)}</span><span class="tr"><span class="${c[k]===mx?'top':''}" style="width:${pc}%"></span></span><b style="text-align:left;font-variant-numeric:tabular-nums">${pc}%</b></div>`; };
-  const cs=hot.rv.filter(b=>b.m==='CS'), rare=cs.length===1?`רק ${esc(cs[0].n)} הלך על ${cs[0].p.replace('-',':')}. אולי הוא יודע משהו.`:cs.length?`${cs.length} מהחבר׳ה הימרו על תוצאה מדויקת.`:'';
+  const cs=hot.rv.filter(b=>b.m==='CS'), rare=cs.length===1?`רק ${esc(cs[0].n)} הלך על ${cs[0].p.replace('-','–')}. אולי הוא יודע משהו.`:cs.length?`${cs.length} מהחבר׳ה הימרו על תוצאה מדויקת.`:'';
   return `<section class="crowdbox"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px">החבר׳ה על ${esc(he(f.home))}–${esc(he(f.away))}</b><span class="muted" style="font-size:11px;font-weight:700">${tot} הימורים</span></div>
     ${row(he(f.home),'1')}${row('תיקו','X')}${row(he(f.away),'2')}${rare?`<span class="muted" style="font-size:12px">${rare}</span>`:''}</section>`;
 }
@@ -694,8 +694,8 @@ const IC={
   key:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C6F432" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg>',
   fire:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFC94D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.5 1 2.5 2 3 0-3 0-6 1-8.5z"/></svg>'};
 // בחירה קצרה: "ארסנל" / "תיקו" / "תוצאה 2–0"
-function shortPick(f,b){ if(b.m==='CS') return `תוצאה <bdi dir="ltr">${esc(b.p.replace('-','–'))}</bdi>`; return b.p==='X'?'תיקו':esc(he(f?(b.p==='1'?f.home:f.away):'')); }
-const scoreTxt = f => `<bdi dir="ltr" style="font-variant-numeric:tabular-nums">${f.h}–${f.a}</bdi>`;   // כמו באנר הגול: בית–חוץ
+function shortPick(f,b){ if(b.m==='CS') return `תוצאה <bdi dir="rtl">${esc(b.p.replace('-','–'))}</bdi>`; return b.p==='X'?'תיקו':esc(he(f?(b.p==='1'?f.home:f.away):'')); }
+const scoreTxt = f => `<bdi dir="rtl" style="font-variant-numeric:tabular-nums">${f.h}–${f.a}</bdi>`;   // כמו באנר הגול: שערי הבית מימין, ליד קבוצת הבית
 // רצף ניחושים נכונים (מההכרעה האחרונה אחורה, בלי הימורים שהוחזרו)
 function winStreak(){ const ss=Object.values((A&&A.settled)||{}).filter(x=>x.st!=='void').sort((a,b)=>(b.at||0)-(a.at||0)); let n=0; for(const x of ss){ if(x.st!=='won') break; n++; } return n; }
 const HOT=5;
