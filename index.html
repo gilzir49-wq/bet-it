@@ -374,7 +374,8 @@ function viewGames(){
   if(!shown.length) return h + `<div class="empty"><div class="e">📅</div>אין משחקים ביום הזה.<br>הרובוט מעדכן משחקים ל-3 ימים קדימה.</div>` + ad();
   const p=myP();
   if(dayF!=='live' && p && !jokerUsed(p,dayF) && shown.some(f=>!isLocked(f))) h += `<div class="muted" style="margin:4px 2px">🃏 הג'וקר היומי שלך פנוי – בחר הימור אחד היום עם רווח כפול</div>`;
-  Object.keys(LEAGUES).forEach((lg,i)=>{ const g=shown.filter(f=>f.lg===lg); if(!g.length) return;
+  const ord = f => f.st==='live'?0 : f.st==='none'?1 : 2;   // חי ← עתידי ← הסתיים
+  Object.keys(LEAGUES).forEach((lg,i)=>{ const g=shown.filter(f=>f.lg===lg).sort((a,b)=>ord(a)-ord(b)||a.ko-b.ko); if(!g.length) return;
     h += `<div class="lghead">${LEAGUES[lg].f} ${LEAGUES[lg].n}</div>` + g.map(fxCard).join('');
     if(i===1) h += ad(); });
   return h + ad();
