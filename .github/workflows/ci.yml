@@ -36,6 +36,13 @@ jobs:
           DB_URL: https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
       - run: mkdir _site && cp -r index.html admin og.png _site/
+      - name: עלייה לאוויר – bet-it.web.app
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: |
+          echo "$FIREBASE_SA" > /tmp/sa.json
+          GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json npx -y firebase-tools@15 deploy --only hosting --project buxbet-il --non-interactive
+          rm -f /tmp/sa.json
       - uses: actions/upload-pages-artifact@v3
         with: { path: _site }
       - id: d

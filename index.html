@@ -11,8 +11,8 @@
 <meta property="og:site_name" content="BET-IT">
 <meta property="og:title" content="BET-IT – משחק הניחושים של החבר׳ה">
 <meta property="og:description" content="מהמרים על הכדורגל בז׳יטונים וירטואליים – בלי כסף אמיתי. ליגת העל, לאומית, אנגליה ואיטליה ⚽">
-<meta property="og:url" content="https://gilzir49-wq.github.io/bet-it/">
-<meta property="og:image" content="https://gilzir49-wq.github.io/bet-it/og.png">
+<meta property="og:url" content="https://bet-it.web.app/">
+<meta property="og:image" content="https://bet-it.web.app/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="og.png">
@@ -106,6 +106,11 @@ h2{font-weight:900;font-size:21px;margin:18px 2px 8px;letter-spacing:-.2px}
 .stake{display:flex;align-items:center;gap:8px;margin:14px 0 8px}
 .stake input{flex:1;font-size:28px;font-weight:900;text-align:center;background:rgba(0,0,0,.4);color:#fff;border:1.5px solid rgba(198,244,50,.6);border-radius:16px;padding:10px;font-family:inherit;width:100%;outline:none}
 .stake input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(198,244,50,.15)}
+.rng{-webkit-appearance:none;appearance:none;width:100%;height:30px;background:transparent;margin:14px 0 2px;direction:rtl;--fill:0%}
+.rng::-webkit-slider-runnable-track{height:8px;border-radius:99px;background:linear-gradient(to left,var(--gold) var(--fill),var(--card3) var(--fill))}
+.rng::-moz-range-track{height:8px;border-radius:99px;background:var(--card3)}.rng::-moz-range-progress{height:8px;border-radius:99px;background:var(--gold)}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:4px solid var(--gold);margin-top:-10px;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+.rng::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid var(--gold)}
 .qs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .qs button{background:var(--card2);color:#fff;border:1px solid var(--line2);border-radius:12px;padding:10px 0;font-weight:900;cursor:pointer}
 .win{text-align:center;font-size:15px;margin:12px 0;font-weight:700;color:#cfd6ee}
@@ -247,6 +252,20 @@ const rnd = (n, abc) => { const a=new Uint32Array(n); crypto.getRandomValues(a);
 const AZ='abcdefghijklmnopqrstuvwxyz0123456789', AZM='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 const nkOf = name => name.toLowerCase().replace(/ /g,'');
 
+// מעבר לכתובת הקבועה bet-it.web.app – מעבירים איתנו את מפתח המכשיר (בחלק של הכתובת שלא נשלח לשום שרת)
+(function migrateHost(){
+  const NEW='https://bet-it.web.app';
+  if(location.hostname.endsWith('github.io')){
+    const p=new URLSearchParams(); ['bb_sec','bb_ak','bb_pending','bb_q','bb_tab'].forEach(k=>{ const v=lsGet(k); if(v) p.set(k,v); });
+    const adm=/\/admin\/?$/.test(location.pathname)||/[?&]admin=1/.test(location.search);
+    const h=location.hash.replace(/^#/,''); location.replace(NEW+(adm?'/?admin=1':'/')+'#'+(h?h+'&':'')+'mig='+encodeURIComponent(p.toString()));
+    throw new Error('moving to '+NEW);
+  }
+  const m=location.hash.match(/mig=([^&]*)/);
+  if(m){ new URLSearchParams(decodeURIComponent(m[1])).forEach((v,k)=>{ if(!lsGet(k)) lsSet(k,v); });
+    const rest=location.hash.replace(/^#/,'').split('&').filter(x=>x&&!x.startsWith('mig=')).join('&');
+    history.replaceState(null,'',location.pathname+location.search+(rest?'#'+rest:'')); }
+})();
 // מפתח המכשיר (סודי) – נשמר רק בטלפון. מפתח מנהל – רק במכשיר של המנהל.
 let SEC = lsGet('bb_sec');
 let PENDING = lsGet('bb_pending');      // בקשת שחזור שממתינה לאישור מנהל
@@ -524,8 +543,9 @@ function renderSheet(){
       <div style="font-weight:900;color:var(--o)">:</div><div><div style="font-weight:900;font-size:13px;margin-bottom:6px">${esc(he(f.away))}</div><div class="step"><button class="minus" onclick="csB('ca',-1)">−</button><span class="val">${sheetSt.ca}</span><button class="plus" onclick="csB('ca',1)">+</button></div></div></div>
       <div class="o" style="margin-top:8px">${o?'× '+o.toFixed(2):'–'}</div></div>`;
   else h+=`<div class="odds" style="margin-top:0">${['1','X','2'].map(k=>`<button class="ob ${sheetSt.p===k?'mine':''}" onclick="sheetSt.p='${k}';renderSheet()"><span class="l">${k==='X'?'תיקו':esc(he(k==='1'?f.home:f.away))}</span><span class="v">${f.odds&&f.odds[k]?f.odds[k].toFixed(2):'–'}</span></button>`).join('')}</div>`;
-  h+=`<div class="stake"><input id="stakeIn" type="number" inputmode="numeric" min="1" value="${s||''}" oninput="sheetSt.s=+this.value;updWin()"><span style="font-weight:900">🪙</span></div>
+  h+=`<div class="stake"><input id="stakeIn" type="number" inputmode="numeric" min="1" value="${s||''}" oninput="sheetSt.s=+this.value;const r=document.getElementById('stakeRng');if(r){r.value=this.value;paintRng(r)}updWin()"><span style="font-weight:900">🪙</span></div>
     <div class="qs">${[10,25,50,100].map(v=>`<button onclick="setStake(${v})">${v}</button>`).join('')}<button onclick="setStake(${Math.floor(a.avail)})">הכול</button></div>
+    <input type="range" class="rng" id="stakeRng" min="1" max="${Math.max(1,Math.floor(a.avail))}" step="1" value="${Math.min(s||1,Math.max(1,Math.floor(a.avail)))}" oninput="sheetSt.s=+this.value;document.getElementById('stakeIn').value=this.value;updWin();paintRng(this)">
     <div class="muted" style="text-align:center;margin-top:6px">יתרה: ${fmt(a.avail)} 🪙</div>
     ${jkFree?`<div class="jk ${sheetSt.j?'on':''}" onclick="sheetSt.j=!sheetSt.j;renderSheet()"><span>🃏 ג'וקר יומי – הרווח כפול!<br><small style="opacity:.8">פעם אחת ל${dayLabel(dk)}</small></span><span class="sw"></span></div>`:`<div class="muted" style="text-align:center;margin:8px 0">🃏 כבר השתמשת בג'וקר של ${dayLabel(dk)}</div>`}
     <div class="win" id="winTxt">זכייה אפשרית: <b>${fmt(win)} 🪙</b></div>
@@ -533,7 +553,9 @@ function renderSheet(){
     <div class="muted" style="text-align:center;margin-top:8px">אפשר לבטל עד הנעילה · אפשר כמה הימורים על אותו משחק</div>`;
   const sh=document.getElementById('sheet'), foc=document.activeElement&&document.activeElement.id==='stakeIn'; sh.innerHTML=h;
   if(foc){ const i=document.getElementById('stakeIn'); i.focus(); i.setSelectionRange(i.value.length,i.value.length); }
+  const rg=document.getElementById('stakeRng'); if(rg) paintRng(rg);
 }
+function paintRng(r){ const p=(r.value-r.min)/Math.max(1,(r.max-r.min))*100; r.style.setProperty('--fill',p+'%'); }
 function updWin(){ const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)); document.getElementById('winTxt').innerHTML=`זכייה אפשרית: <b>${fmt(o?(sheetSt.j?s+2*(s*o-s):s*o):0)} 🪙</b>`; }
 function setStake(v){ sheetSt.s=Math.max(0,v); renderSheet(); }
 function csB(k,d){ sheetSt[k]=Math.max(0,Math.min(4,sheetSt[k]+d)); renderSheet(); }

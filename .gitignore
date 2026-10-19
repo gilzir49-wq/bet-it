@@ -2,3 +2,4 @@ sa.json
 *.key
 .env
 snapshots/
+_site/
