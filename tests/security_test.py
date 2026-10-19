@@ -93,6 +93,11 @@ check('ביטול עם החזר מנופח', req('PATCH', '', canc(A, 'bpentest1
 check('ביטול תקין', req('PATCH', '', canc(A, 'bpentest13', 440, 10))[0], 200)
 check('ביטול כפול (החזר פעמיים)', req('PATCH', '', canc(A, 'bpentest13', 450, 10))[0], 401)
 check('החזר בלי למחוק את ההימור', req('PATCH', '', {f'acct/{A}/wallet/bal': 500, f'acct/{A}/wallet/op': 'c:bpentest12'})[0], 401)
+# משחק נדחה → הרובוט החזיר את הסכום (void) → המשחק חזר ללוח: ביטול היה נותן החזר כפול
+check('הימור לפני דחייה', req('PATCH', '', bet(A, 'bpentest18', 450, s=20))[0], 200)
+R.fb('', 'PATCH', {f'acct/{A}/settled/bpentest18': {'st': 'void', 'pay': 20, 'at': R.now_ms()}, f'acct/{A}/wallet/bal': 450})
+check('החזר כפול: ביטול הימור שכבר הוחזר (משחק נדחה וחזר)', req('PATCH', '', canc(A, 'bpentest18', 450, 20))[0], 401)
+check('החזר כפול: ביטול עם ג\'וקר/בלי – גם מחיקת ההימור לבד', req('DELETE', f'acct/{A}/bets/bpentest18')[0], 401)
 
 print('--- ג\'וקר')
 j1 = bet(A, 'bpentest14', 450, s=10, extra={'j': True}); j1[f'acct/{A}/jokers/{day}'] = 'bpentest14'
