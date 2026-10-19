@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#050C08">
+<meta name="theme-color" content="#070A14">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>BUX BET – ליגת ההימורים של CrossFit BUX</title>
+<title>BET-IT – משחק הניחושים של החבר׳ה</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-/* ===== BUX BET – עיצוב: ירוק-זהב של CrossFit BUX, כהה ופרימיום ===== */
+/* ===== BET-IT – עיצוב: כחול-לילה + ירוק-ליים חשמלי ===== */
 :root{
-  --bg:#050C08;--bg2:#08130D;--card:#0D1A13;--card2:#13241A;--card3:#1A3022;--line:#1C3226;--line2:#26402F;
-  --txt:#EEF5F0;--mut:#86A08F;--gold:#F1C93B;--gold2:#D9A12A;--green:#1F5D24;--em:#34D27B;--red:#FF5A5F;--p:#B26BFF;
+  --bg:#070A14;--bg2:#0A0E1C;--card:#0F1426;--card2:#161C33;--card3:#1E2642;--line:#1C2340;--line2:#2A3358;
+  --txt:#EEF1FA;--mut:#8E97B5;--gold:#C6F432;--gold2:#8FD11E;--green:#3B2FD9;--em:#3BE38B;--red:#FF5A6A;--p:#A97BFF;
   --y:var(--gold);--o:var(--gold2);--g:var(--em);--r:var(--red);
   --r-sm:10px;--r-md:14px;--r-lg:20px;--shadow:0 10px 30px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--txt);font-family:Heebo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-body{padding-bottom:calc(76px + env(safe-area-inset-bottom));background:radial-gradient(1200px 500px at 80% -100px,rgba(31,93,36,.35),transparent 60%),var(--bg);background-attachment:fixed}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom));background:radial-gradient(1200px 500px at 80% -100px,rgba(76,64,230,.35),transparent 60%),var(--bg);background-attachment:fixed}
 button{font-family:inherit}
 .wrap{max-width:560px;margin:0 auto;padding:0 14px}
 b,.big,.score,.v,.val{font-variant-numeric:tabular-nums}
@@ -26,17 +26,17 @@ b,.big,.score,.v,.val{font-variant-numeric:tabular-nums}
 .appbar{position:sticky;top:0;z-index:20;background:rgba(5,12,8,.82);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;height:60px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.mark{position:relative;width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,var(--gold),var(--gold2));color:#0B1A10;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:0 4px 14px rgba(241,201,59,.25);flex:0 0 auto}
+.mark{position:relative;width:38px;height:38px;border-radius:12px;letter-spacing:-1px;font-style:italic;background:linear-gradient(145deg,var(--gold),var(--gold2));color:#0A0E1C;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:0 4px 14px rgba(198,244,50,.25);flex:0 0 auto}
 .mark i{position:absolute;bottom:-2px;left:-2px;width:11px;height:11px;border-radius:50%;background:var(--mut);border:2px solid var(--bg)}
 .mark i.on{background:var(--em);box-shadow:0 0 8px var(--em)}
 .brand b{display:block;font-size:17px;font-weight:900;letter-spacing:.3px;line-height:1}
 .brand small{display:block;color:var(--mut);font-size:11px;font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topr{display:flex;align-items:center;gap:6px}
-.bal{position:relative;display:flex;align-items:center;gap:5px;background:linear-gradient(180deg,#14281C,#0E1D15);border:1px solid rgba(241,201,59,.55);color:var(--gold);border-radius:99px;padding:6px 12px;font-weight:900;font-size:16px;white-space:nowrap;cursor:pointer;transition:background .3s,border-color .3s}
+.bal{position:relative;display:flex;align-items:center;gap:5px;background:linear-gradient(180deg,#1A2140,#11162B);border:1px solid rgba(198,244,50,.55);color:var(--gold);border-radius:99px;padding:6px 12px;font-weight:900;font-size:16px;white-space:nowrap;cursor:pointer;transition:background .3s,border-color .3s}
 .bal small{color:var(--mut);font-weight:700;font-size:10.5px}
 .bal.lv small{color:#ff8a8d;animation:pulse 1.4s infinite}
 .bal.up{background:rgba(52,210,123,.25);border-color:var(--em)}.bal.dn{background:rgba(255,90,95,.25);border-color:var(--red)}
-.pill{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:6px 10px;font-size:12.5px;font-weight:700;white-space:nowrap;color:#d6e4da;cursor:pointer}
+.pill{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:6px 10px;font-size:12.5px;font-weight:700;white-space:nowrap;color:#d4dbf0;cursor:pointer}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mut)}.dot.on{background:var(--em)}
 .delta{position:fixed;z-index:96;font-weight:900;font-size:22px;pointer-events:none;animation:floatUp 1.8s ease-out forwards;text-shadow:0 2px 10px #000}
 .delta.up{color:var(--em)}.delta.dn{color:var(--red)}
@@ -45,15 +45,15 @@ b,.big,.score,.v,.val{font-variant-numeric:tabular-nums}
 /* טיפוגרפיה */
 h2{font-weight:900;font-size:21px;margin:18px 2px 8px;letter-spacing:-.2px}
 .muted{color:var(--mut);font-size:13px;line-height:1.45}
-.card{background:linear-gradient(180deg,var(--card),#0B170F);border-radius:var(--r-lg);padding:14px;margin:10px 0;border:1px solid var(--line);box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
+.card{background:linear-gradient(180deg,var(--card),#0C1122);border-radius:var(--r-lg);padding:14px;margin:10px 0;border:1px solid var(--line);box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
 /* פרסומת חסות – עדינה */
-.ad{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(31,93,36,.35),rgba(31,93,36,.08));border:1px solid var(--line2);border-inline-start:3px solid var(--gold);color:#dfe9e2;border-radius:var(--r-md);padding:10px 12px;margin:14px 0;font-weight:700;font-size:13px}
+.ad{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(76,64,230,.35),rgba(76,64,230,.08));border:1px solid var(--line2);border-inline-start:3px solid var(--gold);color:#dde3f4;border-radius:var(--r-md);padding:10px 12px;margin:14px 0;font-weight:700;font-size:13px}
 .ad b{color:var(--gold)}
 /* צ'יפים */
 .chips{display:flex;gap:8px;overflow-x:auto;padding:12px 2px 6px;scrollbar-width:none;margin:0 -14px;padding-inline:14px}
 .chips::-webkit-scrollbar{display:none}
-.chip{flex:0 0 auto;border:1px solid var(--line2);background:var(--card);color:#dbe7df;border-radius:99px;padding:8px 14px;font-weight:700;font-size:13.5px;cursor:pointer;transition:.15s}
-.chip.on{background:var(--gold);color:#0B1A10;border-color:var(--gold);box-shadow:0 4px 14px rgba(241,201,59,.25)}
+.chip{flex:0 0 auto;border:1px solid var(--line2);background:var(--card);color:#d9dff2;border-radius:99px;padding:8px 14px;font-weight:700;font-size:13.5px;cursor:pointer;transition:.15s}
+.chip.on{background:var(--gold);color:#0A0E1C;border-color:var(--gold);box-shadow:0 4px 14px rgba(198,244,50,.25)}
 .chip .n{opacity:.65;font-size:11px;margin-inline-start:5px}
 .lghead{display:flex;align-items:center;gap:8px;font-weight:900;font-size:13px;margin:18px 4px 6px;color:var(--mut);letter-spacing:.3px;text-transform:uppercase}
 .lghead:after{content:"";flex:1;height:1px;background:var(--line)}
@@ -67,38 +67,38 @@ h2{font-weight:900;font-size:21px;margin:18px 2px 8px;letter-spacing:-.2px}
 .score{font-size:30px;font-weight:900;direction:rtl;unicode-bidi:isolate;white-space:nowrap;letter-spacing:1px}
 .ko{font-size:18px;font-weight:900;color:var(--txt);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:4px 10px}
 .live{display:inline-block;background:var(--red);color:#fff;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:900;animation:pulse 1.4s infinite}
-.fin{display:inline-block;background:var(--card3);color:#cfe0d4;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:900}
+.fin{display:inline-block;background:var(--card3);color:#cfd6ee;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:900}
 .lock{color:#ffb0b2;font-weight:700}
 .odds{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
 .ob{background:var(--card2);border:1px solid var(--line2);border-radius:12px;padding:8px 4px;color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;touch-action:manipulation;transition:transform .1s,background .15s,border-color .15s}
 .ob .l{font-size:11.5px;color:var(--mut);font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
 .ob .v{font-size:18px;font-weight:900;color:var(--gold)}
 .ob:active{transform:scale(.95)}
-.ob:hover:not(:disabled){border-color:rgba(241,201,59,.5)}
-.ob.mine{background:linear-gradient(180deg,rgba(241,201,59,.22),rgba(241,201,59,.08));border-color:var(--gold)}
+.ob:hover:not(:disabled){border-color:rgba(198,244,50,.5)}
+.ob.mine{background:linear-gradient(180deg,rgba(198,244,50,.22),rgba(198,244,50,.08));border-color:var(--gold)}
 .ob:disabled{opacity:.35;cursor:default}
-.csb{display:block;width:100%;margin-top:8px;background:transparent;border:1px dashed var(--line2);color:#cfe0d4;border-radius:12px;padding:9px;font-weight:700;font-size:13px;cursor:pointer}
+.csb{display:block;width:100%;margin-top:8px;background:transparent;border:1px dashed var(--line2);color:#cfd6ee;border-radius:12px;padding:9px;font-weight:700;font-size:13px;cursor:pointer}
 .csb:disabled{opacity:.35}
-.mybet{margin-top:8px;padding:8px 11px;border-radius:12px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:8px;background:rgba(241,201,59,.07);border:1px solid rgba(241,201,59,.3)}
+.mybet{margin-top:8px;padding:8px 11px;border-radius:12px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;gap:8px;background:rgba(198,244,50,.07);border:1px solid rgba(198,244,50,.3)}
 .mybet.won{background:rgba(52,210,123,.12);border-color:rgba(52,210,123,.6)}.mybet.lost{background:rgba(255,90,95,.1);border-color:rgba(255,90,95,.5)}
 .who{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
-.who summary{cursor:pointer;font-weight:700;font-size:13px;color:#cfe0d4;list-style:none}
+.who summary{cursor:pointer;font-weight:700;font-size:13px;color:#cfd6ee;list-style:none}
 .wr{display:flex;justify-content:space-between;font-size:13px;padding:6px 2px;border-bottom:1px solid var(--line)}
 .pct{display:inline-block;min-width:44px;text-align:center;border-radius:99px;padding:1px 8px;font-weight:900;background:linear-gradient(90deg,rgba(52,210,123,.35) var(--p),rgba(255,255,255,.08) var(--p));color:#fff}
 .st-won{color:var(--em)}.st-lost{color:var(--red)}.st-open{color:var(--mut)}.st-live{color:var(--gold)}
 /* גיליון הימור */
 #sheetBg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:40;display:none}
-#sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:linear-gradient(180deg,#112218,#0A150F);border-top:1px solid rgba(241,201,59,.5);border-radius:24px 24px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.9,.3,1);max-width:560px;margin:0 auto;max-height:90vh;overflow:auto;box-shadow:0 -20px 50px rgba(0,0,0,.6)}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:linear-gradient(180deg,#141A33,#0C1020);border-top:1px solid rgba(198,244,50,.5);border-radius:24px 24px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.9,.3,1);max-width:560px;margin:0 auto;max-height:90vh;overflow:auto;box-shadow:0 -20px 50px rgba(0,0,0,.6)}
 #sheet:before{content:"";display:block;width:42px;height:5px;border-radius:99px;background:var(--line2);margin:0 auto 10px}
 #sheet.show{transform:none}#sheetBg.show{display:block}
 .pick{background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center;margin-top:10px}
 .pick .t{font-weight:900;font-size:18px}.pick .o{font-size:30px;font-weight:900;color:var(--gold)}
 .stake{display:flex;align-items:center;gap:8px;margin:14px 0 8px}
-.stake input{flex:1;font-size:28px;font-weight:900;text-align:center;background:rgba(0,0,0,.4);color:#fff;border:1.5px solid rgba(241,201,59,.6);border-radius:16px;padding:10px;font-family:inherit;width:100%;outline:none}
-.stake input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(241,201,59,.15)}
+.stake input{flex:1;font-size:28px;font-weight:900;text-align:center;background:rgba(0,0,0,.4);color:#fff;border:1.5px solid rgba(198,244,50,.6);border-radius:16px;padding:10px;font-family:inherit;width:100%;outline:none}
+.stake input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(198,244,50,.15)}
 .qs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .qs button{background:var(--card2);color:#fff;border:1px solid var(--line2);border-radius:12px;padding:10px 0;font-weight:900;cursor:pointer}
-.win{text-align:center;font-size:15px;margin:12px 0;font-weight:700;color:#cfe0d4}
+.win{text-align:center;font-size:15px;margin:12px 0;font-weight:700;color:#cfd6ee}
 .win b{color:var(--em);font-size:24px}
 .jk{display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(135deg,rgba(178,107,255,.18),rgba(236,72,153,.14));border:1px solid rgba(178,107,255,.5);border-radius:14px;padding:10px 12px;margin:10px 0;font-weight:700;font-size:14px;cursor:pointer}
 .jk.on{background:linear-gradient(135deg,#8b5cf6,#ec4899);border-color:transparent}
@@ -107,9 +107,9 @@ h2{font-weight:900;font-size:21px;margin:18px 2px 8px;letter-spacing:-.2px}
 .csgrid{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:4px}
 .step{display:flex;align-items:center;justify-content:center;gap:8px}
 .step button{width:44px;height:44px;border-radius:12px;border:0;font-size:24px;font-weight:900;cursor:pointer}
-.step .plus{background:var(--gold);color:#0B1A10}.step .minus{background:var(--card3);color:#fff}
+.step .plus{background:var(--gold);color:#0A0E1C}.step .minus{background:var(--card3);color:#fff}
 .step .val{font-size:32px;font-weight:900;min-width:30px;text-align:center}
-.btn{display:block;width:100%;border:0;border-radius:16px;padding:15px;font-size:18px;font-weight:900;cursor:pointer;background:linear-gradient(180deg,#F6D65A,var(--gold2));color:#0B1A10;box-shadow:0 8px 24px rgba(241,201,59,.25);transition:transform .1s}
+.btn{display:block;width:100%;border:0;border-radius:16px;padding:15px;font-size:18px;font-weight:900;cursor:pointer;background:linear-gradient(180deg,#D9FF5C,var(--gold2));color:#0A0E1C;box-shadow:0 8px 24px rgba(198,244,50,.25);transition:transform .1s}
 .btn:active{transform:scale(.98)}.btn:disabled{opacity:.45}
 .btn.sec{background:var(--card2);color:#fff;box-shadow:none;font-size:15px;padding:12px;border:1px solid var(--line2)}
 /* טבלאות */
@@ -117,7 +117,7 @@ table{width:100%;border-collapse:collapse}
 th{font-size:11px;color:var(--mut);font-weight:700;padding:8px 3px;text-align:center;letter-spacing:.2px}
 td{padding:10px 3px;text-align:center;border-top:1px solid var(--line);font-weight:700;font-size:14px}
 td.n{text-align:right;font-weight:900}
-tr.me td{background:rgba(241,201,59,.07)}
+tr.me td{background:rgba(198,244,50,.07)}
 .big{font-size:17px;font-weight:900}
 .pos{color:var(--em)}.neg{color:var(--red)}
 .tag{display:block;font-size:11px;font-weight:700;margin-top:3px}
@@ -125,12 +125,12 @@ tr.me td{background:rgba(241,201,59,.07)}
 .arr{font-size:11px;font-weight:900;margin-inline-start:5px}.arr.up{color:var(--em)}.arr.dn{color:var(--red)}
 .lt td{font-size:13px;padding:8px 2px}.lt td.n{display:flex;align-items:center;gap:7px}.lt img{width:20px;height:20px;object-fit:contain}
 .lt tr.lv td{background:rgba(255,90,95,.07)}
-.bank{position:relative;overflow:hidden;background:radial-gradient(400px 160px at 50% -40px,rgba(241,201,59,.22),transparent 70%),linear-gradient(180deg,#132619,#0B170F);border:1px solid rgba(241,201,59,.45);border-radius:22px;padding:16px;margin:14px 0;text-align:center}
+.bank{position:relative;overflow:hidden;background:radial-gradient(400px 160px at 50% -40px,rgba(198,244,50,.22),transparent 70%),linear-gradient(180deg,#161D38,#0E1328);border:1px solid rgba(198,244,50,.45);border-radius:22px;padding:16px;margin:14px 0;text-align:center}
 .bank .v{font-size:36px;font-weight:900;color:var(--gold);direction:ltr;unicode-bidi:isolate;letter-spacing:.5px}
 .bank .d{font-size:13px;font-weight:700;margin-top:2px}
 .seg{display:flex;gap:6px;margin:10px 0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px}
-.seg button{flex:1;padding:9px 4px;border-radius:10px;border:0;background:transparent;color:#cfe0d4;font-weight:900;font-size:13.5px;cursor:pointer}
-.seg button.on{background:var(--gold);color:#0B1A10}
+.seg button{flex:1;padding:9px 4px;border-radius:10px;border:0;background:transparent;color:#cfd6ee;font-weight:900;font-size:13.5px;cursor:pointer}
+.seg button.on{background:var(--gold);color:#0A0E1C}
 .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
 .sum div{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 4px}.sum b{display:block;font-size:21px;color:var(--gold)}.sum span{font-size:11.5px;color:var(--mut);font-weight:700}
 /* ניווט תחתון */
@@ -141,27 +141,27 @@ nav button.on{color:var(--gold)}
 nav button.on:before{content:"";position:absolute;top:0;width:28px;height:3px;border-radius:0 0 3px 3px;background:var(--gold)}
 nav .badge{position:absolute;top:5px;left:calc(50% - 22px);background:var(--red);color:#fff;border-radius:99px;font-size:10px;padding:0 5px;font-weight:900;line-height:16px}
 footer{text-align:center;color:var(--mut);font-size:11.5px;margin:26px 0 12px;line-height:1.6}footer a{color:var(--mut)}
-input.name{width:100%;font-size:20px;padding:14px;border-radius:16px;border:1.5px solid rgba(241,201,59,.6);background:rgba(0,0,0,.35);color:#fff;font-family:inherit;font-weight:700;text-align:center;margin:12px 0 6px;outline:none}
-input.name:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(241,201,59,.15)}
+input.name{width:100%;font-size:20px;padding:14px;border-radius:16px;border:1.5px solid rgba(198,244,50,.6);background:rgba(0,0,0,.35);color:#fff;font-family:inherit;font-weight:700;text-align:center;margin:12px 0 6px;outline:none}
+input.name:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(198,244,50,.15)}
 .hero{text-align:center;padding:26px 16px 18px}
-.hero .mk{width:76px;height:76px;margin:0 auto 12px;border-radius:24px;background:linear-gradient(145deg,var(--gold),var(--gold2));display:grid;place-items:center;font-size:38px;box-shadow:0 12px 30px rgba(241,201,59,.25)}
+.hero .mk{width:76px;height:76px;margin:0 auto 12px;border-radius:24px;background:linear-gradient(145deg,var(--gold),var(--gold2));display:grid;place-items:center;font-size:38px;box-shadow:0 12px 30px rgba(198,244,50,.25)}
 .hero h2{font-size:26px;margin:6px 0}
 .feat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-.feat div{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12.5px;font-weight:700;text-align:right;color:#dbe7df}
+.feat div{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12.5px;font-weight:700;text-align:right;color:#d9dff2}
 .feat div b{display:block;font-size:18px;margin-bottom:2px}
 .prow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line);gap:8px}
 .x{background:none;border:1px solid var(--red);color:var(--red);border-radius:9px;padding:5px 10px;cursor:pointer;font-weight:700}
-#goalbar{position:fixed;top:0;left:0;right:0;z-index:80;background:linear-gradient(180deg,#F6D65A,var(--gold2));color:#0B1A10;font-weight:900;font-size:16px;text-align:center;padding:14px;padding-top:calc(14px + env(safe-area-inset-top));box-shadow:0 10px 30px rgba(0,0,0,.6);transform:translateY(-110%);transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
+#goalbar{position:fixed;top:0;left:0;right:0;z-index:80;background:linear-gradient(180deg,#D9FF5C,var(--gold2));color:#0A0E1C;font-weight:900;font-size:16px;text-align:center;padding:14px;padding-top:calc(14px + env(safe-area-inset-top));box-shadow:0 10px 30px rgba(0,0,0,.6);transform:translateY(-110%);transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
 #goalbar.show{transform:none}#goalbar .bg{font-size:24px;display:block}
-#final{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#1f3a1f,#050C08 70%);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+#final{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#1c1f4a,#070A14 70%);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
 #final.show{display:flex}#final h1{font-weight:900;font-size:28px;color:var(--gold);margin:0 0 6px}
 .podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin:26px 0 16px;width:100%;max-width:400px}
 .pod{flex:1;display:flex;flex-direction:column;align-items:center}.pod .who2{font-weight:900;font-size:15px;margin-bottom:6px;word-break:break-word}
-.pod .blk{width:100%;border-radius:12px 12px 0 0;display:flex;flex-direction:column;align-items:center;padding-top:10px;font-weight:900;color:#0B1A10}
+.pod .blk{width:100%;border-radius:12px 12px 0 0;display:flex;flex-direction:column;align-items:center;padding-top:10px;font-weight:900;color:#0A0E1C}
 .pod.p1 .blk{height:170px;background:linear-gradient(var(--gold),var(--gold2));font-size:38px}.pod.p2 .blk{height:120px;background:linear-gradient(#e5e5e5,#9a9a9a);font-size:30px}.pod.p3 .blk{height:90px;background:linear-gradient(#e0a060,#a0602a);font-size:26px}
 .pod .blk small{font-size:13px}
 canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
-.toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--card2);color:#fff;border:1px solid rgba(241,201,59,.6);font-weight:900;padding:12px 18px;border-radius:14px;z-index:95;box-shadow:var(--shadow);transition:opacity .3s;max-width:92vw;text-align:center}
+.toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--card2);color:#fff;border:1px solid rgba(198,244,50,.6);font-weight:900;padding:12px 18px;border-radius:14px;z-index:95;box-shadow:var(--shadow);transition:opacity .3s;max-width:92vw;text-align:center}
 .toast.err{background:#3a1416;border-color:var(--red)}.toast.big{font-size:18px;padding:14px 22px}
 .empty{text-align:center;padding:30px 10px;color:var(--mut)}
 .empty .e{font-size:42px;margin-bottom:6px}
@@ -178,7 +178,7 @@ const START_COINS = 500;      // ז'יטונים לכל משתתף חדש
 const WEEKLY_BONUS = 50;      // מענק שבועי מקופת הבנק (כל יום שלישי)
 const BANK_START = 10000;     // קופת הבנק בפתיחה
 const LOCK_BEFORE_MS = 2*60*1000;   // נעילה 2 דקות לפני שריקת הפתיחה
-const PENALTIES = ['חייב 20 ברפיז ב-BUX 😅','חייב 50 סקוואטים ב-BUX 🦵','חייב 30 שכיבות סמיכה ב-BUX 💪']; // אחרון, לפני אחרון, שלישי מהסוף
+const PENALTIES = ['מזמין את כולם לקפה ☕','מעלה סטורי "אני הכי גרוע בניחושים" 😅','בוחר את שיר הקבוצה לשבוע 🎤']; // אחרון, לפני אחרון, שלישי מהסוף
 const LEAGUES = {
   isr1:{ n:'ליגת העל',     f:'🇮🇱' },
   isr2:{ n:'ליגה לאומית',  f:'🇮🇱' },
@@ -204,19 +204,12 @@ const HE = {   // שמות קבוצות בעברית (מה שלא מופיע כ�
   'Napoli':'נאפולי','Atalanta':'אטלנטה','Lecce':"לצ'ה",'Sassuolo':'סאסואולו','Monza':'מונצה','Torino':'טורינו','Bologna':'בולוניה','Parma':'פארמה',
   'Udinese':'אודינזה','Genoa':"ג'נואה",'Fiorentina':'פיורנטינה','Venezia':'ונציה','Empoli':'אמפולי','Verona':'ורונה','Hellas Verona':'ורונה','Pisa':'פיזה','Cremonese':'קרמונזה',
 };
-const ADS = [
-  'ההימור הזה מוגש בחסות <b>CrossFit BUX</b> – כי גם להמר צריך כושר',
-  'הפסדת ז\'יטונים? <b>10 ברפיז</b> ב-BUX יהוד',
-  'תוצאה מדויקת = <b>PR אישי</b> 💪',
-  'כאן מהמרים רק על ז\'יטונים. <b>את הכסף שמים על אימונים</b> ב-BUX 🏋️',
-  'הבנק לא ישן. גם אנחנו לא – <b>WOD בשש בבוקר</b> ב-BUX 🔥',
-  'אין כאן כסף אמיתי. <b>יש כאן כבוד.</b> והרבה ברפיז 😅',
-];
+const ADS = [];   // בלי פרסומות כרגע
 const DB = 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app';
 </script>
 
 <header class="appbar"><div class="wrap bar">
-  <div class="brand"><span class="mark">B<i id="cdot"></i></span><div><b>BUX BET</b><small>ליגת ההימורים של CrossFit BUX</small></div></div>
+  <div class="brand"><span class="mark">B!<i id="cdot"></i></span><div><b>BET-IT</b><small>משחק הניחושים של החבר׳ה</small></div></div>
   <div class="topr" id="top"></div>
 </div></header>
 <div class="wrap" id="app"></div>
@@ -417,7 +410,7 @@ function viewMine(){
     <div class="sum"><div><b>${fmt(a.avail)}</b><span>🪙 יתרה</span></div><div><b>${fmt(a.value)}</b><span>${a.value!==a.avail?'🔴 יתרה לייב':'💼 יתרה לייב'}</span></div><div><b>${pct}%</b><span>🎯 הצלחה (${a.won}/${a.settled})</span></div></div>
     ${a.value!==a.avail?`<div class="card" style="text-align:center;border-color:var(--r)">🔴 <b>יתרה לייב: ${fmt(a.value)} 🪙</b><br><span class="muted">ככה תיראה היתרה אם המשחקים ייגמרו בתוצאה של עכשיו. כל גול מזיז אותה!</span></div>`:''}
     <div class="muted" style="margin-top:6px">כל יום שלישי מקבלים ${WEEKLY_BONUS} ז'יטונים מקופת הבנק 🎁 – גם מי שהפסיד הכול חוזר למשחק</div>`;
-  if(a.avail<=0&&!open.length) h+=`<div class="card" style="text-align:center">😵 נגמרו הז'יטונים! ביום שלישי תקבל ${WEEKLY_BONUS}.<br>בינתיים – <b>20 ברפיז ב-BUX</b></div>`;
+  if(a.avail<=0&&!open.length) h+=`<div class="card" style="text-align:center">😵 נגמרו הז'יטונים! ביום שלישי תקבל ${WEEKLY_BONUS}.<br>בינתיים – תפרגן לחבר׳ה מהיציע 😅</div>`;
   const row=b=>{ const st=betState(b.id,b), f=b.f, cls=st==='won'||st==='live-win'?'won':st==='lost'||st==='live-lose'?'lost':'';
     return `<div class="card" style="padding:10px"><div class="muted">${f?`${LEAGUES[f.lg]?.f||''} ${dayLabel(dayKey(f.ko))} ${hm(f.ko)} · ${esc(he(f.home))} – ${esc(he(f.away))}`:'משחק'}
       ${f&&(f.st==='live'||f.st==='finished')?` · <b style="color:#fff;direction:rtl;unicode-bidi:isolate">${f.h} - ${f.a}</b> ${f.st==='live'?liveTag(f):''}`:''}</div>
@@ -441,7 +434,7 @@ function viewTable(){
   rows.forEach(r=>{ const rank=r[key], king=rank===1&&rows.length>1&&(mode==='season'||r.wp>0), pi=fromBottom.indexOf(rank), pen=mode==='week'&&pi>=0&&pi<3?PENALTIES[pi]:'';
     const d=(r[pkey]||rank)-rank, arr=d>0?`<span class="arr up">▲${d}</span>`:d<0?`<span class="arr dn">▼${-d}</span>`:'';
     const val=mode==='week'?`<span class="${r.wp>0?'pos':r.wp<0?'neg':''}">${sgn(r.wp)}</span>`:fmt(r.v);
-    h+=`<tr class="${r.pid===me?'me':''}"><td class="big">${king?'👑':rank}</td><td class="n">${esc(r.n)}${arr}${king?`<span class="tag k">${mode==='week'?'👑 אלוף BUX של השבוע':"👑 מלך הז'יטונים"}</span>`:''}${pen?`<span class="tag ${pi===0?'l':'p'}">${pen}</span>`:''}</td>
+    h+=`<tr class="${r.pid===me?'me':''}"><td class="big">${king?'👑':rank}</td><td class="n">${esc(r.n)}${arr}${king?`<span class="tag k">${mode==='week'?'👑 אלוף השבוע':"👑 מלך הז'יטונים"}</span>`:''}${pen?`<span class="tag ${pi===0?'l':'p'}">${pen}</span>`:''}</td>
       <td class="big">${val}</td><td>${r.dn?Math.round(100*r.won/r.dn)+'%':'–'}<div class="muted" style="font-size:11px">${r.won}/${r.dn}</div></td></tr>`; });
   return h+`</tbody></table></div>`+ad();
 }
@@ -469,8 +462,8 @@ function viewLogin(){
     <div class="muted">ביקשת לשחזר את החשבון שלך. ברגע שהמנהל יאשר – תיכנס אוטומטית.</div>
     <button class="btn sec" style="margin-top:14px" onclick="PENDING=null;lsSet('bb_pending',null);render()">ביטול</button></div>`;
   return `<div class="card hero" style="margin-top:18px">
-    <div class="mk">⚽</div><h2>ברוך הבא ל-BUX BET</h2>
-    <div class="muted">ליגת הימורי כדורגל בז'יטונים וירטואליים. בלי כסף אמיתי – רק כבוד, עקיצות וברפיז.</div>
+    <div class="mk">⚽</div><h2>ברוכים הבאים ל-BET-IT</h2>
+    <div class="muted">משחק הניחושים של החבר׳ה: מהמרים בז'יטונים וירטואליים על הכדורגל. בלי כסף אמיתי – רק כבוד ועקיצות.</div>
     <div class="feat"><div><b>🪙 ${START_COINS}</b>ז'יטונים במתנה</div><div><b>🎁 +${WEEKLY_BONUS}</b>כל שבוע מהבנק</div><div><b>🇮🇱 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🇮🇹</b>4 ליגות, שבוע קדימה</div><div><b>🃏 ×2</b>ג'וקר יומי</div></div>
     <div style="font-weight:900;font-size:17px;margin-top:18px">איך קוראים לך?</div>
     <input class="name" id="nameIn" placeholder="השם שלך" maxlength="20" autocomplete="off" enterkeyhint="go" onkeydown="if(event.key==='Enter')login()">
@@ -599,7 +592,7 @@ function render(){
   if(!A && tab==='mine') tab='games'; if(tab==='admin'&&!AK) tab='table';
   app.innerHTML=({games:viewGames,mine:viewMine,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
 }
-const footer=()=>`<footer>מופעל ע"י CrossFit BUX 🏋️<br>משחק לשם הכיף בלבד · אין כסף אמיתי ואין אפשרות לקנות ז'יטונים</footer>`;
+const footer=()=>`<footer>BET-IT · משחק הניחושים של החבר׳ה<br>לשם הכיף בלבד · אין כסף אמיתי ואין אפשרות לקנות ז'יטונים</footer>`;
 
 // ================= באנר גול =================
 function detectGoals(){
