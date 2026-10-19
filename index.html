@@ -325,9 +325,10 @@ const myBets = () => Object.entries((A&&A.bets)||{});
 // היתרה האמיתית מגיעה מהשרת; "לייב" = כאילו המשחקים נגמרים עכשיו (לתצוגה בלבד)
 function account(){
   if(!A) return null;
+  // יתרה לייב = היתרה + מה שההימורים במשחקים שרצים עכשיו היו מחזירים אם המשחק נגמר כרגע
   const avail=(A.wallet&&A.wallet.bal)||0; let value=avail, open=0;
   myBets().forEach(([id,b])=>{ if(A.settled&&A.settled[id]) return; const st=betState(id,b);
-    value += st==='won'||st==='live-win' ? payout(b) : st==='lost'||st==='live-lose' ? 0 : b.s; if(st==='open'||st.startsWith('live')) open++; });
+    if(st==='live-win') value+=payout(b); if(st==='open'||st.startsWith('live')) open++; });
   const done=Object.values(A.settled||{}).filter(x=>x.st!=='void'), won=done.filter(x=>x.st==='won').length;
   return {avail, value, open, won, settled:done.length};
 }
@@ -400,7 +401,7 @@ function viewMine(){
   const open=bets.filter(isOpen), done=bets.filter(b=>!isOpen(b));
   const pct=a.settled?Math.round(100*a.won/a.settled):0;
   let h=`<h2>🧾 ההימורים של ${esc(A.name)}</h2>
-    <div class="sum"><div><b>${fmt(a.avail)}</b><span>🪙 יתרה</span></div><div><b>${fmt(a.value)}</b><span>${a.value!==a.avail?'🔴 יתרה לייב':'💼 כולל פתוחים'}</span></div><div><b>${pct}%</b><span>🎯 הצלחה (${a.won}/${a.settled})</span></div></div>
+    <div class="sum"><div><b>${fmt(a.avail)}</b><span>🪙 יתרה</span></div><div><b>${fmt(a.value)}</b><span>${a.value!==a.avail?'🔴 יתרה לייב':'💼 יתרה לייב'}</span></div><div><b>${pct}%</b><span>🎯 הצלחה (${a.won}/${a.settled})</span></div></div>
     ${a.value!==a.avail?`<div class="card" style="text-align:center;border-color:var(--r)">🔴 <b>יתרה לייב: ${fmt(a.value)} 🪙</b><br><span class="muted">ככה תיראה היתרה אם המשחקים ייגמרו בתוצאה של עכשיו. כל גול מזיז אותה!</span></div>`:''}
     <div class="muted" style="margin-top:6px">כל יום שלישי מקבלים ${WEEKLY_BONUS} ז'יטונים מקופת הבנק 🎁 – גם מי שהפסיד הכול חוזר למשחק</div>`;
   if(a.avail<=0&&!open.length) h+=`<div class="card" style="text-align:center">😵 נגמרו הז'יטונים! ביום שלישי תקבל ${WEEKLY_BONUS}.<br>בינתיים – <b>20 ברפיז ב-BUX</b></div>`;
