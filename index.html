@@ -1053,11 +1053,13 @@ function renderNav(){
 }
 function go(k){ tab=k; lsSet('bb_tab',k); render(); window.scrollTo(0,0); }
 function render(){
-  renderTop(); const app=document.getElementById('app'); document.body.classList.toggle('anon',!A&&!AK); hideSplash();
+  renderTop(); const app=document.getElementById('app'); document.body.classList.toggle('anon',!A&&!AK); hideSplash(); if(!A&&!AK&&loginUnchanged(app)) return;
   if(!A && !AK){ app.innerHTML=(SEC&&!loaded.me)?'<div class="empty"><div class="e">⏳</div>מתחבר…</div>':viewLogin()+footer(); renderNav(); return; }
   if(!A && tab==='mine') tab='games'; if(tab==='admin'&&!AK) tab='games';
   app.innerHTML=({games:viewGames,mine:viewMine,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
 }
+// מסך הכניסה לא נבנה מחדש כשמגיעים נתונים (משחקים/טבלה) – אחרת השם שהמשתמש כבר הקליד נמחק
+function loginUnchanged(app){ if(SEC&&!loaded.me) return false; const h=viewLogin(); if(app._lh===h&&document.getElementById('nameIn')) return true; app._lh=h; return false; }
 // מסך פתיחה: לפחות 0.6 שניות, נעלם כשהנתונים הראשונים הגיעו (ולכל היותר אחרי 2.5 שניות)
 const SPLASH_T0=Date.now();
 function hideSplash(force){ const sp=document.getElementById('splash'); if(!sp||sp.classList.contains('out')) return;
