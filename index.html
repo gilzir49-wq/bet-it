@@ -659,7 +659,8 @@ async function joinLeague(raw){
   if(r!=='ok') return toast('ההצטרפות לא הצליחה – נסה שוב',false,'err');
   closeSheet(); toast(`הצטרפת ל"${d.n}"! 🎉 הטבלה תתעדכן תוך רגע`,true); confetti(80); tblScope=c; lsSet('bb_scope',c); go('table');
 }
-function inviteText(lid,n){ const link=`${APP_URL}/#join=${lid}`; return {link, txt:`⚽ בואו לליגה שלי "${n}" ב-BET-IT – משחק הניחושים של החבר׳ה!\nמהמרים בז'יטונים על הכדורגל, בלי כסף אמיתי 🪙\nלוחצים על הלינק, כותבים שם – ואתם בפנים:\n👉 ${link}`}; }
+function inviteText(lid,n){ const link=`${APP_URL}/#join=${lid}`, me=A&&A.name?`\n– ${A.name}`:'';
+  return {link, txt:`היי אח 👋\nמזמין אותך לליגה שלנו "${n}" ב-BET-IT ⚽\nמהמרים על הכדורגל בז'יטונים – בלי כסף אמיתי, רק כבוד ועקיצות 😏\nלוחצים על הלינק, כותבים שם – ואתה בפנים:\n👉 ${link}${me}`}; }
 async function shareInvite(lid){ const n=(S.lg[lid]&&S.lg[lid].n)||'', {link,txt}=inviteText(lid,n);
   if(navigator.share){ try{ await navigator.share({title:'BET-IT',text:txt}); return; }catch(e){ if(e.name==='AbortError') return; } }
   window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`,'_blank'); }
