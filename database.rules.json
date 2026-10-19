@@ -45,6 +45,20 @@
           }
         },
 
+        "leagues": {
+          "$lid": {
+            ".write": "$lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (!newData.exists() || root.child('lgdef').child($lid).exists() || newData.parent().parent().parent().parent().child('lgdef').child($lid).exists())",
+            ".validate": "newData.hasChildren(['at']) && newData.child('at').isNumber() && newData.child('at').val() <= now + 60000 && (!newData.child('own').exists() || (newData.child('own').val() === true && !root.child('lgdef').child($lid).exists() && !data.exists()))",
+            "at": { ".validate": true }, "own": { ".validate": true }, "$x": { ".validate": false }
+          }
+        },
+        "lgkick": {
+          "$lid": { "$pid": {
+            ".write": "root.child('acct').child($secret).child('leagues').child($lid).child('own').val() === true",
+            ".validate": "newData.val() === true && $pid.matches(/^p[a-z0-9]{12,30}$/)"
+          } }
+        },
+
         "jokers": {
           "$day": {
             ".write": "(!data.exists() && newData.isString() && !data.parent().parent().child('bets').child(newData.val()).exists() && newData.parent().parent().child('bets').child(newData.val()).child('j').val() === true && root.child('fixtures').child(newData.parent().parent().child('bets').child(newData.val()).child('e').val()).child('day').val() === $day) || (data.exists() && !newData.exists() && !newData.parent().parent().child('bets').child(data.val()).exists())"
@@ -52,6 +66,13 @@
         },
 
         "$other": { ".validate": "$other === 'settled'" }
+      }
+    },
+
+    "lgdef": {
+      "$lid": {
+        ".read": "$lid.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
+        ".write": "!data.exists() && $lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['n','at']) && newData.child('n').isString() && newData.child('n').val().length >= 2 && newData.child('n').val().length <= 24 && !newData.child('n').val().matches(/[<>]/) && newData.child('at').isNumber() && newData.child('at').val() <= now + 60000"
       }
     },
 

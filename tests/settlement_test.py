@@ -31,5 +31,20 @@ st,av=req('GET',f'adminView/{K}'); r=[x for x in av.get('reqs',[]) if x['nk']==n
 print('admin approve', req('PUT',f'adminOps/{K}/oe2e1',{'t':'approve','rid':r[0]['rid'],'at':SV})[0])
 subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
 ok=req('GET',f'acct/{s2}')[1] is not None and req('GET',f'acct/{sec}')[1] is None; assert ok, 'recovery failed'; print('new phone has account:', req('GET',f'acct/{s2}')[1] is not None and req('GET',f'acct/{s2}')[1]['wallet']['bal']==1000, '| old key dead:', req('GET',f'acct/{sec}')[1] is None)
+# ליגת חברים: בעלים + חבר, הרובוט מפרסם, הבעלים מרחיק
+sB,pB,nB,rB='s'+rs(48,AZM),'p'+rs(16,AZ),'e2e'+rs(8,AZ),None
+assert req('PATCH','',{f'names/{nB}':pB,f'acct/{sB}':{'name':nB,'nk':nB,'pid':pB,'joined':SV,'wallet':{'bal':500,'op':'init'}}})[0]==200
+LID=''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(6))
+assert req('PATCH','',{f'lgdef/{LID}':{'n':'e2e league','at':SV},f'acct/{s2}/leagues/{LID}':{'at':SV,'own':True}})[0]==200
+assert req('PUT',f'acct/{sB}/leagues/{LID}',{'at':SV})[0]==200
+subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
+lg=req('GET',f'pub/lg/{LID}')[1]; assert lg and lg['o']==pid and set(lg['m'])=={pid,pB}, lg; print('league published:', lg['n'], len(lg['m']), 'members')
+assert req('PUT',f'acct/{s2}/lgkick/{LID}/{pB}',True)[0]==200
+subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
+lg=req('GET',f'pub/lg/{LID}')[1]; assert pB not in lg['m'] and req('GET',f'acct/{sB}')[1].get('leagues') is None, lg; print('kick works: member removed')
+assert req('PUT',f'acct/{sB}/leagues/{LID}',{'at':SV})[0]==200   # מנסה לחזור
+subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
+assert pB not in req('GET',f'pub/lg/{LID}')[1]['m']; print('banned member cannot rejoin')
+R.fb('','PATCH',{f'acct/{sB}':None,f'names/{nB}':None,f'lgdef/{LID}':None,f'lgban/{LID}':None})
 R.fb('','PATCH',{f'acct/{s2}':None,f'acct/{sec}':None,f'names/{nk}':None,f'fixtures/{E}':None,f'pub/revealed/{E}':None,f'pub/profiles/{pid}':None,f'adminView/{K}/log':None})
 R.fb(f'adminKeys/{K}','DELETE'); print('cleaned')

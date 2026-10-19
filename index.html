@@ -236,7 +236,7 @@ const DB = 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app';
 <script>
 // ================= מצב =================
 // ציבורי: משחקים, טבלאות, דירוג, הימורים שנחשפו. פרטי: החשבון שלי בלבד (לפי המפתח הסודי של המכשיר).
-let S = { fixtures:{}, tables:{}, standings:null, revealed:{}, meta:{} };
+let S = { fixtures:{}, tables:{}, standings:null, revealed:{}, meta:{}, lg:{} };
 let A = null;            // החשבון שלי (acct/<secret>) – רק מי שמחזיק את המפתח יכול לקרוא/לכתוב
 let AV = null;           // תצוגת מנהל
 let connected=false, loaded={}, seenGoals=null, goalTimer=null;
@@ -273,6 +273,7 @@ const nkOf = name => name.toLowerCase().replace(/ /g,'');
 let SEC = lsGet('bb_sec');
 let PENDING = lsGet('bb_pending');      // בקשת שחזור שממתינה לאישור מנהל
 let AK = lsGet('bb_ak');
+(function grabJoin(){ const m=location.hash.match(/join=([A-Za-z0-9]{6})/); if(m){ lsSet('bb_join',m[1].toUpperCase()); history.replaceState(null,'',location.pathname+location.search); } })();
 (function grabAdminKey(){ const m=location.hash.match(/k=(k[A-Za-z0-9]{40})/); if(m){ AK=m[1]; lsSet('bb_ak',AK); history.replaceState(null,'',location.pathname+location.search); tab='admin'; } })();
 
 // ================= זמן (שעון ישראל) =================
@@ -309,11 +310,12 @@ function listenAll(){
   stream('st','pub/standings', v=>{ S.standings=v; if(!sheetSt) render(); });
   stream('rv','pub/revealed', v=>{ S.revealed=v||{}; if(tab==='games'&&!sheetSt) render(); });
   stream('mt','pub/meta', v=>{ S.meta=v||{}; if(tab==='admin') render(); });
+  stream('lg','pub/lg', v=>{ S.lg=v||{}; if(tab==='table'&&!sheetSt) render(); });
   listenMine();
   if(AK) stream('av',`adminView/${AK}`, v=>{ AV=v||{}; if(tab==='admin') render(); });
 }
 function listenMine(){
-  if(SEC) stream('me',`acct/${SEC}`, v=>{ A=v; loaded.me=true; if(!A){ SEC=null; lsSet('bb_sec',null); } else if(!A.rc && !ensureRc.busy) ensureRc(); render(); if(sheetSt) renderSheet(); });
+  if(SEC) stream('me',`acct/${SEC}`, v=>{ A=v; loaded.me=true; if(!A){ SEC=null; lsSet('bb_sec',null); } else { if(!A.rc && !ensureRc.busy) ensureRc(); const j=lsGet('bb_join'); if(j){ lsSet('bb_join',null); setTimeout(()=>joinLeague(j),700); } } render(); if(sheetSt&&!sheetSt.custom) renderSheet(); });
   else if(PENDING) stream('me',`acct/${PENDING}`, v=>{ if(v){ SEC=PENDING; PENDING=null; lsSet('bb_sec',SEC); lsSet('bb_pending',null); A=v; toast('השחזור אושר! ברוך השב 🎉',true); listenMine(); } render(); });
 }
 async function readOnce(path){ const F=await fbReady; return Promise.race([F.get(F.ref(F.db,path)).then(s=>s.val()), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]); }
@@ -446,31 +448,133 @@ function viewMine(){
     return `<div class="card" style="padding:10px"><div class="muted">${f?`${LEAGUES[f.lg]?.f||''} ${dayLabel(dayKey(f.ko))} ${hm(f.ko)} · ${esc(he(f.home))} – ${esc(he(f.away))}`:'משחק'}
       ${f&&(f.st==='live'||f.st==='finished')?` · <b style="color:#fff;direction:rtl;unicode-bidi:isolate">${f.h} - ${f.a}</b> ${f.st==='live'?liveTag(f):''}`:''}</div>
       <div class="mybet ${cls}"><span>${b.j?'🃏 ':''}${esc(pickLabel(f,b))} · ${fmt(b.s)} 🪙 × ${b.o.toFixed(2)} = ${fmt(payout(b))}</span><span>${stText(st,b,f)}</span></div>
-      ${f&&!isLocked(f)?`<div style="text-align:left;margin-top:4px"><a href="#" class="muted" onclick="cancelBet('${b.id}');return false">בטל הימור</a></div>`:''}</div>`; };
+      ${f&&!isLocked(f)?`<div style="text-align:left;margin-top:4px"><a href="#" class="muted" onclick="cancelBet('${b.id}');return false">בטל הימור</a></div>`:''}
+      ${st==='won'?`<button class="btn sec" style="margin-top:8px;font-size:14px;padding:9px" onclick="shareWin('${b.id}')">📣 שתף זכייה – אמרתי לכם!</button>`:''}</div>`; };
   h+=`<h2>⏳ פתוחים (${open.length})</h2>`+(open.length?open.map(row).join(''):`<div class="empty"><div class="e">🎰</div>אין הימורים פתוחים. <a href="#" style="color:var(--y)" onclick="go('games');return false">ללוח המשחקים</a></div>`);
   h+=ad()+`<h2>📜 היסטוריה (${done.length})</h2>`+done.slice(0,40).map(row).join('');
   h+=`<div class="card" style="text-align:center"><b>🔑 קוד הכניסה שלך</b><div class="muted">לכניסה מטלפון או מחשב נוסף. אל תשתף.</div>
     <button class="btn sec" style="margin-top:10px" onclick="showCode(A.rc)">הצג קוד</button></div>`;
   return h+`<footer>מחובר כ-${esc(A.name)} 🔐</footer>`;
 }
+// ================= טבלאות: ארצית + ליגות חברים =================
+let tblScope=lsGet('bb_scope')||'all';
+const myLeagues=()=>Object.keys((A&&A.leagues)||{}).filter(l=>S.lg&&S.lg[l]);
+function rankRows(rows,key){ rows.sort((a,b)=>b[key]-a[key]||b.won-a.won||a.n.localeCompare(b.n,'he')); let prev=null;
+  rows.forEach((r,i)=>{ r._rk = prev && prev[key]===r[key] ? prev._rk : i+1; prev=r; }); return rows; }
 function viewTable(){
-  const st=S.standings, mode=tblMode, rows=(st&&st.rows?st.rows:[]).slice(), wk=weekKey(dayKey(Date.now()));
-  const key=mode==='week'?'rw':'rs', pkey=mode==='week'?'pw':'ps'; rows.sort((a,b)=>a[key]-b[key]||b.won-a.won);
-  const bank=st?st.bank:BANK_START, bd=bank-BANK_START, me=A&&A.pid;
-  let h=`<div class="bank"><div class="muted">🏦 קופת הבנק</div><div class="v">${fmt(bank)} 🪙</div>
-    <div class="d ${bd>0?'neg':bd<0?'pos':''}">${bd>0?`הבנק מרוויח ${fmt(bd)} – השחקנים בהפסד 😈`:bd<0?`השחקנים לקחו לבנק ${fmt(-bd)}! 🤑`:'הבנק מחכה להימור הראשון'}</div></div>
-    <div class="seg"><button class="${mode==='week'?'on':''}" onclick="setTM('week')">📅 שבועית (${weekLabel(wk)})</button><button class="${mode==='season'?'on':''}" onclick="setTM('season')">🏆 עונתית</button></div>
-    <div class="muted">${mode==='week'?'רווח/הפסד מהימורים על משחקי השבוע (כולל לייב)':'יתרה + הימורים פתוחים (כולל לייב)'} · % = אחוז הימורים שזכו · החצים = שינוי מאז הגול האחרון</div>`;
-  const fromBottom=[...new Set(rows.map(r=>r[key]))].filter(x=>x>1).sort((a,b)=>b-a);
+  const st=S.standings, mode=tblMode, wk=weekKey(dayKey(Date.now())), me=A&&A.pid, mine=myLeagues();
+  if(tblScope!=='all' && !mine.includes(tblScope)) tblScope='all';
+  const L=tblScope==='all'?null:S.lg[tblScope];
+  let rows=(st&&st.rows?st.rows:[]).map(r=>({...r}));
+  if(L) rows=rows.filter(r=>L.m&&L.m[r.pid]);
+  const vk=mode==='week'?'wp':'v', gk=mode==='week'?'pw':'ps';
+  rankRows(rows,vk);
+  const prevOrder=rows.slice().sort((a,b)=>(a[gk]||0)-(b[gk]||0)); const prevRk={}; prevOrder.forEach((r,i)=>prevRk[r.pid]=i+1);   // מיקום קודם בתוך הטבלה הזו
+  const bank=st?st.bank:BANK_START, bd=bank-BANK_START;
+  let h=`<div class="chips"><button class="chip ${tblScope==='all'?'on':''}" onclick="setScope('all')">🌍 ארצית</button>
+    ${mine.map(l=>`<button class="chip ${tblScope===l?'on':''}" onclick="setScope('${l}')">👥 ${esc(S.lg[l].n)}<span class="n">${Object.keys(S.lg[l].m||{}).length}</span></button>`).join('')}
+    ${A?`<button class="chip" onclick="leagueMenu()">➕ ליגה</button>`:''}</div>`;
+  if(!L) h+=`<div class="bank"><div class="muted">🏦 קופת הבנק</div><div class="v">${fmt(bank)} 🪙</div>
+    <div class="d ${bd>0?'neg':bd<0?'pos':''}">${bd>0?`הבנק מרוויח ${fmt(bd)} – השחקנים בהפסד 😈`:bd<0?`השחקנים לקחו לבנק ${fmt(-bd)}! 🤑`:'הבנק מחכה להימור הראשון'}</div></div>`;
+  else h+=`<div class="card" style="text-align:center"><div style="font-size:22px;font-weight:900">👥 ${esc(L.n)}</div>
+    <div class="muted">${Object.keys(L.m||{}).length} חברים · קוד הצטרפות <b style="color:var(--gold);letter-spacing:2px">${tblScope}</b></div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="font-size:15px;padding:11px" onclick="inviteLeague('${tblScope}')">📲 הזמן חברים</button>
+      <button class="btn sec" onclick="manageLeague('${tblScope}')">${L.o===me?'⚙️ ניהול':'🚪 עזיבה'}</button></div></div>`;
+  h+=`<div class="seg"><button class="${mode==='week'?'on':''}" onclick="setTM('week')">📅 שבועית (${weekLabel(wk)})</button><button class="${mode==='season'?'on':''}" onclick="setTM('season')">🏆 עונתית</button></div>
+    <div class="muted">${mode==='week'?'רווח/הפסד מהימורים על משחקי השבוע (כולל לייב)':'יתרה + הימורים פתוחים (כולל לייב)'} · % = אחוז הימורים שזכו</div>`;
+  const fromBottom=[...new Set(rows.map(r=>r._rk))].filter(x=>x>1).sort((a,b)=>b-a);
   h+=`<div class="card" style="padding:4px 8px"><table><thead><tr><th>#</th><th style="text-align:right">שם</th><th>${mode==='week'?'רווח':'שווי 🪙'}</th><th>% הצלחה</th></tr></thead><tbody>`;
   if(!rows.length) h+=`<tr><td colspan="4" class="muted">עוד אין משתתפים</td></tr>`;
-  rows.forEach(r=>{ const rank=r[key], king=rank===1&&rows.length>1&&(mode==='season'||r.wp>0), pi=fromBottom.indexOf(rank), pen=mode==='week'&&pi>=0&&pi<3?PENALTIES[pi]:'';
-    const d=(r[pkey]||rank)-rank, arr=d>0?`<span class="arr up">▲${d}</span>`:d<0?`<span class="arr dn">▼${-d}</span>`:'';
+  rows.forEach(r=>{ const rank=r._rk, king=rank===1&&rows.length>1&&(mode==='season'||r.wp>0), pi=fromBottom.indexOf(rank), pen=mode==='week'&&pi>=0&&pi<3?PENALTIES[pi]:'';
+    const d=(prevRk[r.pid]||rank)-rank, arr=d>0?`<span class="arr up">▲${d}</span>`:d<0?`<span class="arr dn">▼${-d}</span>`:'';
     const val=mode==='week'?`<span class="${r.wp>0?'pos':r.wp<0?'neg':''}">${sgn(r.wp)}</span>`:fmt(r.v);
-    h+=`<tr class="${r.pid===me?'me':''}"><td class="big">${king?'👑':rank}</td><td class="n">${esc(r.n)}${arr}${king?`<span class="tag k">${mode==='week'?'👑 אלוף השבוע':"👑 מלך הז'יטונים"}</span>`:''}${pen?`<span class="tag ${pi===0?'l':'p'}">${pen}</span>`:''}</td>
+    h+=`<tr class="${r.pid===me?'me':''}"><td class="big">${king?'👑':rank}</td><td class="n">${esc(r.n)}${arr}${king?`<span class="tag k">${mode==='week'?'👑 אלוף השבוע':"👑 מלך הז'יטונים"}</span>`:''}${pen?`<span class="tag ${pi===0?'l':'p'}">${pen}</span>`:''}
+      ${r.pid===me?`<a href="#" class="tag" style="color:var(--gold)" onclick="shareRank(${rank},${rows.length});return false">📣 שתף מיקום</a>`:''}</td>
       <td class="big">${val}</td><td>${r.dn?Math.round(100*r.won/r.dn)+'%':'–'}<div class="muted" style="font-size:11px">${r.won}/${r.dn}</div></td></tr>`; });
   return h+`</tbody></table></div>`+ad();
 }
+function setScope(x){ tblScope=x; lsSet('bb_scope',x); render(); }
+
+// ================= ליגות חברים: יצירה, הזמנה, הצטרפות, ניהול =================
+const APP_URL='https://bet-it.web.app';
+function sheet(html){ sheetSt={custom:true}; const sh=document.getElementById('sheet'); sh.innerHTML=`<div style="display:flex;justify-content:flex-end"><button class="x" style="border-color:#555;color:#ccc" onclick="closeSheet()">✕</button></div>`+html;
+  sh.classList.add('show'); document.getElementById('sheetBg').classList.add('show'); }
+function leagueMenu(){
+  sheet(`<h2 style="margin-top:0">👥 ליגות חברים</h2><div class="muted">ליגה פרטית עם טבלה משלכם. הז'יטונים וההימורים אותם הימורים – רק הטבלה שלכם.</div>
+    <input class="name" id="lgName" placeholder="שם הליגה (למשל: החבר׳ה מהעבודה)" maxlength="24">
+    <button class="btn" onclick="createLeague()">➕ פתח ליגה חדשה</button>
+    <div style="text-align:center;margin:14px 0 6px;font-weight:900">או</div>
+    <input class="name" id="lgCode" placeholder="קוד הצטרפות (6 תווים)" maxlength="7" style="letter-spacing:3px;direction:ltr">
+    <button class="btn sec" onclick="joinLeague(document.getElementById('lgCode').value)">הצטרף לליגה</button>`);
+}
+async function createLeague(){
+  const n=(document.getElementById('lgName').value||'').trim(); if(n.length<2) return toast('שם של לפחות 2 תווים',false,'err');
+  if(myLeagues().length>=10) return toast('אפשר עד 10 ליגות',false,'err');
+  const lid=rnd(6,RCA);
+  const r=await write('PATCH','',{[`lgdef/${lid}`]:{n,at:SV},[`acct/${SEC}/leagues/${lid}`]:{at:SV,own:true}});
+  if(r!=='ok') return toast('לא הצלחתי לפתוח ליגה – נסה שוב',false,'err');
+  toast('הליגה נפתחה! 🎉 עכשיו מזמינים חברים',true); tblScope=lid; lsSet('bb_scope',lid); go('table'); setTimeout(()=>inviteLeague(lid,n),400);
+}
+async function joinLeague(raw){
+  const c=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,''); if(!/^[A-HJ-NP-Z2-9]{6}$/.test(c)) return toast('קוד ליגה לא תקין',false,'err');
+  if(!A) { lsSet('bb_join',c); return toast('קודם נכנסים עם שם, ואז מצטרפים אוטומטית 🙂',true); }
+  if(A.leagues&&A.leagues[c]){ closeSheet(); setScope(c); go('table'); return; }
+  let d=null; try{ d=await readOnce(`lgdef/${c}`); }catch(e){} if(!d) return toast('לא מצאתי ליגה עם הקוד הזה',false,'err');
+  if(!confirm(`להצטרף לליגה "${d.n}"?`)) return;
+  const r=await write('PUT',`acct/${SEC}/leagues/${c}`,{at:SV});
+  if(r!=='ok') return toast('ההצטרפות לא הצליחה – נסה שוב',false,'err');
+  closeSheet(); toast(`הצטרפת ל"${d.n}"! 🎉 הטבלה תתעדכן תוך רגע`,true); confetti(80); tblScope=c; lsSet('bb_scope',c); go('table');
+}
+function inviteLeague(lid,name){
+  const n=name||(S.lg[lid]&&S.lg[lid].n)||'', link=`${APP_URL}/#join=${lid}`;
+  const txt=`⚽ הצטרפו לליגה שלי "${n}" ב-BET-IT – משחק הניחושים של החבר׳ה!\nמהמרים בז'יטונים על הכדורגל, בלי כסף אמיתי 🪙\n👉 ${link}\nקוד ליגה: ${lid}`;
+  sheet(`<h2 style="margin-top:0">📲 הזמנה לליגה</h2><div class="muted">שלחו את הלינק בקבוצת הווטסאפ – מי שנכנס מצטרף אוטומטית.</div>
+    <div style="font-size:30px;font-weight:900;letter-spacing:4px;text-align:center;color:var(--gold);margin:12px 0;direction:ltr">${lid}</div>
+    <a class="btn" style="display:block;text-align:center;text-decoration:none;background:linear-gradient(180deg,#3ee07a,#1fa855);color:#04210f" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank">🟢 שלח בוואטסאפ</a>
+    <button class="btn sec" style="margin-top:8px" onclick="navigator.clipboard&&navigator.clipboard.writeText(${JSON.stringify(link)}).then(()=>toast('הלינק הועתק 📋',true))">📋 העתק לינק</button>`);
+}
+function manageLeague(lid){
+  const L=S.lg[lid], me=A&&A.pid; if(!L) return;
+  if(L.o!==me) return sheet(`<h2 style="margin-top:0">🚪 עזיבת "${esc(L.n)}"</h2><div class="muted">ההימורים והז'יטונים שלך לא משתנים – רק יוצאים מהטבלה של הליגה.</div>
+    <button class="btn sec" style="margin-top:12px;border-color:var(--red);color:var(--red)" onclick="leaveLeague('${lid}')">עזוב את הליגה</button>`);
+  const mem=Object.entries(L.m||{}).filter(([p])=>p!==me);
+  sheet(`<h2 style="margin-top:0">⚙️ ניהול "${esc(L.n)}"</h2><div class="muted">את/ה מנהל/ת הליגה. אפשר להרחיק חברים (הם לא יוכלו לחזור).</div>
+    ${mem.length?mem.map(([p,n])=>`<div class="prow"><span>${esc(n)}</span><button class="x" onclick="kick('${lid}','${p}',${JSON.stringify(n).replace(/"/g,'&quot;')})">הרחק</button></div>`).join(''):'<div class="empty">עוד אין חברים – הזמן אותם 📲</div>'}
+    <button class="btn" style="margin-top:12px" onclick="inviteLeague('${lid}')">📲 הזמן חברים</button>`);
+}
+async function kick(lid,pid,n){ if(!confirm(`להרחיק את ${n} מהליגה?`)) return; const r=await write('PUT',`acct/${SEC}/lgkick/${lid}/${pid}`,true);
+  toast(r==='ok'?`${n} יורחק תוך כמה שניות`:'לא הצלחתי – נסה שוב',r==='ok',r==='ok'?null:'err'); closeSheet(); }
+async function leaveLeague(lid){ const r=await write('DELETE',`acct/${SEC}/leagues/${lid}`); if(r==='ok'){ closeSheet(); setScope('all'); toast('יצאת מהליגה',true); } }
+
+// ================= כרטיסי שיתוף (וואטסאפ / סטורי) =================
+async function makeCard(o){
+  const c=document.createElement('canvas'); c.width=1080; c.height=1350; const x=c.getContext('2d');
+  try{ await document.fonts.load('900 80px Heebo'); }catch(e){}
+  const g=x.createLinearGradient(0,0,1080,1350); g.addColorStop(0,'#141a3a'); g.addColorStop(1,'#070A14'); x.fillStyle=g; x.fillRect(0,0,1080,1350);
+  x.fillStyle='rgba(198,244,50,.12)'; x.beginPath(); x.arc(900,180,360,0,7); x.fill();
+  x.fillStyle='#C6F432'; const rr=(X,Y,W,H,R)=>{x.beginPath();x.roundRect?x.roundRect(X,Y,W,H,R):x.rect(X,Y,W,H);x.fill();}; rr(80,80,330,96,30);
+  x.fillStyle='#0A0E1C'; x.font='900 50px Heebo, Arial'; x.direction='ltr'; x.textAlign='left'; x.fillText('LET IT | B',112,146);
+  x.direction='rtl'; x.textAlign='right'; x.fillStyle='#fff'; x.font='900 120px Heebo, Arial'; x.fillText(o.title,1000,420);
+  x.fillStyle='#C6F432'; x.font='900 92px Heebo, Arial'; x.fillText(o.big,1000,580);
+  x.fillStyle='#C9D1EA'; x.font='700 52px Heebo, Arial'; (o.lines||[]).forEach((t,i)=>x.fillText(t,1000,720+i*80));
+  x.fillStyle='#8E97B5'; x.font='700 42px Heebo, Arial'; x.fillText('BET-IT · משחק הניחושים של החבר׳ה',1000,1190);
+  x.fillStyle='#C6F432'; x.font='900 46px Heebo, Arial'; x.direction='ltr'; x.textAlign='right'; x.fillText('bet-it.web.app',1000,1260);
+  return await new Promise(r=>c.toBlob(r,'image/png'));
+}
+async function shareCard(o, text){
+  const blob=await makeCard(o), file=new File([blob],'bet-it.png',{type:'image/png'});
+  const msg=`${text}\n👉 ${APP_URL}`;
+  if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file],text:msg}); return; }catch(e){ if(e.name==='AbortError') return; } }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bet-it.png'; a.click();
+  setTimeout(()=>window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,'_blank'),500);
+  toast('התמונה נשמרה – צרף אותה להודעה 📸',true,null,3500);
+}
+function shareWin(bid){ const b=A.bets[bid], f=S.fixtures[b.e]; if(!b||!f) return;
+  shareCard({title:'אמרתי לכם! ✅', big:`+${fmt(payout(b)-b.s)} ז'יטונים`, lines:[`${he(f.home)} ${f.h}–${f.a} ${he(f.away)}`, `${pickLabel(f,b)} · יחס ${b.o.toFixed(2)}${b.j?' · 🃏 ג׳וקר':''}`]},
+    `אמרתי לכם! ✅ זכיתי ב-${fmt(payout(b)-b.s)} ז'יטונים ב-BET-IT על ${he(f.home)}–${he(f.away)} 😎`); }
+function shareRank(rank,total){ const L=tblScope==='all'?null:S.lg[tblScope], where=L?`בליגת "${L.n}"`:'בטבלה הארצית', per=tblMode==='week'?'השבוע':'העונה';
+  shareCard({title:rank===1?'👑 אני במקום הראשון':`אני במקום ${rank}`, big:where, lines:[`מתוך ${total} שחקנים · ${per}`, 'מי מעז לעקוף? 😏']},
+    `${rank===1?'👑 אני מוביל':`אני במקום ${rank}`} ${where} ב-BET-IT ${per}. מי מעז לעקוף? 😏`); }
 function setTM(m){ tblMode=m; lsSet('bb_tm',m); render(); }
 function liveTable(lg){
   const base=(S.tables[lg]&&S.tables[lg].rows)||[], rows=base.map((r,i)=>({...r,base:i+1,live:null})), by=Object.fromEntries(rows.map(r=>[r.t,r]));
@@ -560,7 +664,7 @@ function openBet(eid,m,p){
 function closeSheet(){ sheetSt=null; document.getElementById('sheet').classList.remove('show'); document.getElementById('sheetBg').classList.remove('show'); }
 function sheetOdds(){ const f=S.fixtures[sheetSt.eid], o=(f&&f.odds)||{}; return sheetSt.m==='CS'?(o.cs||{})[`${sheetSt.ch}-${sheetSt.ca}`]:o[sheetSt.p]; }
 function renderSheet(){
-  if(!sheetSt) return; const f=S.fixtures[sheetSt.eid]; if(!f||!A) return closeSheet();
+  if(!sheetSt||sheetSt.custom) return; const f=S.fixtures[sheetSt.eid]; if(!f||!A) return closeSheet();
   const L=isLocked(f), a=account(), dk=f.day||dayKey(f.ko), jkFree=!jokerUsed(dk);
   if(sheetSt.m==='CS') sheetSt.p=`${sheetSt.ch}-${sheetSt.ca}`;
   const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)), win=o?(sheetSt.j?s+2*(s*o-s):s*o):0;

@@ -267,6 +267,40 @@ def publish(accts, prev_fx):
         published['standings'] = json.dumps(st_body, sort_keys=True); published['profiles'] = json.dumps(profiles, sort_keys=True)
         for e, v in revealed.items(): published['rv' + e] = json.dumps(v, sort_keys=True)
 
+# ---------- ליגות חברים ----------
+MAX_LEAGUES_PER_USER, MAX_MEMBERS = 10, 200
+lg_first_seen = {}
+def leagues_tick(accts):
+    """בונה את ליגות החברים מהחשבונות (הרובוט הוא היחיד שמפרסם חברות), מבצע הרחקות, מנקה ליגות יתומות."""
+    defs = fb('lgdef') or {}; bans = fb('lgban') or {}; out = {}
+    for sec, a in accts.items():
+        if not a or 'pid' not in a: continue
+        mine = sorted((a.get('leagues') or {}).items(), key=lambda x: (x[1] or {}).get('at', 0))[:MAX_LEAGUES_PER_USER]
+        for lid, e in mine:
+            if lid not in defs or a['pid'] in (bans.get(lid) or {}): continue
+            L = out.setdefault(lid, {'n': defs[lid].get('n', ''), 'm': {}, 'o': None, 'at': defs[lid].get('at', 0)})
+            if (e or {}).get('own'): L['o'] = a['pid']
+            if len(L['m']) < MAX_MEMBERS: L['m'][a['pid']] = a['name']
+    # הרחקות – רק בעל הליגה
+    by_pid = {a.get('pid'): s for s, a in accts.items() if a}
+    for sec, a in accts.items():
+        for lid, pids in ((a or {}).get('lgkick') or {}).items():
+            L = out.get(lid)
+            for pid in (pids or {}):
+                if L and L['o'] == a.get('pid') and pid != a.get('pid'):
+                    fb(f'lgban/{lid}/{pid}', 'PUT', True); L['m'].pop(pid, None)
+                    if pid in by_pid: fb(f'acct/{by_pid[pid]}/leagues/{lid}', 'DELETE')
+            fb(f'acct/{sec}/lgkick/{lid}', 'DELETE')
+    # ליגה בלי בעלים (ספאם/נטושה) – נמחקת אחרי 10 דקות
+    t = time.time()
+    for lid in defs:
+        if lid in out and out[lid]['o']: lg_first_seen.pop(lid, None); continue
+        if t - lg_first_seen.setdefault(lid, t) > 600:
+            fb(f'lgdef/{lid}', 'DELETE'); out.pop(lid, None); lg_first_seen.pop(lid, None)
+    out = {k: v for k, v in out.items() if v['o']}
+    sig = json.dumps(out, sort_keys=True)
+    if published.get('lg') != sig: fb('pub/lg', 'PUT', out or None); published['lg'] = sig
+
 # ---------- מנהל ----------
 rid = lambda s: hashlib.sha256(s.encode()).hexdigest()[:10]
 def admin_tick(accts):
@@ -348,6 +382,7 @@ if __name__ == '__main__':
             if n: msg.append(f'settled {n}'); accts = fb('acct') or {}
             publish(accts, prev)
             admin_tick(accts)
+            leagues_tick(accts)
             cleanup_names(accts)
             fb('pub/meta/robotAt', 'PUT', now_ms())
             print(datetime.datetime.now(IL).strftime('%d.%m %H:%M:%S'), ' · '.join(msg) or 'ok', flush=True)

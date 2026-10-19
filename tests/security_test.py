@@ -115,6 +115,19 @@ check('דריסת קוד קיים כך שיצביע לחשבון אחר', req('P
 check('קוד חדש שמצביע לחשבון של מישהו אחר', req('PUT', f'rc/{rs(12, RCA)}', B)[0], 401)
 check('החלפת הקוד של חשבון קיים', req('PATCH', '', {f'acct/{A}/rc': (c2 := rs(12, RCA)), f'rc/{c2}': A})[0], 401)
 
+print('--- ליגות חברים')
+LID = rs(6, RCA)
+check('קריאת כל הליגות (lgdef)', req('GET', 'lgdef')[0], 401)
+check('פתיחת ליגה תקינה (בעלים)', req('PATCH', '', {f'lgdef/{LID}': {'n': 'pentest league', 'at': SV}, f'acct/{A}/leagues/{LID}': {'at': SV, 'own': True}})[0], 200)
+check('שינוי שם של ליגה קיימת', req('PUT', f'lgdef/{LID}', {'n': 'hacked', 'at': SV})[0], 401)
+check('השתלטות: B מסמן את עצמו בעלים של ליגה קיימת', req('PUT', f'acct/{B}/leagues/{LID}', {'at': SV, 'own': True})[0], 401)
+check('הצטרפות תקינה של B', req('PUT', f'acct/{B}/leagues/{LID}', {'at': SV})[0], 200)
+check('הצטרפות לליגה שלא קיימת', req('PUT', f'acct/{B}/leagues/{rs(6, RCA)}', {'at': SV})[0], 401)
+check('הרחקה ע"י מי שאינו בעלים', req('PUT', f'acct/{B}/lgkick/{LID}/{Apid}', True)[0], 401)
+check('הרחקה ע"י הבעלים', req('PUT', f'acct/{A}/lgkick/{LID}/{Bpid}', True)[0], 200)
+check('זיוף טבלת ליגות (pub/lg)', req('PUT', f'pub/lg/{LID}', {'n': 'x', 'o': Bpid, 'm': {}})[0], 401)
+check('עזיבת ליגה', req('DELETE', f'acct/{B}/leagues/{LID}')[0], 200)
+
 print('--- מנהל')
 check('פעולת מנהל עם מפתח מזויף', req('PUT', f'adminOps/k{rs(40, AZM)}/o1', {'t': 'adjust', 'pid': Apid, 'd': 9999, 'at': SV})[0], 401)
 check('רישום מפתח מנהל חדש', req('PUT', f'adminKeys/k{rs(40, AZM)}', True)[0], 401)
@@ -124,7 +137,7 @@ st, a = req('GET', f'acct/{A}')
 check('יתרה סופית של A נכונה (500−50−10 = 440)', (a or {}).get('wallet', {}).get('bal'), 440)
 
 # ניקוי
-R.fb('', 'PATCH', {f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None,
+R.fb('', 'PATCH', {f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None, f'lgdef/{LID}': None,
                    f'fixtures/{OPEN}': None, f'fixtures/{LOCKED}': None, f'pub/profiles/{Apid}': None, f'pub/profiles/{Bpid}': None, f'pub/revealed/{OPEN}': None})
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)

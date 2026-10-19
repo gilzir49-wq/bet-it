@@ -59,6 +59,10 @@ try:
         pg.wait_for_function('() => A && A.wallet.bal === 500 && Object.keys(A.bets||{}).length === 0', timeout=20000)
         check(True, 'ביטול החזיר את הז\'יטונים (500)')
         sec, a = acct(); check(a and a['wallet']['bal'] == 500, 'הביטול נשמר בשרת')
+        pg.evaluate("() => { go('table'); leagueMenu(); }"); pg.fill('#lgName', 'smoke league'); pg.click("button[onclick='createLeague()']")
+        pg.wait_for_function('() => A && A.leagues && Object.values(A.leagues).some(l => l.own)', timeout=20000)
+        check(True, 'פתיחת ליגת חברים מהאפליקציה'); pg.wait_for_selector('#sheet.show', timeout=10000)
+        check(pg.locator('#sheet a[href^="https://wa.me/"]').count() == 1, 'מסך הזמנה עם כפתור וואטסאפ'); pg.evaluate('() => closeSheet()')
         ctx2 = b.new_context(viewport={'width': 390, 'height': 844}); pg2 = ctx2.new_page()
         pg2.goto('http://127.0.0.1:8765/index.html'); pg2.wait_for_selector('#nameIn', timeout=20000)
         pg2.once('dialog', lambda d: d.accept(code))
@@ -72,6 +76,6 @@ except Exception as ex:
 finally:
     s, a = acct()
     upd = {f'fixtures/{E}': None}
-    if s: upd.update({f'acct/{s}': None, f"names/{a['nk']}": None}); upd.update({f"rc/{a['rc']}": None} if a.get('rc') else {})
+    if s: upd.update({f'acct/{s}': None, f"names/{a['nk']}": None}); upd.update({f"rc/{a['rc']}": None} if a.get('rc') else {}); upd.update({f'lgdef/{l}': None for l in (a.get('leagues') or {})})
     R.fb('', 'PATCH', upd); srv.shutdown()
 sys.exit(1 if fails else 0)
