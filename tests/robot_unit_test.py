@@ -166,8 +166,8 @@ a = {'pid': 'p1', 'name': 'a', 'bets': {'b1': B_('1', 100), 'b2': B_('2', 50, 8.
 check('רווח כולל = (300−100)+(400−50)−70, הוחזר = 0, פתוח לא נספר', R.stats_of(a) == (480, 2, 3, 5))
 rows = R.standings_rows({'s1': a, 's2': {'pid': 'p2', 'name': 'b', 'bets': {}, 'settled': {}}, 's3': {'pid': 'p3', 'name': 'c', 'bets': {'x': B_('9', 10)}},
                           's4': {'pid': 'p4', 'name': 'd', 'bets': {'y': B_('9', 10)}, 'settled': {'y': {'st': 'won', 'pay': 990}}}})
-check('בטבלה הארצית רק מי שניחש (מי שרק נרשם – לא)', {r['pid'] for r in rows} == {'p1', 'p3', 'p4'})
-check('מדורג לפי רווח כולל', [r['pid'] for r in rows] == ['p4', 'p1', 'p3'] and rows[0]['rk'] == 1 and rows[2]['pf'] == 0)
+check('בטבלה הארצית כל מי שנכנס – גם מי שעוד לא ניחש', {r['pid'] for r in rows} == {'p1', 'p2', 'p3', 'p4'})
+check('מדורג לפי רווח כולל; מי שלא ניחש – בתחתית, 0, מסומן ng', [r['pid'] for r in rows] == ['p4', 'p1', 'p3', 'p2'] and rows[0]['rk'] == 1 and rows[2]['pf'] == 0 and rows[3].get('ng') and rows[3]['rk'] == 4 and not rows[2].get('ng'))
 il = lambda *x: int(datetime.datetime(*x, tzinfo=R.IL).timestamp() * 1000)
 check('23:58 שייך עדיין לאתמול', R.official_day(il(2026, 10, 25, 23, 58)) == '2026-10-24')
 check('23:59 = העדכון של היום', R.official_day(il(2026, 10, 25, 23, 59)) == '2026-10-25')

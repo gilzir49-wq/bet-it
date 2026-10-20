@@ -42,7 +42,7 @@ assert req('PATCH','',{f'lgdef/{LID}':{'n':'e2e league','at':SV},f'acct/{s2}/lea
 assert req('PUT',f'acct/{sB}/leagues/{LID}',{'at':SV})[0]==200
 subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
 assert req('GET','pub/lg')[1] is None; print('public list of all leagues (pub/lg) is gone')
-assert pB not in [r['pid'] for r in req('GET','pub/standings')[1]['rows']]; print('new player without guesses is not in the national table')
+nr=[r for r in req('GET','pub/standings')[1]['rows'] if r['pid']==pB]; assert nr and nr[0].get('ng') and nr[0]['pf']==0 and nr[0]['rk']==max(r['rk'] for r in req('GET','pub/standings')[1]['rows']), nr; print('new player without guesses IS in the national table – at the bottom, 0, "not guessed yet"')
 lv=req('GET',f'lgv/{LID}')[1]; assert lv and lv['o']==pid and set(lv['m'])=={pid,pB} and lv['rk']['of']>=1, lv; print('private league view (lgv) published, rank', lv['rk'])
 assert req('GET','lgv')[0]==401 and (req('GET','pub/stats')[1] or {}).get('leagues',0)>=1; print('league list is private, only a count is public')
 assert req('PUT',f'acct/{s2}/lgkick/{LID}/{pB}',True)[0]==200

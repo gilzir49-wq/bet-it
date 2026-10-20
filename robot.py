@@ -299,15 +299,19 @@ def official_day(now):
     if (d.hour, d.minute) >= (23, 59): return d.strftime('%Y-%m-%d')
     return (d - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
 def standings_rows(accts, live=False):
-    """הטבלה הארצית: כל מי שניחש לפחות פעם אחת. מדורג לפי רווח כולל, אחר כך פגיעות."""
-    rows = []
+    """הטבלה הארצית: כל מי שנכנס לאפליקציה (גל: "זה יניע אנשים לפעולה"). מדורג לפי רווח כולל, אחר כך פגיעות;
+    מי שעוד לא ניחש – בתחתית, 0, מסומן ng (לא משתתף בדירוג של המנחשים)."""
+    rows, idle = [], []
     for a in accts.values():
         if not a or 'pid' not in a: continue
         pf, won, dn, nb = stats_of(a, live)
-        if nb or dn: rows.append({'pid': a['pid'], 'n': a['name'], 'pf': pf, 'won': won, 'dn': dn, 'nb': nb})
+        r = {'pid': a['pid'], 'n': a['name'], 'pf': pf, 'won': won, 'dn': dn, 'nb': nb}
+        if nb or dn: rows.append(r)
+        else: r['ng'] = True; idle.append(r)
     rk = ranks('pf', rows)
     for r in rows: r['rk'] = rk[r['pid']]
-    return sorted(rows, key=lambda r: (r['rk'], r['n']))
+    for r in idle: r['rk'] = len(rows) + 1
+    return sorted(rows, key=lambda r: (r['rk'], r['n'])) + sorted(idle, key=lambda r: r['n'])
 def publish(accts, prev_fx=None):
     now = now_ms()
     bank, revealed, profiles = BANK_START, {}, {}
