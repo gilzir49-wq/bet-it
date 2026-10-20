@@ -529,14 +529,6 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 .ntf>div{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--line)}.ntf>div:last-child{border-bottom:0}
 .ntf .tx{flex:1;display:flex;flex-direction:column;gap:2px}.ntf b{font-size:14px}.ntf .tx span{font-size:12px;color:var(--mut)}
 .soon{font-size:11px;font-weight:900;color:var(--p2);background:rgba(169,123,255,.14);border-radius:999px;padding:3px 9px;white-space:nowrap}
-/* המחזור השבועי */
-.rdc{display:flex;flex-direction:column;gap:8px}.rdw{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--gold);border-radius:16px;padding:12px 14px}.rdw b{font-size:22px;color:var(--gold)}
-.rdwarn{background:rgba(255,201,77,.12);border:1px solid #FFC94D;border-radius:14px;padding:10px 12px;margin-top:8px;font-weight:700}.rdwarn small{font-weight:500;color:var(--txt2)}.rdok{color:var(--em);margin-top:8px;font-weight:700}
-.mst{font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px;background:var(--card3);color:var(--txt2)}.mst.live{background:rgba(255,77,94,.18);color:#FF6B7A}
-.rdt{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:4px 12px}.rdt .r{display:grid;grid-template-columns:28px 1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}.rdt .r:first-child{border-top:0}.rdt .r.me{color:var(--gold)}.rdt .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rdt .v{font-variant-numeric:tabular-nums}
-.rdfr .tt{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0}.rdfr .sc{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}.rdfr.need{border-color:#FFC94D}.auto{color:#A97BFF}.mtag{font-size:12px;color:var(--gold)}
-.mtfx{display:flex;flex-direction:column;gap:6px;max-height:45vh;overflow:auto}.mtfx label{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:13.5px;background:var(--card);border-radius:12px;padding:9px 10px}
-.podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;margin:12px 0}.podium>div{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--card);border-radius:16px;padding:12px 6px;text-align:center}.podium .p1{order:2;padding-top:26px;border:1px solid var(--gold)}.podium .p2{order:1}.podium .p3{order:3}.podium span:first-child{font-size:30px}
 .afb{padding:8px 16px;border-top:1px solid var(--line)}.afb div{white-space:pre-wrap;margin-top:3px}
 </style>
 </head>
@@ -1046,7 +1038,6 @@ function leagueHub(lid,L,rows,prevRk,my){
   if(rows.length) h+=`<div class="lbd c3">${rows.map(r=>{ const pi=fromBottom.indexOf(r._rk), pen=mode==='week'&&rows.length>=3&&pi===0, isMe=r.pid===me, d=(prevRk[r.pid]||r._rk)-r._rk;
       const k=r._rk===1&&rows.length>1&&(mode==='season'||r.wp>0);
       return `<div class="r ${isMe?'me':''}">${k?CROWN:`<b>${r._rk}</b>`}<span class="nm"><span><span class="t">${esc(r.n)}${isMe?' (אתה)':''}</span>${d>0?`<span class="mv2 up" dir="ltr">▲${d}</span>`:d<0?`<span class="mv2 dn" dir="ltr">▼${-d}</span>`:''}${pen?`<span style="font-size:12px;color:var(--red2);font-weight:500">· ${esc(PENALTIES[0].replace(/ [^ ]+$/,''))}</span>`:''}</span></span>${val(r)}</div>`; }).join('')}</div>`;
-  h+=roundSection(lid,L);
   const feed=leagueFeed(L), last=rows.length>=3?rows[rows.length-1]:null;
   if(feed.length||last){ h+=`<div class="dayh">מה קורה בליגה</div><div class="feed">`+feed.map(x=>`<div class="fi"><span class="av" style="${avBg(x.pid,x.pid===me)}${x.pid===me?';background:var(--gold);color:var(--on-accent)':''}">${initial(L.m[x.pid])}</span><span style="flex:1">${x.h} <span class="tm2">${agoTxt(x.t)}</span></span></div>`).join('');
     if(last&&mode==='week') h+=`<div class="fi warn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFC94D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>השבוע נסגר ביום שני 23:59. ${esc(last.n)} — ${last.pid===me?'אתה בתחתית, יש עוד זמן!':'תכין ארנק.'}</span></div>`;
@@ -1442,9 +1433,9 @@ function updStake(){ const s=Math.max(0,Math.floor(sheetSt.s||0)); const i=docum
   const p=document.getElementById('potAmt'); if(p) p.textContent=fmt(s); const st=document.getElementById('potStk'); if(st) st.innerHTML=stacksHTML(s); updWin(); }
 
 // ================= גיליון הימור =================
-function openBet(eid,m,p,rd){
+function openBet(eid,m,p){
   const f=S.fixtures[eid]; if(!f||isLocked(f)) return toast('המשחק ננעל 🔒',false,'err'); if(!A) return toast('קודם נכנסים עם שם 🙂');
-  const a=rd?rdAcc(rd):account(); sheetSt={eid,m,p,s:Math.min(a.avail,Math.max(10,Math.round(a.avail/10/5)*5)),j:false,rd:rd||null};
+  const a=account(); sheetSt={eid,m,p,s:Math.min(a.avail,Math.max(10,Math.round(a.avail/10/5)*5)),j:false};
   if(m==='CS'){ const [h,x]=p.split('-').map(Number); sheetSt.ch=h; sheetSt.ca=x; }
   renderSheet(); document.getElementById('sheet').classList.add('show'); document.getElementById('sheetBg').classList.add('show');
 }
@@ -1452,11 +1443,11 @@ function closeSheet(){ sheetSt=null; document.getElementById('sheet').classList.
 function sheetOdds(){ const f=S.fixtures[sheetSt.eid], o=(f&&f.odds)||{}; return sheetSt.m==='CS'?(o.cs||{})[`${sheetSt.ch}-${sheetSt.ca}`]:o[sheetSt.p]; }
 function renderSheet(){
   if(!sheetSt||sheetSt.custom) return; const f=S.fixtures[sheetSt.eid]; if(!f||!A) return closeSheet();
-  const L=isLocked(f), a=sheetSt.rd?rdAcc(sheetSt.rd):account(), dk=f.day||dayKey(f.ko), jkFree=!sheetSt.rd&&!jokerUsed(dk);
+  const L=isLocked(f), a=account(), dk=f.day||dayKey(f.ko), jkFree=!jokerUsed(dk);
   if(sheetSt.m==='CS') sheetSt.p=`${sheetSt.ch}-${sheetSt.ca}`;
   const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)), win=o?(sheetSt.j?s+2*(s*o-s):s*o):0;
   const cdm=f.ko-LOCK_BEFORE_MS-Date.now(), cdh=Math.floor(cdm/3600e3), cdmm=Math.floor(cdm%3600e3/60e3);
-  let h=`<div class="shd"><div><b>${sheetSt.rd?'<span class="mtag">📅 מחזור</span> ':''}${esc(he(f.home))} נגד ${esc(he(f.away))}</b><span>${LEAGUES[f.lg]?.n||''} · ${dayLabel(dk)} ${hm(f.ko)}${cdm>0&&cdm<6*3600e3?` · ננעל בעוד ${cdh?cdh+':'+String(cdmm).padStart(2,'0'):cdmm+' דק׳'}`:''}</span></div>
+  let h=`<div class="shd"><div><b>${esc(he(f.home))} נגד ${esc(he(f.away))}</b><span>${LEAGUES[f.lg]?.n||''} · ${dayLabel(dk)} ${hm(f.ko)}${cdm>0&&cdm<6*3600e3?` · ננעל בעוד ${cdh?cdh+':'+String(cdmm).padStart(2,'0'):cdmm+' דק׳'}`:''}</span></div>
     <button class="sclose" aria-label="סגירה" onclick="closeSheet()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="stabs"><button class="${sheetSt.m==='W'?'on':''}" onclick="sheetSt.m='W';sheetSt.p=sheetSt.p.includes('-')?'1':sheetSt.p;renderSheet()">מי מנצח</button><button class="${sheetSt.m==='CS'?'on':''}" onclick="sheetSt.m='CS';sheetSt.ch=sheetSt.ch??1;sheetSt.ca=sheetSt.ca??0;renderSheet()">תוצאה מדויקת</button></div>`;
   if(sheetSt.m==='CS') h+=`<div class="pick"><div class="csgrid"><div><div style="font-weight:900;font-size:13px;margin-bottom:6px">${esc(he(f.home))}</div><div class="step"><button class="minus" onclick="csB('ch',-1)">−</button><span class="val">${sheetSt.ch}</span><button class="plus" onclick="csB('ch',1)">+</button></div></div>
@@ -1526,7 +1517,6 @@ async function flushQueue(){
 }
 addEventListener('online', flushQueue); setInterval(flushQueue, 10000);
 async function placeBet(){
-  if(sheetSt&&sheetSt.rd) return placeRdBet();
   const f=S.fixtures[sheetSt.eid]; if(!f||isLocked(f)) return toast('המשחק ננעל 🔒',false,'err');
   const s=Math.floor(sheetSt.s||0), o=sheetOdds(), bal=A.wallet.bal, dk=f.day||dayKey(f.ko);
   if(!o) return toast('אין יחס לבחירה הזו',false,'err'); if(s<1) return toast("כמה ז'יטונים? 🙂",false,'err');
@@ -1550,90 +1540,7 @@ async function cancelBet(bid){
   if(r==='ok') toast('ההימור בוטל ↩️',true); else toast(r==='denied'?'לא ניתן לבטל כרגע':'אין קליטה – הביטול לא נשלח, נסה שוב',false,'err',4000);
 }
 
-// ================= המחזור השבועי של הליגה (ערימה נפרדת של 1,000 – לא נוגעת ביתרה הראשית) =================
-const RD_STACK=1000, RDST={open:'פתוח להימורים',live:'🔴 רץ עכשיו',done:'הסתיים'};
-const curWk = () => weekKey(dayKey(Date.now()));
 const fval = id => ((document.getElementById(id)||{}).value||'');
-const myRd = (lid,wk) => (((A&&A.rd)||{})[lid]||{})[wk||curWk()]||null;
-const rdAcc = lid => { const R=myRd(lid); return {avail:R&&R.wallet?R.wallet.bal:0}; };
-const rdHas = (R,e) => Object.values((R&&R.bets)||{}).some(b=>b.e===e);
-const whenTxt = ms => ms?`${dayLabel(dayKey(ms))} ${hm(ms)}`:'';
-const wkTxt = wk => { const a=dkToDate(wk), b=dkToDate(addDays(wk,6)); return `${a.getUTCDate()}.${a.getUTCMonth()+1}–${b.getUTCDate()}.${b.getUTCMonth()+1}`; };
-function rdBetState(lid,wk,bid,b){ const R=myRd(lid,wk), s=R&&R.settled&&R.settled[bid]; if(s) return s.st; const f=S.fixtures[b.e]; if(!f) return 'open';
-  if(f.st==='postp') return 'void'; if(f.st==='finished') return legWins(f,b)?'won':'lost'; if(f.st==='live') return legWins(f,b)?'live-win':'live-lose'; return 'open'; }
-function rdTable(rows,me){ if(!rows||!rows.length) return `<div class="empty" style="padding:14px">הטבלה תתמלא ברגע שיתחילו להמר</div>`;
-  return `<div class="rdt">${rows.map(r=>`<div class="r ${r.pid===me?'me':''}"><b>${r.rk===1?'👑':r.rk}</b><span class="n">${esc(r.n)}${r.pid===me?' (אתה)':''}</span><span class="muted">${r.dn?`${r.won}/${r.dn} פגיעות`:`${r.nb||0} הימורים`}${r.na?` · 🎲${r.na}`:''}</span><b class="v">${fmt(r.v)}</b></div>`).join('')}</div>`; }
-function podiumHTML(p){ const md=['🥇','🥈','🥉']; return `<div class="podium">${(p||[]).slice(0,3).map(r=>`<div class="p${r.rk}"><span>${md[r.rk-1]||''}</span><b>${esc(r.n)}</b><span>${fmt(r.v)}</span></div>`).join('')}</div>`; }
-function rdFxRow(lid,wk,f,R,done){
-  const L=isLocked(f), o=f.odds||{}, live=f.st==='live', fin=f.st==='finished', mine=Object.entries((R&&R.bets)||{}).filter(([id,b])=>b.e===f.id);
-  const ob=k=>`<button class="ob" ${L||!o[k]||!R||done?'disabled':''} data-e="${esc(f.id)}" data-p="${k}" data-l="${esc(lid)}" onclick="openBet(this.dataset.e,'W',this.dataset.p,this.dataset.l)"><span class="l">${k==='X'?'תיקו':esc(he(k==='1'?f.home:f.away))}</span><span class="v">${o[k]?o[k].toFixed(2):'–'}</span></button>`;
-  let h=`<div class="card rdfr ${!mine.length&&!L?'need':''}"><div class="muted">${LEAGUES[f.lg]?.f||''} ${whenTxt(f.ko)}${live?' · '+liveTag(f):''}${!L?` · ${lockIn(f)}`:''}</div>
-    <div class="tt"><b>${esc(he(f.home))}</b>${live||fin?`<bdi dir="rtl" class="sc">${f.h}–${f.a}</bdi>`:'<span class="muted">נגד</span>'}<b>${esc(he(f.away))}</b></div>`;
-  if(!L&&!done) h+=`<div class="odds">${ob('1')}${ob('X')}${ob('2')}</div><button class="csb" ${!o.cs||!R?'disabled':''} data-e="${esc(f.id)}" data-l="${esc(lid)}" onclick="openBet(this.dataset.e,'CS','1-0',this.dataset.l)">תוצאה מדויקת</button>`;
-  mine.forEach(([id,b])=>{ const st=rdBetState(lid,wk,id,b);
-    h+=`<div class="mybet"><span>${b.auto?'<span class="auto">🎲 הימור אוטומטי</span> ':'שלך: '}<b>${esc(pickLabel(f,b))} · ${fmt(b.s)}</b> <span class="muted">ביחס ${b.o.toFixed(2)}</span></span><span style="display:flex;gap:6px;align-items:center">${statusPill(st,b,f)}${!L&&!b.auto&&!(R.settled&&R.settled[id])?`<button class="x" data-l="${esc(lid)}" data-b="${esc(id)}" onclick="cancelRdBet(this.dataset.l,this.dataset.b)" title="בטל">✕</button>`:''}</span></div>`; });
-  if(!mine.length&&L&&!fin&&f.st!=='postp') h+=`<div class="muted" style="margin-top:4px">🎲 הבית מהמר במקומך עוד רגע…</div>`;
-  return h+'</div>';
-}
-function roundSection(lid,L){
-  const wk=curWk(), r=(L.rd||{})[wk], me=A&&A.pid, own=L.o===me, R=myRd(lid,wk), st=(L.rdst||{})[wk]||{};
-  let h=`<div class="dayh" id="rdSec">📅 המחזור של השבוע <small class="muted">${wkTxt(wk)}</small></div>`;
-  if(!r){
-    const picked=((((A&&A.rdpick)||{})[lid]||{})[wk]);
-    h+=`<div class="card rdc">${own?(picked?'✅ בחרת את משחקי המחזור – הוא נפתח תוך כמה שניות':`<b>בחר את משחקי המחזור</b><div class="muted">3–12 משחקים מהשבוע. לא בחרת עד חמישי 12:00? אני בוחר לבד את המשחקים הבולטים (ליגת העל + הגדולים בפרמייר ליג).</div><button class="btn" id="rdPick" data-l="${esc(lid)}" onclick="rdPickSheet(this.dataset.l)">📅 בחר משחקים למחזור</button>`)
-      :'<b>המחזור נפתח עד חמישי 12:00</b><div class="muted">בעל הליגה בוחר את המשחקים, ואם לא – הם נבחרים אוטומטית. כל אחד מקבל 1,000 ז׳יטוני מחזור.</div>'}</div>`;
-  } else {
-    const fx=Object.keys(r.fx||{}).filter(e=>S.fixtures[e]).map(e=>({id:e,...S.fixtures[e]})).sort((a,b)=>a.ko-b.ko), done=r.st==='done';
-    const need=fx.filter(f=>!isLocked(f)&&!rdHas(R,f.id)), nx=need[0];
-    h+=`<div class="rdw"><span><span class="mst ${esc(r.st)}">${RDST[r.st]||''}</span> ${fx.length} משחקים${r.by==='auto'?' · נבחרו אוטומטית':''}</span>${R&&R.wallet?`<span>הערימה שלך <b id="rdBal">${fmt(R.wallet.bal)}</b></span>`:'<span class="muted">הערימה שלך נפתחת תוך רגע…</span>'}</div>`;
-    if(need.length&&!done) h+=`<div class="rdwarn" id="rdLeft">⏰ נשארו לך ${need.length} משחקים להמר · הבא ננעל ${lockIn(nx)}<br><small>משחק שלא תהמר עליו – הבית יהמר במקומך 🎲 (סכום ממוצע, תוצאה אקראית)</small></div>`;
-    else if(!done&&R) h+=`<div class="rdok">✅ הימרת על כל המשחקים שעוד פתוחים</div>`;
-    if(done&&st.podium) h+=podiumHTML(st.podium)+`<button class="btn" id="rdShare" data-l="${esc(lid)}" onclick="rdShare(this.dataset.l)">📣 שתף את אלוף המחזור</button>`;
-    h+=`<div style="display:flex;gap:8px;margin:8px 0"><button class="btn sec" id="rdInv" data-l="${esc(lid)}" onclick="rdInvite(this.dataset.l)">📲 שלח לקבוצה שהמחזור נפתח</button></div>`;
-    h+=`<div class="dayh">טבלת המחזור</div>`+rdTable(st.rows,me);
-    h+=`<div class="dayh">משחקי המחזור</div>`+fx.map(f=>rdFxRow(lid,wk,f,R,done)).join('');
-  }
-  const sum=L.rdsum&&L.rdsum.rows;
-  if(sum&&sum.length) h+=`<div class="dayh">🏆 הטבלה העונתית של המחזורים</div><div class="rdt">${sum.map(x=>`<div class="r ${x.pid===me?'me':''}"><b>${x.rk}</b><span class="n">${esc(x.n)}</span><span class="muted">${x.rds} מחזורים${x.w?` · 🥇×${x.w}`:''}</span><b class="v">${x.pts} נק׳</b></div>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:4px">מקום 1 = 10 נק׳ · 2 = 7 · 3 = 5 · כל משתתף = 2</div>`;
-  const hist=Object.entries(L.rdst||{}).filter(([w,x])=>w!==wk&&x&&x.st==='done'&&x.podium&&x.podium.length).sort((a,b)=>b[0]<a[0]?-1:1).slice(0,12);
-  if(hist.length) h+=`<div class="dayh">היסטוריית מחזורים</div><div class="rdt">${hist.map(([w,x])=>`<div class="r"><b>📅</b><span class="n">${wkTxt(w)}</span><span>🥇 ${esc(x.podium[0].n)}</span><b class="v">${fmt(x.podium[0].v)}</b></div>`).join('')}</div>`;
-  return h;
-}
-function rdPickSheet(lid){
-  const wk=curWk(), end=Date.parse(addDays(wk,7)+'T00:00:00+02:00'), fx=fxList().filter(f=>f.st==='none'&&!isLocked(f)&&f.odds&&f.ko<end).sort((a,b)=>a.ko-b.ko);
-  sheet(`<h2 style="margin-top:0">📅 משחקי המחזור</h2><div class="muted">בוחרים 3–12 משחקים מהשבוע (${wkTxt(wk)}). כל חבר מקבל ${fmt(RD_STACK)} ז׳יטוני מחזור וצריך להמר על כולם.</div>
-    <div class="muted" style="margin-top:6px">נבחרו <span id="rdCnt">0</span></div>
-    <div id="rdFx" class="mtfx">${fx.map(f=>`<label><input type="checkbox" value="${esc(f.id)}" onchange="document.getElementById('rdCnt').textContent=document.querySelectorAll('#rdFx input:checked').length"><span>${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} – ${esc(he(f.away))}</span><span class="muted">${whenTxt(f.ko)}</span></label>`).join('')||'<div class="empty">אין משחקים פתוחים השבוע</div>'}</div>
-    <button class="btn" id="rdGo" data-l="${esc(lid)}" onclick="rdPickSave(this.dataset.l)">פתח את המחזור</button>`);
-}
-async function rdPickSave(lid){ const fx=[...document.querySelectorAll('#rdFx input:checked')].map(i=>i.value);
-  if(fx.length<3||fx.length>12) return toast('בוחרים בין 3 ל-12 משחקים',false,'err');
-  const b=document.getElementById('rdGo'); if(b) b.disabled=true;
-  const r=await write('PUT',`acct/${SEC}/rdpick/${lid}/${curWk()}`,{fx:Object.fromEntries(fx.map(e=>[e,true])),at:SV});
-  if(r!=='ok'){ if(b) b.disabled=false; return toast(r==='denied'?'לא הצלחתי – אולי אחד המשחקים כבר ננעל או שהמחזור כבר נפתח':'אין קליטה – נסה שוב',false,'err',3500); }
-  closeSheet(); toast('המחזור נפתח! 🎉 עוד רגע כולם מקבלים ערימה – שלח לקבוצה',true,null,3500); render(); }
-async function placeRdBet(){
-  const lid=sheetSt.rd, wk=curWk(), L=S.lg[lid], r=L&&L.rd&&L.rd[wk], f=S.fixtures[sheetSt.eid];
-  if(!f||isLocked(f)||!r||!(r.fx||{})[sheetSt.eid]||r.st==='done') return toast('המשחק ננעל 🔒',false,'err');
-  const R=myRd(lid,wk); if(!R||!R.wallet) return toast('הערימה שלך נפתחת תוך רגע – נסה שוב בעוד כמה שניות',false,'err');
-  const s=Math.floor(sheetSt.s||0), o=sheetOdds(), bal=R.wallet.bal, btn=document.getElementById('betBtn');
-  if(!o) return toast('אין יחס לבחירה הזו',false,'err'); if(s<1) return toast("כמה ז'יטונים? 🙂",false,'err'); if(s>bal) return toast(`אין מספיק בערימה – יש ${fmt(bal)}`,false,'err');
-  if(btn){ btn.disabled=true; btn.textContent='שולח...'; }
-  const bid='b'+Date.now().toString(36)+rnd(4,AZ), P=`acct/${SEC}/rd/${lid}/${wk}`;
-  const res=await write('PATCH','',{[`${P}/bets/${bid}`]:{e:sheetSt.eid,m:sheetSt.m,p:sheetSt.p,s,o,at:SV},[`${P}/wallet/bal`]:bal-s,[`${P}/wallet/op`]:'b:'+bid});
-  if(res==='ok'){ closeSheet(); toast('ההימור נכנס למחזור 📅✅',true); confetti(50); render(); }
-  else { if(btn){ btn.disabled=false; btn.textContent='הימור!'; } toast(res==='denied'?'ההימור נדחה – אולי היחס התעדכן או שהמשחק ננעל':'אין קליטה – ההימור לא נשלח, נסה שוב',false,'err',4000); if(sheetSt) renderSheet(); }
-}
-async function cancelRdBet(lid,bid){ const wk=curWk(), R=myRd(lid,wk), b=R&&R.bets&&R.bets[bid]; if(!b||b.auto) return; const f=S.fixtures[b.e];
-  if(R.settled&&R.settled[bid]) return toast('ההימור כבר נסגר',false,'err'); if(isLocked(f)) return toast('המשחק ננעל – אי אפשר לבטל 🔒',false,'err');
-  if(!confirm(`לבטל את ההימור (${fmt(b.s)} ז'יטונים יחזרו לערימה)?`)) return; const P=`acct/${SEC}/rd/${lid}/${wk}`;
-  const r=await write('PATCH','',{[`${P}/bets/${bid}`]:null,[`${P}/wallet/bal`]:R.wallet.bal+b.s,[`${P}/wallet/op`]:'c:'+bid});
-  toast(r==='ok'?'ההימור בוטל ↩️':'לא ניתן לבטל כרגע',r==='ok',r==='ok'?null:'err'); }
-const rdInviteText = (lid,L,r) => `היי אח, נפתח המחזור בליגה שלנו "${L.n}" 📅\nיש לך עד ${whenTxt(r.dl)} להמר על ${Object.keys(r.fx||{}).length} משחקים – כל אחד מקבל ${fmt(RD_STACK)} ז׳יטונים:\n👉 ${APP_URL}/#join=${lid}`;
-function rdInvite(lid){ const L=S.lg[lid], r=L&&L.rd&&L.rd[curWk()]; if(!r) return; window.open(`https://wa.me/?text=${encodeURIComponent(rdInviteText(lid,L,r))}`,'_blank'); }
-function rdShare(lid){ const L=S.lg[lid], p=(((L&&L.rdst)||{})[curWk()]||{}).podium||[]; if(!p.length) return;
-  shareCard({title:'🏆 אלוף המחזור', big:p[0].n, lines:[`${L.n} · ${wkTxt(curWk())}`, ...p.slice(1,3).map(x=>`${['🥈','🥉'][x.rk-2]||''} ${x.n} · ${fmt(x.v)}`)]}, `🏆 ${p[0].n} אלוף המחזור בליגת "${L.n}" ב-BET-IT!`); }
-
 // ================= פידבק לשחקנים (רק המנהל רואה) =================
 function feedbackSheet(){ sheet(`<h2 style="margin-top:0">💬 שלח פידבק</h2><div class="muted">מה לשפר? מה מעצבן? מה בא לך שיהיה? רק המנהל רואה.</div>
   <textarea id="fbIn" class="name" maxlength="500" rows="5" style="height:auto;min-height:110px"></textarea><button class="btn" id="fbGo" onclick="sendFeedback()">שלח</button>`); }

@@ -174,54 +174,15 @@ check('בקשת שחזור עם שדה זבל ענק', req('PUT', f'recoverReq/s
 check('בקשת שחזור עם nk ענק', req('PUT', f'recoverReq/s{rs(48, AZM)}', {'nk': JUNK, 'at': SV})[0], 401)
 check('תפיסת שם עם מפתח ענק', req('PUT', f'names/{"y" * 300}', 'p' + rs(16, AZ))[0], 401)
 
-print('--- המחזור השבועי של ליגת חברים')
+print('--- המחזור השבועי בוטל: הנתיבים סגורים')
 LID2, OPEN2, WK = rs(6, RCA), '999000005', R.week_key(now)
-R.fb('', 'PATCH', {f'fixtures/{OPEN2}': {'lg': 'isr1', 'home': 'Bnei Sakhnin', 'away': 'Hapoel Beer Sheva', 'ko': now + 2 * 86400000, 'day': day, 'st': 'none', 'h': 0, 'a': 0, 'odds': {'1': 2.5, 'X': 3.1, '2': 2.6}},
-                   f'lgdef/{LID2}': {'n': 'pentest rd', 'at': now}, f'acct/{A}/leagues/{LID2}': {'at': now, 'own': True}, f'acct/{B}/leagues/{LID2}': {'at': now},
-                   f'lgv/{LID2}': {'n': 'pentest rd', 'o': Apid, 'm': {Apid: 'a', Bpid: 'b'}}})   # כמו שהרובוט מפרסם
+R.fb('', 'PATCH', {f'lgdef/{LID2}': {'n': 'pentest rd', 'at': now}, f'acct/{A}/leagues/{LID2}': {'at': now, 'own': True}, f'lgv/{LID2}': {'n': 'pentest rd', 'o': Apid, 'm': {Apid: 'a', Bpid: 'b'}}})
 st, X, Xpid, Xnk = new_acct('pentest_x' + RUN)
-pick = lambda **kw: {**{'fx': {OPEN: True, OPEN2: True}, 'at': SV}, **kw}
-check('מחזור: מי שאינו בעל הליגה בוחר משחקים', req('PUT', f'acct/{B}/rdpick/{LID2}/{WK}', pick())[0], 401)
-check('מחזור: בחירת משחק נעול', req('PUT', f'acct/{A}/rdpick/{LID2}/{WK}', pick(fx={OPEN: True, LOCKED: True}))[0], 401)
-check('מחזור: בחירה עם שדה נוסף (ערימה מנופחת)', req('PUT', f'acct/{A}/rdpick/{LID2}/{WK}', pick(stack=99999))[0], 401)
-check('מחזור: מפתח שבוע לא תקין', req('PUT', f'acct/{A}/rdpick/{LID2}/hack', pick())[0], 401)
-check('מחזור: בחירה תקינה ע"י בעל הליגה', req('PUT', f'acct/{A}/rdpick/{LID2}/{WK}', pick())[0], 200)
-check('מחזור: שינוי הבחירה אחרי ששלחו', req('PUT', f'acct/{A}/rdpick/{LID2}/{WK}', pick(fx={OPEN2: True}))[0], 401)
-R.fb(f'lgv/{LID2}/rd/2099-01-06', 'PUT', {'fx': {OPEN: True}, 'st': 'open'})
-check('מחזור: בחירה למחזור שכבר נפתח (אוטומטית)', req('PUT', f'acct/{A}/rdpick/{LID2}/2099-01-06', pick())[0], 401)
-check('מחזור: זיוף המחזור (lgv/rd)', req('PUT', f'lgv/{LID2}/rd/{WK}', {'fx': {OPEN2: True}, 'st': 'open'})[0], 401)
-check('מחזור: זיוף טבלת המחזור', req('PUT', f'lgv/{LID2}/rdst/{WK}', {'rows': []})[0], 401)
-check('מחזור: זיוף הטבלה העונתית', req('PUT', f'lgv/{LID2}/rdsum', {'rows': []})[0], 401)
-R.fb(f'lgv/{LID2}/rd/{WK}', 'PUT', {'fx': {OPEN: True}, 'st': 'open', 'by': 'owner'})     # הרובוט פתח את המחזור
-check('מחזור: שחקן פותח לעצמו ערימה (רק הרובוט)', req('PUT', f'acct/{B}/rd/{LID2}/{WK}/wallet', {'bal': 1000, 'op': 'init'})[0], 401)
-check('מחזור: מי שלא בליגה פותח ערימה', req('PUT', f'acct/{X}/rd/{LID2}/{WK}/wallet', {'bal': 1000, 'op': 'init'})[0], 401)
-R.fb(f'acct/{B}/rd/{LID2}/{WK}/wallet', 'PUT', {'bal': 1000, 'op': 'init'})                # הרובוט נותן ערימה לכל חבר
-P = lambda sec: f'acct/{sec}/rd/{LID2}/{WK}'
-rdb = lambda sec, bid, bal, e=OPEN, s=100, o=1.8, dec=None, extra=None: {f'{P(sec)}/bets/{bid}': {'e': e, 'm': 'W', 'p': '1', 's': s, 'o': o, 'at': SV, **(extra or {})},
-    f'{P(sec)}/wallet/bal': bal - (s if dec is None else dec), f'{P(sec)}/wallet/op': 'b:' + bid}
-check('מחזור: הימור על משחק שלא במחזור', req('PATCH', '', rdb(B, 'brdpent01', 1000, e=OPEN2, o=2.5))[0], 401)
-check('מחזור: יחס מזויף', req('PATCH', '', rdb(B, 'brdpent02', 1000, o=9.9))[0], 401)
-check('מחזור: הימור בלי להוריד מהערימה', req('PATCH', '', rdb(B, 'brdpent03', 1000, dec=0))[0], 401)
-check('מחזור: הימור מעל הערימה (1,500)', req('PATCH', '', rdb(B, 'brdpent04', 1000, s=1500))[0], 401)
-check('מחזור: ג\'וקר במחזור', req('PATCH', '', rdb(B, 'brdpent05', 1000, extra={'j': True}))[0], 401)
-check('מחזור: זיוף "הימור אוטומטי" (auto:true) מהלקוח', req('PATCH', '', rdb(B, 'brdpent06', 1000, extra={'auto': True}))[0], 401)
-check('מחזור: מי שלא בליגה מהמר', req('PATCH', '', rdb(X, 'brdpent07', 1000))[0], 401)
-check('מחזור: הימור תקין', req('PATCH', '', rdb(B, 'brdpent08', 1000))[0], 200)
-check('מחזור: איפוס הערימה ל-1,000', req('PUT', f'{P(B)}/wallet', {'bal': 1000, 'op': 'init'})[0], 401)
-check('מחזור: שינוי ישיר של הערימה', req('PUT', f'{P(B)}/wallet/bal', 5000)[0], 401)
-check('מחזור: זכייה מזויפת (settled)', req('PUT', f'{P(B)}/settled/brdpent08', {'st': 'won', 'pay': 9999})[0], 401)
-check('מחזור: הפיכת הימור קיים ל"אוטומטי"', req('PUT', f'{P(B)}/bets/brdpent08/auto', True)[0], 401)
-check('מחזור: הימור מהיתרה הראשית לתוך המחזור', req('PATCH', '', {f'{P(B)}/bets/brdpent09': {'e': OPEN, 'm': 'W', 'p': '1', 's': 50, 'o': 1.8, 'at': SV}, f'acct/{B}/wallet/bal': 450, f'acct/{B}/wallet/op': 'b:brdpent09'})[0], 401)
-canr = lambda sec, bid, bal, s: {f'{P(sec)}/bets/{bid}': None, f'{P(sec)}/wallet/bal': bal + s, f'{P(sec)}/wallet/op': 'c:' + bid}
-check('מחזור: ביטול עם החזר מנופח', req('PATCH', '', canr(B, 'brdpent08', 900, 500))[0], 401)
-check('מחזור: ביטול תקין', req('PATCH', '', canr(B, 'brdpent08', 900, 100))[0], 200)
-R.fb(f'lgv/{LID2}/m/{Bpid}', 'DELETE')
-check('מחזור: חבר שהורחק מהליגה מהמר', req('PATCH', '', rdb(B, 'brdpent10', 1000))[0], 401)
-R.fb('', 'PATCH', {f'lgv/{LID2}/m/{Bpid}': 'b', f'lgv/{LID2}/rd/{WK}/st': 'done'})
-check('מחזור: הימור על מחזור שהסתיים', req('PATCH', '', rdb(B, 'brdpent11', 1000))[0], 401)
-check('מחזור: מי שיודע את קוד הליגה רואה את טבלת המחזור (החלטה: הקוד = הזמנה)', req('GET', f'lgv/{LID2}/rd/{WK}')[0], 200)
-sq, pq = 's' + rs(48, AZM), 'p' + rs(16, AZ)
-check('חשבון חדש עם ערימת מחזור מוכנה מראש', req('PATCH', '', {f'names/ptrd{RUN}': pq, f'acct/{sq}': {'name': 'ptrd' + RUN, 'nk': 'ptrd' + RUN, 'pid': pq, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}, 'rd': {LID2: {WK: {'wallet': {'bal': 99999, 'op': 'init'}}}}}})[0], 401)
+check('מחזור (בוטל): בעל ליגה לא יכול לבחור משחקים', req('PUT', f'acct/{A}/rdpick/{LID2}/{WK}', {'fx': {OPEN: True}, 'at': SV})[0], 401)
+check('מחזור (בוטל): אי אפשר לפתוח ערימה', req('PUT', f'acct/{B}/rd/{LID2}/{WK}/wallet', {'bal': 1000, 'op': 'init'})[0], 401)
+check('מחזור (בוטל): אי אפשר להמר בערימת מחזור', req('PATCH', '', {f'acct/{B}/rd/{LID2}/{WK}/bets/brdpent01': {'e': OPEN, 'm': 'W', 'p': '1', 's': 10, 'o': 1.8, 'at': SV}})[0], 401)
+check('מפגש (בוטל): mtown/mt סגורים', req('PUT', f'acct/{A}/mtown/m{rs(12, AZ)}', {'lid': LID2, 'n': 'x', 'when': now, 'fx': {OPEN: True}, 'at': SV})[0], 401)
+check('ארכיון המחזורים לא קריא מבחוץ', req('GET', 'archive')[0], 401)
 
 print('--- פידבק')
 check('פידבק תקין', req('PUT', f'acct/{B}/fbk/f{rs(10, AZ)}', {'t': 'אחלה משחק! "מעולה" & תודה', 'at': SV})[0], 200)
@@ -238,7 +199,7 @@ st, a = req('GET', f'acct/{A}')
 check('יתרה סופית של A נכונה (500−50−10 = 440)', (a or {}).get('wallet', {}).get('bal'), 440)
 
 # ניקוי
-R.fb('', 'PATCH', {f'acct/{X}': None, f'names/{Xnk}': None, f'rc/{CODES[X]}': None, f'lgdef/{LID2}': None, f'lgv/{LID2}': None, f'fixtures/{OPEN2}': None, f'pub/profiles/{Xpid}': None, f'acct/{G}': None, f'names/{Gnk}': None, f'rc/{CODES[G]}': None, f'pub/profiles/{Gpid}': None, f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None, f'lgdef/{LID}': None, f'lgv/{LID}': None,
+R.fb('', 'PATCH', {f'acct/{X}': None, f'names/{Xnk}': None, f'rc/{CODES[X]}': None, f'lgdef/{LID2}': None, f'lgv/{LID2}': None, f'pub/profiles/{Xpid}': None, f'acct/{G}': None, f'names/{Gnk}': None, f'rc/{CODES[G]}': None, f'pub/profiles/{Gpid}': None, f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None, f'lgdef/{LID}': None, f'lgv/{LID}': None,
                    f'fixtures/{OPEN}': None, f'fixtures/{LOCKED}': None, f'pub/profiles/{Apid}': None, f'pub/profiles/{Bpid}': None, f'pub/revealed/{OPEN}': None})
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)
