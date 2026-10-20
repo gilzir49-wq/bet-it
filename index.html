@@ -168,6 +168,13 @@ tr.me td{background:rgba(198,244,50,.07)}
 .thd{display:flex;align-items:center;gap:10px;margin:18px 2px 14px}.thd h1{margin:0;font-size:24px;font-weight:900}
 .scp{margin-inline-start:auto;max-width:62%;height:36px;padding:0 12px;border:1px solid var(--line2);border-radius:999px;background:var(--card);color:var(--txt2);font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer}
 .scp span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.natc{background:var(--gold);color:var(--on-accent);border-radius:22px;padding:14px 16px;margin:12px 0 14px;display:flex;flex-direction:column;gap:10px}
+.natc.sm{cursor:pointer}.natc .hd2{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:900}.natc .go2{font-size:12.5px;font-weight:700;opacity:.75}
+.natc .cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}.natc .nc{display:flex;flex-direction:column;gap:2px;min-width:0;background:rgba(10,15,0,.07);border-radius:14px;padding:10px 12px}
+.natc .lb2{font-size:12px;font-weight:700;opacity:.75}.natc b{font-size:34px;font-weight:900;line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.5px}.natc.sm b{font-size:28px}
+.natc .of{font-size:12.5px;font-weight:700}.natc .mv{align-self:flex-start;margin-top:4px;background:var(--on-accent);color:var(--em);border-radius:999px;padding:2px 9px;font-size:12px;font-weight:900}.natc .mv.dn{color:var(--red2)}.natc .mv.eq{color:var(--mut);font-weight:700}
+.natc .ft2{font-size:11px;font-weight:500;opacity:.65}.natc.empty2{gap:4px}
+.lbd .r.gap{display:flex;justify-content:center;padding:6px;color:var(--mut2);font-size:13px;letter-spacing:3px}
 .mehero{border-radius:24px;padding:20px;background:var(--gold);color:var(--on-accent);display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;margin-bottom:14px}
 .mehero .il{position:absolute;left:-20px;bottom:-40px;font-family:Karantina,Heebo,sans-serif;font-weight:700;font-size:200px;line-height:1;opacity:.1;pointer-events:none}
 .mehero>span{font-size:13px;font-weight:700;position:relative}.mehero b{font-size:56px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px;position:relative}
@@ -191,16 +198,16 @@ tr.me td{background:rgba(198,244,50,.07)}
 .pd.p2 .av{box-shadow:0 0 0 3px var(--txt2)}.pd.p2 .blk2{height:84px}.pd.p2 .rk{color:var(--txt2)}
 .pd.p3 .av{box-shadow:0 0 0 3px #C88A4A}.pd.p3 .blk2{height:64px}.pd.p3 .rk{color:#C88A4A}
 .av.me{background:var(--gold)!important;color:var(--on-accent)}
-.lb{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
-.lb .r{display:grid;grid-template-columns:28px minmax(0,1fr) 64px 44px;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
-.lb .r:last-child{border-bottom:0}.lb .r.h{padding:10px 14px;font-size:11px;color:var(--mut);font-weight:700}
-.lb .r>b:first-child{font-variant-numeric:tabular-nums}
-.lb .r .nm{display:flex;flex-direction:column;gap:2px;min-width:0}.lb .r .nm>span:first-child{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;min-width:0}
-.lb .r .nm .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lb .r .nm small{font-size:12px;color:var(--mut)}
-.lb .r .vl{text-align:left;font-weight:900;font-variant-numeric:tabular-nums;direction:ltr}.lb .r .pc{text-align:left;font-size:13px;color:var(--txt2);font-variant-numeric:tabular-nums}
-.lb .r.me{background:rgba(198,244,50,.07)}
-.lb .pz{background:rgba(255,90,106,.05)}.lb .pz .r{border-bottom:0;padding:10px 14px}.lb .pz .ttl{padding:10px 14px 4px;font-size:11px;font-weight:900;letter-spacing:1px;color:var(--red2)}
-.lb .pz .r:last-child small{color:var(--red2);font-weight:700}
+.lbd{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.lbd .r{display:grid;grid-template-columns:28px minmax(0,1fr) 64px 44px;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.lbd .r:last-child{border-bottom:0}.lbd .r.h{padding:10px 14px;font-size:11px;color:var(--mut);font-weight:700}
+.lbd .r>b:first-child{font-variant-numeric:tabular-nums}
+.lbd .r .nm{display:flex;flex-direction:column;gap:2px;min-width:0}.lbd .r .nm>span:first-child{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;min-width:0}
+.lbd .r .nm .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbd .r .nm small{font-size:12px;color:var(--mut)}
+.lbd .r .vl{text-align:left;font-weight:900;font-variant-numeric:tabular-nums;direction:ltr}.lbd .r .pc{text-align:left;font-size:13px;color:var(--txt2);font-variant-numeric:tabular-nums}
+.lbd .r.me{background:rgba(198,244,50,.07)}
+.lbd .pz{background:rgba(255,90,106,.05)}.lbd .pz .r{border-bottom:0;padding:10px 14px}.lbd .pz .ttl{padding:10px 14px 4px;font-size:11px;font-weight:900;letter-spacing:1px;color:var(--red2)}
+.lbd .pz .r:last-child small{color:var(--red2);font-weight:700}
 .mv2{font-size:11px;font-weight:700}.mv2.up{color:var(--em)}.mv2.dn{color:var(--red)}.mv2.eq{color:var(--mut)}
 .kingc{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:16px;font-size:13px;color:var(--txt2)}
 .kingc b{color:var(--txt)}
@@ -468,7 +475,7 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 .avs{display:flex}.avs span{width:30px;height:30px;border-radius:50%;box-shadow:0 0 0 2px #121A3A;margin-inline-start:-8px;display:grid;place-items:center;font-size:11px;font-weight:900;color:var(--txt)}.avs span:first-child{margin:0}
 .wabtn{margin-inline-start:auto;height:40px;padding:0 14px;border:0;border-radius:12px;background:#25D366;color:#04210F;font-weight:900;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
 .hcode{display:flex;align-items:center;justify-content:space-between;background:rgba(7,10,20,.5);border-radius:12px;padding:8px 12px;font-size:13px;border:0;color:var(--txt);width:100%;cursor:pointer}.hcode span{color:var(--mut)}.hcode b{letter-spacing:3px;direction:ltr}
-.lb.c3 .r{grid-template-columns:28px minmax(0,1fr) 64px}.lb .r.me{box-shadow:inset -3px 0 0 var(--gold)}
+.lbd.c3 .r{grid-template-columns:28px minmax(0,1fr) 64px}.lbd .r.me{box-shadow:inset -3px 0 0 var(--gold)}
 .feed{display:flex;flex-direction:column;gap:8px}
 .fi{display:flex;gap:10px;align-items:flex-start;background:var(--card);border-radius:16px;padding:12px;font-size:14px;line-height:1.5}
 .fi .av{width:32px;height:32px;font-size:13px}.fi .tm2{color:var(--mut);font-size:12.5px}
@@ -880,7 +887,7 @@ function viewMine(){
   let h=`<div class="ph"><h1>ההימורים שלי</h1><button class="meav" onclick="go('ach')" aria-label="ההישגים שלי">הישגים<span>${initial(A.name)}</span></button></div>
     <div class="kpis"><div class="kpi"><span>יתרה</span><b>${fmt(a.avail)}</b></div>
       <div class="kpi lv ${a.value<a.avail?'dn':''}"><span>${lv?'<span class="rdot"></span>':''}יתרה לייב</span><b>${fmt(a.value)}</b></div>
-      <div class="kpi"><span>הצלחה${a.settled?` <bdi dir="ltr">${a.won}/${a.settled}</bdi>`:''}</span><b>${a.settled?pct+'%':'–'}</b></div></div>`;
+      <div class="kpi"><span>הצלחה${a.settled?` <bdi dir="ltr">${a.won}/${a.settled}</bdi>`:''}</span><b>${a.settled?pct+'%':'–'}</b></div></div>${natCard(true)}`;
   if(sk>=2) h+=`<div class="streak" style="cursor:pointer" onclick="go('ach')">${IC.fire}<span><b>${sk>=HOT?`חם! רצף של ${sk} ניחושים`:`רצף של ${sk} ניחושים`}</b> · ${sk>=HOT?'שומר על התג "חם" 🔥':HOT-sk===1?'עוד אחד ומקבלים תג "חם"':`עוד ${HOT-sk} ומקבלים תג "חם"`}</span></div>`;
   if(a.avail<=0&&!open.length) h+=`<div class="card" style="text-align:center">😵 נגמרו הז'יטונים! ביום שלישי תקבל ${WEEKLY_BONUS} מקופת הבנק.<br>בינתיים – תפרגן לחבר׳ה מהיציע 😅</div>`;
   const qN=QUEUE.length;
@@ -904,7 +911,7 @@ function viewMine(){
   return h+`<footer>מחובר כ-${esc(A.name)} 🔐</footer>`;
 }
 // ================= טבלאות: ארצית + ליגות חברים =================
-let tblScope=lsGet('bb_scope')||'all';
+let tblScope='all';   // ברירת מחדל: ארצית בכל פתיחה; ליגות החברים בצ׳יפים ליד
 const myLeagues=()=>Object.keys((A&&A.leagues)||{}).filter(l=>S.lg&&S.lg[l]);
 function rankRows(rows,key){ rows.sort((a,b)=>b[key]-a[key]||b.won-a.won||a.n.localeCompare(b.n,'he')); let prev=null;
   rows.forEach((r,i)=>{ r._rk = prev && prev[key]===r[key] ? prev._rk : i+1; prev=r; }); return rows; }
@@ -920,6 +927,21 @@ function scopeMenu(){
     ${mine.map(l=>row(l,'👥 '+esc(S.lg[l].n),`${Object.keys(S.lg[l].m||{}).length} חברים`)).join('')}</div>
     <div class="muted" style="text-align:center;margin-top:10px">${otherLeagues()?`👥 יש עוד ${fmt(otherLeagues())} ליגות חברים בקהילה`:''}</div>
     <button class="btn sec" style="margin-top:12px" onclick="leagueMenu()">➕ פתח ליגה או הצטרף עם קוד</button>`);
+}
+// המקום שלי בארץ – שבועי ועונתי, עם שינוי מאז העדכון האחרון בתוצאות (גול/סיום משחק)
+function natRank(){
+  const rows0=(S.standings&&S.standings.rows)||[], me=A&&A.pid, out={};
+  [['wk','wp','pw'],['ss','v','ps']].forEach(([k,vk,gk])=>{ const rows=rankRows(rows0.map(r=>({...r})),vk), my=rows.find(r=>r.pid===me); if(!my) return;
+    const pv=my[gk]||my._rk, prev=1+rows.filter(x=>(x[gk]||x._rk)<pv).length, N=rows.length;
+    out[k]={rk:my._rk,N,top:Math.max(1,Math.ceil(100*my._rk/N)),d:prev-my._rk}; });
+  return out;
+}
+function natCard(small){
+  const R=natRank(); if(!A) return '';
+  if(!R.wk) return `<div class="natc empty2"><span>🇮🇱 המקום שלך בארץ</span><b style="font-size:15px">תופיע בטבלה הארצית אחרי העדכון הבא</b></div>`;
+  const col=(lab,x)=>`<div class="nc"><span class="lb2">${lab}</span><b>#${fmt(x.rk)}</b><span class="of">מתוך ${fmt(x.N)}${x.N>=10&&x.top<=50?` · בטופ ${x.top}%`:''}</span>${x.d?`<span class="mv ${x.d<0?'dn':''}" dir="ltr">${x.d>0?'▲':'▼'} ${Math.abs(x.d)}</span>`:'<span class="mv eq">ללא שינוי</span>'}</div>`;
+  return `<section class="natc ${small?'sm':''}" ${small?`onclick="setScope('all');go('table')" role="button" tabindex="0" aria-label="לטבלה הארצית"`:''}><div class="hd2"><span>🇮🇱 המקום שלך בארץ</span>${small?'<span class="go2">לטבלה ←</span>':''}</div>
+    <div class="cols">${col('השבוע',R.wk)}${col('העונה',R.ss)}</div><div class="ft2">החצים: שינוי מאז הגול/התוצאה האחרונה</div></section>`;
 }
 function setNS(k){ natSub=k; lsSet('bb_ns',k); render(); }
 // הדירוג של הליגות שלי מול כל ליגות החברים בארץ (הרובוט מחשב; שמות של ליגות אחרות לא מגיעים לטלפון)
@@ -939,11 +961,8 @@ function viewTable(){
   const prevRk={}; rows.forEach(r=>{ const pv=r[gk]||r._rk; prevRk[r.pid]=1+rows.filter(x=>(x[gk]||x._rk)<pv).length; });   // מיקום קודם בתוך הטבלה הזו (תיקו = אותו מקום)
   const bank=st?st.bank:BANK_START, bd=bank-BANK_START, my=rows.find(r=>r.pid===me);
   if(L) return leagueHub(tblScope,L,rows,prevRk,my);
-  let h=`<div class="thd"><h1>${all?'טבלה ארצית':'טבלה'}</h1>${A?`<button class="scp" onclick="scopeMenu()"><span>${all?'🌍 ארצית':'👥 '+esc(L.n)}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>`:''}</div>`;
-  if(all && my){ const N=rows.length, top=Math.max(1,Math.ceil(100*my._rk/N)), d=(prevRk[me]||my._rk)-my._rk;
-    h+=`<section class="mehero"><span class="il" aria-hidden="true">IL</span><span>אתה במקום</span><b>${fmt(my._rk)}</b>
-      <span class="sub">מתוך ${fmt(N)}${N>=10&&top<=50?` · טופ ${top}%`:''} · ${mode==='week'?'השבוע':'העונה'}</span>
-      ${d?`<span class="mv ${d<0?'dn':''}">${d>0?'▲':'▼'} ${Math.abs(d)} ${Math.abs(d)===1?'מקום':'מקומות'}</span>`:''}</section>`; }
+  let h=`<div class="thd" style="margin-bottom:6px"><h1>טבלה ארצית</h1></div>${A?`<div class="chips" style="padding-top:0"><button class="chip on" onclick="setScope('all')">🇮🇱 ארצית</button>${mine.map(l=>`<button class="chip" data-s="${esc(l)}" onclick="setScope(this.dataset.s)">👥 ${esc(S.lg[l].n)}<span class="n">${Object.keys(S.lg[l].m||{}).length}</span></button>`).join('')}<button class="chip" onclick="leagueMenu()">➕ ליגה</button></div>`:''}`;
+  if(all) h+=natCard(false);
   if(all && A && !mine.length) h+=`<div class="invcta" onclick="leagueMenu()"><span style="font-size:30px">👥</span><div><b>שחקו עם החבר׳ה</b><span>פתחו ליגה פרטית ושלחו לינק לקבוצת הוואטסאפ – טבלה רק שלכם</span></div><span style="margin-inline-start:auto;font-weight:900;color:var(--gold)">פתח ←</span></div>`;
   if(all){ const pctB=Math.max(4,Math.min(100,Math.round(100*bank/(2*BANK_START))));
     h+=`<section class="bank2" aria-label="קופת הבנק"><div class="hd"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C6F432" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg>קופת הבנק</div>
@@ -977,15 +996,17 @@ function viewTable(){
   }
   const rowH=r=>{ const pen=penOf(r), isMe=r.pid===me;
     return `<div class="r ${isMe?'me':''}"><b>${r._rk}</b><span class="nm"><span><span class="t">${esc(r.n)}${isMe?' (אתה)':''}</span>${mvOf(r)}</span>${pen?`<small>${esc(pen.t)}</small>`:''}</span><span class="vl">${valOf(r)}</span><span class="pc">${r.dn?Math.round(100*r.won/r.dn):'–'}</span></div>`; };
-  const LIM=all?50:200, restShown=rest.filter((r,i)=>i<LIM||r.pid===me);
-  const norm=restShown.filter(r=>!penOf(r)), pz=restShown.filter(r=>penOf(r));
-  if(restShown.length) h+=`<div class="lb" style="${pod.length?'margin-top:-1px;border-radius:0 0 20px 20px':''}"><div class="r h"><span>#</span><span>שחקן</span><span style="text-align:left">${mode==='week'?'שבוע':'שווי'}</span><span style="text-align:left">%</span></div>
-    ${norm.map(rowH).join('')}${rest.length>LIM?`<div class="r h" style="justify-content:center;display:flex">· · ·</div>`:''}
-    ${pz.length?`<div class="pz"><div class="ttl">אזור העונשים</div>${pz.map(rowH).join('')}</div>`:''}</div>`;
+  const hdr=`<div class="r h"><span>#</span><span>שחקן</span><span style="text-align:left">${mode==='week'?'שבוע':'שווי'}</span><span style="text-align:left">%</span></div>`, lbSt=pod.length?'margin-top:-1px;border-radius:0 0 20px 20px':'';
+  if(all && rows.length>13){   // כמו בפנטזי: העשירייה הראשונה, "…", ואני עם השכנים שלי
+    const top10=rest.filter(r=>rows.indexOf(r)<10), mi=my?rows.indexOf(my):-1, near=mi>=10?rows.slice(Math.max(10,mi-1),mi+2):[];
+    h+=`<div class="lbd" style="${lbSt}">${hdr}${top10.map(rowH).join('')}${near.length?`${near[0]!==rows[10]?'<div class="r gap" aria-hidden="true">· · ·</div>':''}${near.map(rowH).join('')}`:''}${(near.length?rows.indexOf(near[near.length-1]):9)<rows.length-1?`<div class="r gap">· · · עוד ${fmt(rows.length-1-(near.length?rows.indexOf(near[near.length-1]):9))} שחקנים</div>`:''}</div>`;
+  } else {
+    const norm=rest.filter(r=>!penOf(r)), pz=rest.filter(r=>penOf(r));
+    if(rest.length) h+=`<div class="lbd" style="${lbSt}">${hdr}${norm.map(rowH).join('')}${pz.length?`<div class="pz"><div class="ttl">אזור העונשים</div>${pz.map(rowH).join('')}</div>`:''}</div>`;
+  }
   const other=[...rows].sort((a,b)=>mode==='week'?b.v-a.v:b.wp-a.wp)[0];
   if(other&&rows.length>1&&(mode==='week'||other.wp>0)) h+=`<div class="kingc">${CROWN}<span style="flex:1"><b>${mode==='week'?'מלך הז׳יטונים (עונתי):':'אלוף השבוע:'}</b> ${esc(other.n)} · <bdi>${mode==='week'?fmt(other.v):sgn(other.wp)}</bdi></span></div>`;
   if(my) h+=`<button class="shbtn" onclick="shareRank(${my._rk},${rows.length})">${SHARE_I}שלח את הטבלה לקבוצה</button>`;
-  if(all && my && my._rk>8) h+=`<div class="mesticky"><b>${fmt(my._rk)}</b><b>${esc(my.n)} (אתה)</b><b>${valOf(my)}</b></div>`;
   return h;
 }
 // ===== ליגת חברים (LeagueHub) =====
@@ -1016,7 +1037,7 @@ function leagueHub(lid,L,rows,prevRk,my){
   if(rows.length<2) h+=`<div class="empty" style="padding:20px 10px"><div class="e">👥</div>עוד אין כאן חברים. שלח את הלינק לקבוצה – ברגע שמישהו מצטרף הוא מופיע בטבלה.</div>`;
   const fromBottom=[...new Set(rows.map(r=>r._rk))].filter(x=>x>1).sort((a,b)=>b-a);
   const val=r=>mode==='week'?`<b class="vl ${r.wp>0?'pos':r.wp<0?'neg':''}">${sgn(r.wp).replace('-','−')}</b>`:`<b class="vl">${fmt(r.v)}</b>`;
-  if(rows.length) h+=`<div class="lb c3">${rows.map(r=>{ const pi=fromBottom.indexOf(r._rk), pen=mode==='week'&&rows.length>=3&&pi===0, isMe=r.pid===me, d=(prevRk[r.pid]||r._rk)-r._rk;
+  if(rows.length) h+=`<div class="lbd c3">${rows.map(r=>{ const pi=fromBottom.indexOf(r._rk), pen=mode==='week'&&rows.length>=3&&pi===0, isMe=r.pid===me, d=(prevRk[r.pid]||r._rk)-r._rk;
       const k=r._rk===1&&rows.length>1&&(mode==='season'||r.wp>0);
       return `<div class="r ${isMe?'me':''}">${k?CROWN:`<b>${r._rk}</b>`}<span class="nm"><span><span class="t">${esc(r.n)}${isMe?' (אתה)':''}</span>${d>0?`<span class="mv2 up" dir="ltr">▲${d}</span>`:d<0?`<span class="mv2 dn" dir="ltr">▼${-d}</span>`:''}${pen?`<span style="font-size:12px;color:var(--red2);font-weight:500">· ${esc(PENALTIES[0].replace(/ [^ ]+$/,''))}</span>`:''}</span></span>${val(r)}</div>`; }).join('')}</div>`;
   h+=roundSection(lid,L);
