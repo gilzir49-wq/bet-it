@@ -597,7 +597,7 @@ let S = { fixtures:{}, tables:{}, standings:null, revealed:{}, meta:{}, lg:{} };
 let A = null;            // החשבון שלי (acct/<secret>) – רק מי שמחזיק את המפתח יכול לקרוא/לכתוב
 let AV = null;           // תצוגת מנהל
 let connected=false, loaded={}, seenGoals=null, goalTimer=null;
-let tab = lsGet('bb_tab') || 'games', dayF=null, lgF=lsGet('bb_lg')||'isr1', tblMode=lsGet('bb_tm')||'week', adIdx=Math.floor(Math.random()*ADS.length);
+let tab = lsGet('bb_tab') || 'games', dayF=null, lgF=lsGet('bb_lg')||'isr1', tblMode='season', adIdx=Math.floor(Math.random()*ADS.length);
 let sheetSt=null;
 let POKER = lsGet('bb_poker')!=='0';   // מצב פוקר (ז'יטונים) – ברירת מחדל פעיל, אפשר לכבות
 function togglePoker(){ POKER=!POKER; lsSet('bb_poker',POKER?'1':'0'); toast(POKER?'מצב פוקר פעיל 🎰':'חזרת למצב רגיל',true); if(sheetSt&&!sheetSt.custom) renderSheet(); render(); }
@@ -674,6 +674,7 @@ function listenAll(){
   stream('fx','fixtures', v=>{ S.fixtures=v||{}; loaded.fx=true; detectGoals(); render(); if(sheetSt) renderSheet(); }, Date.now()-3*86400e3);
   stream('tb','pub/tables', v=>{ S.tables=v||{}; if(tab==='leagues') render(); });
   stream('st','pub/standings', v=>{ S.standings=v; if(!sheetSt) render(); });
+  stream('bk','pub/bank', v=>{ S.bank=v; renderTop(); });
   stream('rv','pub/revealed', v=>{ S.revealed=v||{}; if(tab==='games'&&!sheetSt) render(); });
   stream('mt','pub/meta', v=>{ S.meta=v||{}; if(tab==='admin') render(); });
   stream('stats','pub/stats', v=>{ S.stats=v||{}; if(tab==='table'&&!sheetSt) render(); });
@@ -761,7 +762,7 @@ function animateBal(to){
     const n=document.getElementById('balV'); if(n) n.textContent=fmt(v); if(k<1) balAnim=requestAnimationFrame(step); else shownBal=to; })(t0);
 }
 function renderTop(){
-  const a=account(), bank=S.standings?S.standings.bank:BANK_START;
+  const a=account(), bank=bankNow();
   const cd=document.getElementById('cdot'); if(cd) cd.className=connected?'on':'';
   document.getElementById('top').innerHTML = `
     <span class="pill bankp" onclick="go('table')" title="קופת הבנק"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8E97B5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg>${fmt(bank)}</span>
@@ -914,6 +915,11 @@ function viewMine(){
   return h+`<footer>מחובר כ-${esc(A.name)} 🔐</footer>`;
 }
 // ================= טבלאות: ארצית + ליגות חברים =================
+// הטבלאות מתעדכנות פעם ביום ב-23:59 (הרובוט); היתרה והסטטוס של הניחושים שלך – לייב
+const pctTxt = r => r.dn?`${Math.round(100*r.won/r.dn)}% <small>מתוך ${fmt(r.dn)}</small>`:'–';
+const pfHTML = r => `<span class="${r.pf>0?'pos':r.pf<0?'neg':''}">${sgn(r.pf||0).replace('-','−')}</span>`;
+const updTxt = () => { const at=S.standings&&S.standings.at; return at?`עודכן לאחרונה: ${dayLabel(dayKey(at))} ${hm(at)}`:'הטבלה תתעדכן הלילה ב-23:59'; };
+const bankNow = () => S.bank!=null?S.bank:(S.standings&&S.standings.bank!=null?S.standings.bank:BANK_START);
 let tblScope='all';   // ברירת מחדל: ארצית בכל פתיחה; ליגות החברים בצ׳יפים ליד
 const myLeagues=()=>Object.keys((A&&A.leagues)||{}).filter(l=>S.lg&&S.lg[l]);
 function rankRows(rows,key){ rows.sort((a,b)=>b[key]-a[key]||b.won-a.won||a.n.localeCompare(b.n,'he')); let prev=null;
@@ -934,17 +940,17 @@ function scopeMenu(){
 // המקום שלי בארץ – שבועי ועונתי, עם שינוי מאז העדכון האחרון בתוצאות (גול/סיום משחק)
 function natRank(){
   const rows0=(S.standings&&S.standings.rows)||[], me=A&&A.pid, out={};
-  [['wk','wp','pw'],['ss','v','ps']].forEach(([k,vk,gk])=>{ const rows=rankRows(rows0.map(r=>({...r})),vk), my=rows.find(r=>r.pid===me); if(!my) return;
+  [['ss','pf','pp']].forEach(([k,vk,gk])=>{ const rows=rankRows(rows0.map(r=>({...r})),vk), my=rows.find(r=>r.pid===me); if(!my) return;
     const pv=my[gk]||my._rk, prev=1+rows.filter(x=>(x[gk]||x._rk)<pv).length, N=rows.length;
     out[k]={rk:my._rk,N,top:Math.max(1,Math.ceil(100*my._rk/N)),d:prev-my._rk}; });
   return out;
 }
 function natCard(small){
   const R=natRank(); if(!A) return '';
-  if(!R.wk) return `<div class="natc empty2"><span>🇮🇱 המקום שלך בארץ</span><b style="font-size:15px">תופיע בטבלה הארצית אחרי העדכון הבא</b></div>`;
+  if(!R.ss) return `<div class="natc empty2"><span>🇮🇱 המקום שלך בארץ</span><b style="font-size:15px">${myBets().length||(A.settled&&Object.keys(A.settled).length)?'תופיע בטבלה הארצית בעדכון של הלילה (23:59)':'תופיע בטבלה הארצית אחרי הניחוש הראשון שלך'}</b></div>`;
   const col=(lab,x)=>`<div class="nc"><span class="lb2">${lab}</span><b>#${fmt(x.rk)}</b><span class="of">מתוך ${fmt(x.N)}${x.N>=10&&x.top<=50?` · בטופ ${x.top}%`:''}</span>${x.d?`<span class="mv ${x.d<0?'dn':''}" dir="ltr">${x.d>0?'▲':'▼'} ${Math.abs(x.d)}</span>`:'<span class="mv eq">ללא שינוי</span>'}</div>`;
   return `<section class="natc ${small?'sm':''}" ${small?`onclick="setScope('all');go('table')" role="button" tabindex="0" aria-label="לטבלה הארצית"`:''}><div class="hd2"><span>🇮🇱 המקום שלך בארץ</span>${small?'<span class="go2">לטבלה ←</span>':''}</div>
-    <div class="cols">${col('השבוע',R.wk)}${col('העונה',R.ss)}</div><div class="ft2">החצים: שינוי מאז הגול/התוצאה האחרונה</div></section>`;
+    <div class="cols">${col('לפי רווח כולל',R.ss)}</div><div class="ft2">החצים: שינוי מאתמול · ${updTxt()}</div></section>`;
 }
 function setNS(k){ natSub=k; lsSet('bb_ns',k); render(); }
 // הדירוג של הליגות שלי מול כל ליגות החברים בארץ (הרובוט מחשב; שמות של ליגות אחרות לא מגיעים לטלפון)
@@ -954,15 +960,15 @@ function leagueRanks(){
     .sort((a,b)=>(a.rk||1e9)-(b.rk||1e9));          // הדירוג מחושב ברובוט מול כל הליגות; כאן רואים רק את שלך
 }
 function viewTable(){
-  const st=S.standings, mode=tblMode, wk=weekKey(dayKey(Date.now())), me=A&&A.pid, mine=myLeagues();
+  const st=S.standings, mode='season', me=A&&A.pid, mine=myLeagues();
   if(tblScope!=='all' && !mine.includes(tblScope)) tblScope='all';
   const L=tblScope==='all'?null:S.lg[tblScope], all=!L;
   let rows=(st&&st.rows?st.rows:[]).map(r=>({...r}));
   if(L) rows=rows.filter(r=>L.m&&L.m[r.pid]);
-  const vk=mode==='week'?'wp':'v', gk=mode==='week'?'pw':'ps';
+  const vk='pf', gk='pp';
   rankRows(rows,vk);
   const prevRk={}; rows.forEach(r=>{ const pv=r[gk]||r._rk; prevRk[r.pid]=1+rows.filter(x=>(x[gk]||x._rk)<pv).length; });   // מיקום קודם בתוך הטבלה הזו (תיקו = אותו מקום)
-  const bank=st?st.bank:BANK_START, bd=bank-BANK_START, my=rows.find(r=>r.pid===me);
+  const bank=bankNow(), bd=bank-BANK_START, my=rows.find(r=>r.pid===me);
   if(L) return leagueHub(tblScope,L,rows,prevRk,my);
   let h=`<div class="thd" style="margin-bottom:6px"><h1>טבלה ארצית</h1></div>${A?`<div class="chips" style="padding-top:0"><button class="chip on" onclick="setScope('all')">🇮🇱 ארצית</button>${mine.map(l=>`<button class="chip" data-s="${esc(l)}" onclick="setScope(this.dataset.s)">👥 ${esc(S.lg[l].n)}<span class="n">${Object.keys(S.lg[l].m||{}).length}</span></button>`).join('')}<button class="chip" onclick="leagueMenu()">➕ ליגה</button></div>`:''}`;
   if(all) h+=natCard(false);
@@ -979,27 +985,26 @@ function viewTable(){
     if(!lr.length) h+=`<div class="empty"><div class="e">👥</div>${mine.length?'הליגה שלך תיכנס לדירוג כשיהיו בה 2 חברים ומעלה':'עוד אין לך ליגת חברים – פתח אחת והזמן את החבר׳ה'}</div>`;
     h+=lr.map(x=>`<div class="lgr mine" data-s="${esc(x.id)}" onclick="setScope(this.dataset.s)"><span class="n">${x.rk?fmt(x.rk):'–'}</span><span class="tx"><b>${esc(x.n)} · הליגה שלך</b><span>${x.cnt} חברים${x.of?` · מקום ${fmt(x.rk)} מתוך ${fmt(x.of)} ליגות`:''}${x.avg?` · ממוצע ${fmt(x.avg)}`:''}</span></span></div>`).join('');
     h+=`<div class="muted" id="lgOthers" style="text-align:center;margin:12px 0">👥 ${oth?`יש עוד ${fmt(oth)} ליגות חברים בקהילה – כל ליגה רואה רק את עצמה 🔒`:'עוד אין ליגות חברים אחרות בקהילה'}</div>`;
-    return h+(my?`<div class="mesticky"><b>${fmt(my._rk)}</b><b>${esc(my.n)} (אתה)</b><b>${fmt(my.v)}</b></div>`:'');
+    return h+(my?`<div class="mesticky"><b>${fmt(my._rk)}</b><b>${esc(my.n)} (אתה)</b><b>${pfHTML(my)}</b></div>`:'');
   }
-  h+=`<div class="mtabs" role="tablist" style="margin-top:4px"><button role="tab" aria-selected="${mode==='week'}" class="${mode==='week'?'on':''}" onclick="setTM('week')">שבועית <small style="font-weight:500;opacity:.7">${weekLabel(wk)}</small></button><button role="tab" aria-selected="${mode==='season'}" class="${mode==='season'?'on':''}" onclick="setTM('season')">עונתית</button></div>
-    <div class="muted" style="margin:0 2px 4px">${mode==='week'?'רווח/הפסד מהימורים על משחקי השבוע (כולל לייב)':'יתרה + הימורים פתוחים (כולל לייב)'} · % = אחוז הימורים שזכו</div>`;
-  if(!rows.length) return h+`<div class="empty"><div class="e">🏆</div>עוד אין משתתפים</div>`;
+  h+=`<div class="muted" id="tblInfo" style="margin:4px 2px 6px">מדורג לפי רווח כולל מכל הניחושים שנסגרו · % = פגיעות מתוך הניחושים שנסגרו<br><b>${updTxt()}</b> · מתעדכן פעם ביום ב-23:59</div>`;
+  if(!rows.length) return h+`<div class="empty"><div class="e">🏆</div>עוד אין משתתפים – מי שמנחש ניחוש ראשון נכנס לטבלה בעדכון של הלילה</div>`;
   const fromBottom=[...new Set(rows.map(r=>r._rk))].filter(x=>x>1).sort((a,b)=>b-a);
   const penOf=r=>{ const pi=fromBottom.indexOf(r._rk); return mode==='week'&&pi>=0&&pi<3?{pi,t:PENALTIES[pi]}:null; };
-  const valOf=r=>mode==='week'?`<span class="${r.wp>0?'pos':r.wp<0?'neg':''}">${sgn(r.wp).replace('-','−')}</span>`:fmt(r.v);
+  const valOf=r=>pfHTML(r);
   const mvOf=r=>{ const d=(prevRk[r.pid]||r._rk)-r._rk; return d>0?`<span class="mv2 up" dir="ltr">▲${d}</span>`:d<0?`<span class="mv2 dn" dir="ltr">▼${-d}</span>`:''; };
-  const king=r=>r._rk===1&&rows.length>1&&(mode==='season'||r.wp>0);
+  const king=r=>r._rk===1&&rows.length>1&&r.pf>0;
   const pod=rows.length>=3?rows.slice(0,3):[], rest=rows.slice(pod.length);
   if(pod.length){
     const cf=[['right:40px;top:4px;width:6px;height:10px;background:var(--gold);transform:rotate(25deg)'],['right:150px;top:16px;width:6px;height:10px;background:var(--p);transform:rotate(-30deg)'],['left:120px;top:0;width:7px;height:7px;background:var(--warn);border-radius:50%'],['left:40px;top:20px;width:6px;height:10px;background:var(--em);transform:rotate(50deg)'],['left:180px;top:36px;width:5px;height:9px;background:var(--red);transform:rotate(-10deg)']];
     const pc=(r,k)=>{ const isMe=r.pid===me, pen=penOf(r);
       return `<div class="pd p${k}">${k===1?CROWN:''}<span class="av ${isMe?'me':''}" style="${avBg(r.pid,isMe)}">${initial(r.n)}</span><b>${esc(r.n)}${isMe?' (אתה)':''}</b>
-        <div class="blk2"><span class="rk">${r._rk}</span><span class="vl">${valOf(r)}</span>${k===1&&king(r)?`<small style="color:var(--warn)">${mode==='week'?'אלוף השבוע':'מלך הז׳יטונים'}</small>`:''}${pen?`<small style="color:var(--red2)">${esc(pen.t)}</small>`:''}</div></div>`; };
+        <div class="blk2"><span class="rk">${r._rk}</span><span class="vl">${valOf(r)}</span>${k===1&&king(r)?'<small style="color:var(--warn)">המוביל</small>':''}${pen?`<small style="color:var(--red2)">${esc(pen.t)}</small>`:''}</div></div>`; };
     h+=`<section class="podium2" aria-label="פודיום">${cf.map(c=>`<span class="cf" style="${c[0]}" aria-hidden="true"></span>`).join('')}${pc(pod[1],2)}${pc(pod[0],1)}${pc(pod[2],3)}</section>`;
   }
   const rowH=r=>{ const pen=penOf(r), isMe=r.pid===me;
-    return `<div class="r ${isMe?'me':''}"><b>${r._rk}</b><span class="nm"><span><span class="t">${esc(r.n)}${isMe?' (אתה)':''}</span>${mvOf(r)}</span>${pen?`<small>${esc(pen.t)}</small>`:''}</span><span class="vl">${valOf(r)}</span><span class="pc">${r.dn?Math.round(100*r.won/r.dn):'–'}</span></div>`; };
-  const hdr=`<div class="r h"><span>#</span><span>שחקן</span><span style="text-align:left">${mode==='week'?'שבוע':'שווי'}</span><span style="text-align:left">%</span></div>`, lbSt=pod.length?'margin-top:-1px;border-radius:0 0 20px 20px':'';
+    return `<div class="r ${isMe?'me':''}"><b>${r._rk}</b><span class="nm"><span><span class="t">${esc(r.n)}${isMe?' (אתה)':''}</span>${mvOf(r)}</span>${pen?`<small>${esc(pen.t)}</small>`:''}</span><span class="vl">${valOf(r)}</span><span class="pc">${pctTxt(r)}</span></div>`; };
+  const hdr=`<div class="r h"><span>#</span><span>שחקן</span><span style="text-align:left">רווח</span><span style="text-align:left">פגיעות</span></div>`, lbSt=pod.length?'margin-top:-1px;border-radius:0 0 20px 20px':'';
   if(all && rows.length>13){   // כמו בפנטזי: העשירייה הראשונה, "…", ואני עם השכנים שלי
     const top10=rest.filter(r=>rows.indexOf(r)<10), mi=my?rows.indexOf(my):-1, near=mi>=10?rows.slice(Math.max(10,mi-1),mi+2):[];
     h+=`<div class="lbd" style="${lbSt}">${hdr}${top10.map(rowH).join('')}${near.length?`${near[0]!==rows[10]?'<div class="r gap" aria-hidden="true">· · ·</div>':''}${near.map(rowH).join('')}`:''}${(near.length?rows.indexOf(near[near.length-1]):9)<rows.length-1?`<div class="r gap">· · · עוד ${fmt(rows.length-1-(near.length?rows.indexOf(near[near.length-1]):9))} שחקנים</div>`:''}</div>`;
@@ -1007,13 +1012,11 @@ function viewTable(){
     const norm=rest.filter(r=>!penOf(r)), pz=rest.filter(r=>penOf(r));
     if(rest.length) h+=`<div class="lbd" style="${lbSt}">${hdr}${norm.map(rowH).join('')}${pz.length?`<div class="pz"><div class="ttl">אזור העונשים</div>${pz.map(rowH).join('')}</div>`:''}</div>`;
   }
-  const other=[...rows].sort((a,b)=>mode==='week'?b.v-a.v:b.wp-a.wp)[0];
-  if(other&&rows.length>1&&(mode==='week'||other.wp>0)) h+=`<div class="kingc">${CROWN}<span style="flex:1"><b>${mode==='week'?'מלך הז׳יטונים (עונתי):':'אלוף השבוע:'}</b> ${esc(other.n)} · <bdi>${mode==='week'?fmt(other.v):sgn(other.wp)}</bdi></span></div>`;
   if(my) h+=`<button class="shbtn" onclick="shareRank(${my._rk},${rows.length})">${SHARE_I}שלח את הטבלה לקבוצה</button>`;
   return h;
 }
 // ===== ליגת חברים (LeagueHub) =====
-function weekRankIn(lid){ const L=S.lg[lid], rows=((S.standings&&S.standings.rows)||[]).filter(r=>L&&L.m&&L.m[r.pid]).map(r=>({...r})); rankRows(rows,'wp'); const me=rows.find(r=>A&&r.pid===A.pid); return {rk:me?me._rk:null,n:rows.length}; }
+function weekRankIn(lid){ const L=S.lg[lid], rows=((S.standings&&S.standings.rows)||[]).filter(r=>L&&L.m&&L.m[r.pid]).map(r=>({...r})); rankRows(rows,'pf'); const me=rows.find(r=>A&&r.pid===A.pid); return {rk:me?me._rk:null,n:rows.length}; }
 const agoTxt = ms => { const m=Math.round((Date.now()-ms)/60e3); return m<60?`לפני ${Math.max(1,m)} דק׳`:m<24*60?`לפני ${Math.round(m/60)} שע׳`:dayLabel(dayKey(ms)); };
 // מה קורה בליגה: מתוך ההימורים שנחשפו (אחרי נעילה) של חברי הליגה
 function leagueFeed(L){
@@ -1027,8 +1030,8 @@ function leagueFeed(L){
   return out.sort((a,b)=>b.t-a.t).slice(0,5);
 }
 function leagueHub(lid,L,rows,prevRk,my){
-  const me=A&&A.pid, mode=tblMode, mine=myLeagues(), mem=Object.entries(L.m||{}), nat=((S.standings&&S.standings.rows)||[]).map(r=>({...r}));
-  rankRows(nat,mode==='week'?'wp':'v'); const natMe=nat.find(r=>r.pid===me);
+  const me=A&&A.pid, mode='season', mine=myLeagues(), mem=Object.entries(L.m||{}), nat=((S.standings&&S.standings.rows)||[]).map(r=>({...r}));
+  rankRows(nat,'pf'); const natMe=nat.find(r=>r.pid===me);
   let h=`<div class="lsw">${mine.map(l=>{ const r=weekRankIn(l); return `<button class="${l===lid?'on':''}" data-s="${esc(l)}" onclick="setScope(this.dataset.s)"><b>${esc(S.lg[l].n)}</b><span>${r.rk?`מקום ${r.rk} מתוך ${r.n}`:`${r.n} חברים`}</span></button>`; }).join('')}
     <button style="width:120px" onclick="setScope('all')"><b>ארצית</b><span>${natMe?`מקום ${fmt(natMe._rk)}`:'כל השחקנים'}</span></button><button class="add" onclick="leagueMenu()"><b>➕</b><span>ליגה</span></button></div>`;
   h+=`<section class="hub"><div class="t"><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><h1>${esc(L.n)}</h1><span>${mem.length} חברים · עונש: ${esc(PENALTIES[0].replace(/ [^ ]+$/,''))}</span></div>
@@ -1036,12 +1039,12 @@ function leagueHub(lid,L,rows,prevRk,my){
     <div style="display:flex;align-items:center;gap:10px"><span class="avs">${mem.slice(0,4).map(([p,n])=>`<span class="${p===me?'me':''}" style="${p===me?'background:var(--gold);color:var(--on-accent)':avBg(p)}">${initial(n)}</span>`).join('')}${mem.length>4?`<span style="background:var(--card3)">+${mem.length-4}</span>`:''}</span>
       <button class="wabtn" data-lid="${esc(lid)}" onclick="inviteLeague(this.dataset.lid)">הזמן בוואטסאפ</button></div>
     <button class="hcode" data-t="${esc(lid)}" onclick="copyTxt(this.dataset.t,'קוד ההזמנה הועתק 📋')"><span>קוד הזמנה</span><b>${esc(lid)}</b></button></section>`;
-  h+=`<div class="mtabs" role="tablist" style="margin-top:0"><button role="tab" aria-selected="${mode==='week'}" class="${mode==='week'?'on':''}" onclick="setTM('week')">שבועית</button><button role="tab" aria-selected="${mode==='season'}" class="${mode==='season'?'on':''}" onclick="setTM('season')">עונתית</button></div>`;
+  h+=`<div class="muted" style="margin:0 2px 6px">לפי רווח כולל · % פגיעות מתוך הניחושים שנסגרו · ${updTxt()}</div>`;
   if(rows.length<2) h+=`<div class="empty" style="padding:20px 10px"><div class="e">👥</div>עוד אין כאן חברים. שלח את הלינק לקבוצה – ברגע שמישהו מצטרף הוא מופיע בטבלה.</div>`;
   const fromBottom=[...new Set(rows.map(r=>r._rk))].filter(x=>x>1).sort((a,b)=>b-a);
-  const val=r=>mode==='week'?`<b class="vl ${r.wp>0?'pos':r.wp<0?'neg':''}">${sgn(r.wp).replace('-','−')}</b>`:`<b class="vl">${fmt(r.v)}</b>`;
-  if(rows.length) h+=`<div class="lbd c3">${rows.map(r=>{ const pi=fromBottom.indexOf(r._rk), pen=mode==='week'&&rows.length>=3&&pi===0, isMe=r.pid===me, d=(prevRk[r.pid]||r._rk)-r._rk;
-      const k=r._rk===1&&rows.length>1&&(mode==='season'||r.wp>0);
+  const val=r=>`<b class="vl">${pfHTML(r)}</b><span class="pc">${pctTxt(r)}</span>`;
+  if(rows.length) h+=`<div class="lbd">${rows.map(r=>{ const pi=fromBottom.indexOf(r._rk), pen=mode==='week'&&rows.length>=3&&pi===0, isMe=r.pid===me, d=(prevRk[r.pid]||r._rk)-r._rk;
+      const k=r._rk===1&&rows.length>1&&r.pf>0;
       return `<div class="r ${isMe?'me':''}">${k?CROWN:`<b>${r._rk}</b>`}<span class="nm"><span><span class="t">${esc(r.n)}${isMe?' (אתה)':''}</span>${d>0?`<span class="mv2 up" dir="ltr">▲${d}</span>`:d<0?`<span class="mv2 dn" dir="ltr">▼${-d}</span>`:''}${pen?`<span style="font-size:12px;color:var(--red2);font-weight:500">· ${esc(PENALTIES[0].replace(/ [^ ]+$/,''))}</span>`:''}</span></span>${val(r)}</div>`; }).join('')}</div>`;
   const feed=leagueFeed(L), last=rows.length>=3?rows[rows.length-1]:null;
   if(feed.length||last){ h+=`<div class="dayh">מה קורה בליגה</div><div class="feed">`+feed.map(x=>`<div class="fi"><span class="av" style="${avBg(x.pid,x.pid===me)}${x.pid===me?';background:var(--gold);color:var(--on-accent)':''}">${initial(L.m[x.pid])}</span><span style="flex:1">${x.h} <span class="tm2">${agoTxt(x.t)}</span></span></div>`).join('');
@@ -1058,7 +1061,7 @@ function achData(){
   const won=list.filter(x=>x.st==='won'), byDay={}; won.forEach(x=>{ const d=dayKey(x.at||0); byDay[d]=(byDay[d]||0)+((x.pay||0)-((x.b&&x.b.s)||0)); });
   const ownM=Object.values(S.lg||{}).filter(L=>A&&L.o===A.pid).reduce((t,L)=>t+Math.max(0,Object.keys(L.m||{}).length-1),0);
   const st0=((S.standings&&S.standings.rows)||[]).find(r=>A&&r.pid===A.pid);
-  if(st0&&st0.rw===1&&st0.wp>0) lsSet('bb_wkchamp','1');
+  if(st0&&st0.rk===1&&st0.pf>0) lsSet('bb_wkchamp','1');
   const anyB=Object.keys(bets).length;
   const L=[
     {k:'cs',t:'אמרתי לכם',d:'תוצאה מדויקת',ok:won.some(x=>x.b&&x.b.m==='CS'),bg:'var(--gold)',ic:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0A0F00" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>'},
@@ -1230,19 +1233,19 @@ function shareWin(bid){ const b=A.bets[bid], f=S.fixtures[b.e]; if(!b||!f) retur
     : {kind:'win', sub:`${what} · ${LEAGUES[f.lg]?.n||''}`, match, big:`+${fmt(prof)} ז׳יטונים${only?' · רק אני ניחשתי':''}`};
   shareCard(o, `אמרתי לכם! ✅ זכיתי ב-${fmt(prof)} ז'יטונים ב-BET-IT על ${he(f.home)}–${he(f.away)} 😎`); }
 function shareRank(rank,total){ const L=tblScope==='all'?null:S.lg[tblScope], where=L?`בליגת "${L.n}"`:'בטבלה הארצית', per=tblMode==='week'?'השבוע':'העונה';
-  const link=L?`${APP_URL}/#join=${tblScope}`:APP_URL, me=A&&A.pid, wk=tblMode==='week';
-  let rows=((S.standings&&S.standings.rows)||[]).map(r=>({...r})); if(L) rows=rows.filter(r=>L.m&&L.m[r.pid]); rankRows(rows,wk?'wp':'v');
-  const my=rows.find(r=>r.pid===me), V=r=>wk?sgn(r.wp).replace('-','−'):fmt(r.v);
+  const link=L?`${APP_URL}/#join=${tblScope}`:APP_URL, me=A&&A.pid, wk=false;
+  let rows=((S.standings&&S.standings.rows)||[]).map(r=>({...r})); if(L) rows=rows.filter(r=>L.m&&L.m[r.pid]); rankRows(rows,'pf');
+  const my=rows.find(r=>r.pid===me), V=r=>sgn(r.pf||0).replace('-','−');
   const text=`${rank===1?'👑 אני מוביל':`אני במקום ${rank}`} ${where} ב-BET-IT ${per}. מי מעז לעקוף? 😏`;
   if(rank===1&&my){ const last=rows.length>2?rows[rows.length-1]:null;
     return shareCard({kind:'lead', link, name:my.n, title1:'מוביל', title2:L?'בליגה':'בארץ', sub:L?`"${L.n}" · ${per}`:`הטבלה הארצית · ${per}`,
-      pills:[`${wk?sgn(my.wp):fmt(my.v)} ${wk?'השבוע':'ז׳יטונים'}`, ...(my.dn?[`${Math.round(100*my.won/my.dn)}% הצלחה`]:[])],
+      pills:[`${sgn(my.pf||0)} רווח`, ...(my.dn?[`${Math.round(100*my.won/my.dn)}% מתוך ${my.dn}`]:[])],
       foot:last&&wk?`${last.n}, הקפה עליך.`:link.replace('https://','')}, text); }
-  const pick=rows.slice(0,3).map(r=>({rk:r._rk,n:r.n,v:V(r),neg:wk&&r.wp<0,me:r.pid===me}));
-  if(my&&my._rk>3) pick.push({rk:my._rk,n:my.n,v:V(my),neg:wk&&my.wp<0,me:true});
-  const last=rows[rows.length-1]; if(rows.length>4&&last&&!pick.some(p=>p.n===last.n&&p.rk===last._rk)) pick.push({rk:last._rk,n:last.n,v:V(last),neg:wk&&last.wp<0,last:true,pen:wk?PENALTIES[0]:''});
+  const pick=rows.slice(0,3).map(r=>({rk:r._rk,n:r.n,v:V(r),neg:r.pf<0,me:r.pid===me}));
+  if(my&&my._rk>3) pick.push({rk:my._rk,n:my.n,v:V(my),neg:my.pf<0,me:true});
+  const last=rows[rows.length-1]; if(rows.length>4&&last&&!pick.some(p=>p.n===last.n&&p.rk===last._rk)) pick.push({rk:last._rk,n:last.n,v:V(last),neg:last.pf<0,last:true,pen:wk?PENALTIES[0]:''});
   shareCard({kind:'table', link, title1:'הטבלה של', title2:L?L.n.slice(0,14):(wk?'השבוע':'העונה'), rows:pick, foot:link.replace('https://','')}, text); }
-function setTM(m){ tblMode=m; lsSet('bb_tm',m); render(); }
+function setTM(m){ render(); }   // אין יותר שבועית – טבלה אחת לפי רווח כולל
 function liveTable(lg){
   const base=(S.tables[lg]&&S.tables[lg].rows)||[], rows=base.map((r,i)=>({...r,base:i+1,live:null})), by=Object.fromEntries(rows.map(r=>[r.t,r]));
   fxList().filter(f=>f.lg===lg&&(f.st==='live'||(f.st==='finished'&&!f.inT&&f.bh!=null))).forEach(f=>{ const H=by[f.home], X=by[f.away]; if(!H||!X) return;
@@ -1567,7 +1570,7 @@ function viewAdmin(){
   if(!AV) return `<div class="empty"><div class="e">⏳</div>טוען… (אם זה לא נטען – המפתח לא תקף)</div>`;
   const ra=AV.robot||S.meta.robotAt, live=ra&&Date.now()-ra<=120000, users=(AV.users||[]).slice().sort((a,b)=>b.bal-a.bal), reqs=AV.reqs||[];
   const wk=Date.now()-7*86400e3, newWk=users.filter(u=>u.j&&u.j>=wk).length, openN=Object.values(S.cnt||{}).reduce((t,n)=>t+n,0);
-  const bank=S.standings?S.standings.bank:BANK_START, bd=bank-BANK_START, T=ms=>new Date(ms).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem'});
+  const bank=bankNow(), bd=bank-BANK_START, T=ms=>new Date(ms).toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem'});
   let h=`<div class="adm"><div class="hd"><h1>סקירה <span class="tagA">ADMIN</span></h1><span class="upd">${ra?`הרובוט עדכן ${agoAdm(ra)}`:'הרובוט עוד לא התחבר'}</span></div>
     <div class="akpi"><div class="${live?'ok':'bad'}"><span><span class="cdot ${live?'on':''}" style="margin:0;${live?'':'background:var(--red)'}"></span>רובוט תוצאות</span><b style="font-size:20px">${live?'פעיל':'לא פעיל'}</b><span>${ra?`סנכרון אחרון ${T(ra)}`:''} · ${fxList().length} משחקים</span></div>
       <div><span>משתתפים</span><b>${fmt(users.length)}</b><span style="color:${newWk?'var(--em)':'var(--mut)'}">${newWk?`+${newWk} השבוע`:'אין חדשים השבוע'}</span></div>

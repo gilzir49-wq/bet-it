@@ -1,6 +1,6 @@
 # בדיקות יחידה לרובוט (הבנק) – בלי מסד ובלי אינטרנט: מסד מדומה בזיכרון ו-LiveScore מדומה.
 # בודק מקרי קצה: נתונים שבורים מ-LiveScore, עיגול תשלומים, שעון חורף, תיקו בדירוג, שחזור חשבון בטוח.
-import os, sys, json, copy, datetime, importlib.util
+import os, sys, json, copy, time, datetime, importlib.util
 spec = importlib.util.spec_from_file_location('r', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'robot.py'))
 R = importlib.util.module_from_spec(spec); sys.argv = ['x']; spec.loader.exec_module(R)
 
@@ -157,6 +157,32 @@ class Drop(FakeDB):
 d2 = Drop(); d2.d = db.d; R.fb = d2; R.published.clear()
 R.cleanup_rounds(d2._get('acct'))
 check('ניקוי: אם ההעתקה לארכיון נכשלה – לא מוחקים כלום', d2._get('acct/sC/rd/L1/w/wallet/bal') == 5)
+
+# ---------- סטטיסטיקה ודירוג יומי ----------
+print('--- סטטיסטיקה: רווח כולל, פגיעות, "% מתוך N"; דירוג רשמי פעם ביום ב-23:59')
+B_ = lambda e, s_, o=2.0, m='W', p_='1': {'e': e, 's': s_, 'o': o, 'm': m, 'p': p_}
+a = {'pid': 'p1', 'name': 'a', 'bets': {'b1': B_('1', 100), 'b2': B_('2', 50, 8.0, 'CS', '2-1'), 'b3': B_('3', 70), 'b4': B_('4', 30), 'b5': B_('5', 20)},
+     'settled': {'b1': {'st': 'won', 'pay': 300}, 'b2': {'st': 'won', 'pay': 400}, 'b3': {'st': 'lost', 'pay': 0}, 'b4': {'st': 'void', 'pay': 30}}}
+check('רווח כולל = (300−100)+(400−50)−70, הוחזר = 0, פתוח לא נספר', R.stats_of(a) == (480, 2, 3, 5))
+rows = R.standings_rows({'s1': a, 's2': {'pid': 'p2', 'name': 'b', 'bets': {}, 'settled': {}}, 's3': {'pid': 'p3', 'name': 'c', 'bets': {'x': B_('9', 10)}},
+                          's4': {'pid': 'p4', 'name': 'd', 'bets': {'y': B_('9', 10)}, 'settled': {'y': {'st': 'won', 'pay': 990}}}})
+check('בטבלה הארצית רק מי שניחש (מי שרק נרשם – לא)', {r['pid'] for r in rows} == {'p1', 'p3', 'p4'})
+check('מדורג לפי רווח כולל', [r['pid'] for r in rows] == ['p4', 'p1', 'p3'] and rows[0]['rk'] == 1 and rows[2]['pf'] == 0)
+il = lambda *x: int(datetime.datetime(*x, tzinfo=R.IL).timestamp() * 1000)
+check('23:58 שייך עדיין לאתמול', R.official_day(il(2026, 10, 25, 23, 58)) == '2026-10-24')
+check('23:59 = העדכון של היום', R.official_day(il(2026, 10, 25, 23, 59)) == '2026-10-25')
+check('00:30 אחרי חצות = עדיין העדכון של אתמול (משחק שנגמר אחרי חצות – נכנס מחר)', R.official_day(il(2026, 10, 26, 0, 30)) == '2026-10-25')
+db = fresh(); T = [il(2026, 10, 25, 23, 59, 30)]; R.now_ms = lambda: T[0]
+accts = {'s1': a, 's4': {'pid': 'p4', 'name': 'd', 'bets': {'y': B_('9', 10)}, 'settled': {'y': {'st': 'won', 'pay': 990}}}}
+R.publish(accts); st1 = db._get('pub/standings')
+check('פרסום רשמי ב-23:59 עם יום ושעה', st1 and st1['day'] == '2026-10-25' and len(st1['rows']) == 2)
+accts['s1'] = {**a, 'settled': {**a['settled'], 'b5': {'st': 'won', 'pay': 2000}}}             # ניחוש נסגר אחרי העדכון
+T[0] = il(2026, 10, 26, 12, 0); R.publish(accts)
+check('באמצע היום הטבלה הרשמית לא משתנה (מתעדכנת רק ב-23:59)', db._get('pub/standings') == st1)
+T[0] = il(2026, 10, 26, 23, 59, 5); R.publish(accts); st2 = db._get('pub/standings'); r1 = [r for r in st2['rows'] if r['pid'] == 'p1'][0]
+check('ב-23:59 של מחר: הדירוג מתעדכן והחץ מראה את המקום מאתמול', st2['day'] == '2026-10-26' and r1['rk'] == 1 and r1['pp'] == 2)
+check('הקופה (בנק) מתעדכנת לייב בנפרד', db._get('pub/bank') is not None)
+R.now_ms = lambda: int(time.time() * 1000)
 
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)

@@ -145,7 +145,6 @@ def calc_odds(table, home, away):
 # ---------- מצב ----------
 fixtures, tables = {}, {}
 published = {}          # מה שכבר פורסם (כדי לא לכתוב שוב בלי שינוי)
-last_ranks = {}         # לחצים בטבלה
 orphan_seen = {}
 
 def table_rows(st):
@@ -272,36 +271,40 @@ def needs_settle(acct):
     return any(bid not in settled and state(b) in ('won', 'lost', 'void') for bid, b in (acct.get('bets') or {}).items())
 
 # ---------- פרסום: טבלאות, בנק, הימורים שנחשפו ----------
-def calc(a, F):
-    """שווי חי, רווח שבועי וסטטיסטיקה לחשבון (כולל משחקים שרצים עכשיו)."""
-    wk = week_key(now_ms()); w = a.get('wallet') or {}; bal = w.get('bal', 0); settled = a.get('settled') or {}
-    value, wkp, won, done, nwk = bal, 0, 0, 0, 0
-    for bid, b in (a.get('bets') or {}).items():
-        f = F.get(b['e']); s = settled.get(bid)
-        st = s['st'] if s else {'live-win': 'won', 'live-lose': 'lost'}.get(state(b, F), state(b, F))
-        v = payout(b) if st == 'won' else (b['s'] if st in ('void', 'open') else 0)
-        if not s: value += v
-        if st in ('won', 'lost'):
-            if s or (f and f['st'] == 'finished'): done += 1; won += st == 'won'
-        if f and week_key(f['ko']) == wk:
-            nwk += 1
-            if st in ('won', 'lost'): wkp += v - b['s']
-    return value, wkp, won, done, nwk
-
 def ranks(key, rs):
     srt = sorted(rs, key=lambda r: (-r[key], -r['won'], r['n'])); out, prev = {}, None
     for i, r in enumerate(srt):
         out[r['pid']] = out[prev['pid']] if prev and prev[key] == r[key] else i + 1; prev = r
     return out
 
-def publish(accts, prev_fx):
-    now = now_ms(); wk = week_key(now)
-    rows, bank, revealed, profiles = [], BANK_START, {}, {}
+def stats_of(a):
+    """סטטיסטיקה מהניחושים שנסגרו בלבד: רווח/הפסד לפי היחסים (pay − סכום; הוחזר = 0), פגיעות, כמה נסגרו."""
+    pf = won = dn = 0; bets = a.get('bets') or {}
+    for bid, s in (a.get('settled') or {}).items():
+        b = bets.get(bid)
+        if not b or s.get('st') not in ('won', 'lost'): continue
+        dn += 1; won += s['st'] == 'won'; pf += (s.get('pay') or 0) - b['s']
+    return round(pf), won, dn, len(bets)
+def official_day(now):
+    """לאיזה יום שייך הדירוג הרשמי האחרון שהיה צריך להתפרסם: היום אחרי 23:59, אחרת אתמול."""
+    d = datetime.datetime.fromtimestamp(now / 1000, IL)
+    if (d.hour, d.minute) >= (23, 59): return d.strftime('%Y-%m-%d')
+    return (d - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+def standings_rows(accts):
+    """הטבלה הארצית: כל מי שניחש לפחות פעם אחת. מדורג לפי רווח כולל, אחר כך פגיעות."""
+    rows = []
+    for a in accts.values():
+        if not a or 'pid' not in a: continue
+        pf, won, dn, nb = stats_of(a)
+        if nb or dn: rows.append({'pid': a['pid'], 'n': a['name'], 'pf': pf, 'won': won, 'dn': dn, 'nb': nb})
+    rk = ranks('pf', rows)
+    for r in rows: r['rk'] = rk[r['pid']]
+    return sorted(rows, key=lambda r: (r['rk'], r['n']))
+def publish(accts, prev_fx=None):
+    now = now_ms()
+    bank, revealed, profiles = BANK_START, {}, {}
     for sec, a in accts.items():
         if not a or 'pid' not in a: continue
-        value, wkp, won, done, nwk = calc(a, fixtures)
-        rows.append({'pid': a['pid'], 'n': a['name'], 'v': round(value), 'wp': round(wkp), 'won': won, 'dn': done, 'nw': nwk,
-                     'nb': len(a.get('bets') or {})})
         profiles[a['pid']] = {'n': a['name'], 'j': a.get('joined', 0)}
         bank -= (a.get('wallet') or {}).get('bn', 0)
         settled = a.get('settled') or {}
@@ -311,18 +314,14 @@ def publish(accts, prev_fx):
             elif st in ('won', 'live-win'): bank -= payout(b) - b['s']
             if f and (f['st'] != 'none' or now >= f['ko'] - LOCK_MS) and f['ko'] > now - REVEAL_MS:   # נחשף רק אחרי הנעילה; ישנים לא נשלחים לכולם
                 revealed.setdefault(b['e'], {})[f"{a['pid']}_{bid}"] = {'n': a['name'], 'm': b['m'], 'p': b['p'], 's': b['s'], 'j': bool(b.get('j')), 'st': st}
-    rw, rs = ranks('wp', rows), ranks('v', rows)
-    if prev_fx:   # חצים: הדירוג לפני השינוי האחרון בתוצאות
-        F0 = dict(fixtures); F0.update({e: {**fixtures[e], **v} for e, v in prev_fx.items() if e in fixtures})
-        old = []
-        for a in accts.values():
-            if a and 'pid' in a:
-                value, wkp, won, done, nwk = calc(a, F0); old.append({'pid': a['pid'], 'n': a['name'], 'v': value, 'wp': wkp, 'won': won})
-        last_ranks.update({'w': ranks('wp', old), 's': ranks('v', old)})
-    for r in rows:
-        r['rw'], r['rs'] = rw[r['pid']], rs[r['pid']]
-        r['pw'] = last_ranks.get('w', {}).get(r['pid'], r['rw']); r['ps'] = last_ranks.get('s', {}).get(r['pid'], r['rs'])
-    st_body = {'rows': rows, 'wk': wk, 'bank': round(bank)}
+    # הדירוג הרשמי – פעם ביום ב-23:59 (משחק שנגמר אחרי חצות נכנס לעדכון של מחר). חצים = שינוי מהעדכון הקודם.
+    day = official_day(now); upd = {}
+    if published.get('stday') != day or os.environ.get('FORCE_STANDINGS'):
+        rows = standings_rows(accts); prev = published.get('strk') or {}
+        for r in rows: r['pp'] = prev.get(r['pid'], r['rk'])
+        upd['pub/standings'] = {'rows': rows, 'day': day, 'at': now, 'bank': round(bank)}
+        published['stday'] = day; published['strk'] = {r['pid']: r['rk'] for r in rows}; published['stpf'] = {r['pid']: r['pf'] for r in rows}
+    if published.get('bank') != round(bank): upd['pub/bank'] = round(bank); published['bank'] = round(bank)       # הקופה – לייב
     # כמה הימורים יש על כל משחק שעוד לא ננעל ("9 מהחבר׳ה כבר הימרו") – רק מספר, בלי לחשוף מה
     cnt = {}
     for a in accts.values():
@@ -331,8 +330,6 @@ def publish(accts, prev_fx):
             if f and f['st'] == 'none' and now < f['ko'] - LOCK_MS: cnt[b['e']] = cnt.get(b['e'], 0) + 1
     if published.get('cnt') != json.dumps(cnt, sort_keys=True): upd_cnt = cnt
     else: upd_cnt = 'same'
-    upd = {}
-    if published.get('standings') != json.dumps(st_body, sort_keys=True): upd['pub/standings'] = {**st_body, 'at': now}
     if published.get('profiles') != json.dumps(profiles, sort_keys=True): upd['pub/profiles'] = profiles
     for e, v in revealed.items():
         if published.get('rv' + e) != json.dumps(v, sort_keys=True): upd[f'pub/revealed/{e}'] = v
@@ -341,7 +338,7 @@ def publish(accts, prev_fx):
     if upd_cnt != 'same': upd['pub/cnt'] = upd_cnt or None; published['cnt'] = json.dumps(cnt, sort_keys=True)
     if upd:
         fb('', 'PATCH', upd)
-        published['standings'] = json.dumps(st_body, sort_keys=True); published['profiles'] = json.dumps(profiles, sort_keys=True)
+        published['profiles'] = json.dumps(profiles, sort_keys=True)
         for e, v in revealed.items(): published['rv' + e] = json.dumps(v, sort_keys=True)
 
 # ---------- ליגות חברים ----------
@@ -380,7 +377,7 @@ def leagues_tick(accts):
     sig = json.dumps(out, sort_keys=True)
     if not published.get('lg_gone'): fb('pub/lg', 'DELETE'); published['lg_gone'] = True     # פרטיות: הרשימה הציבורית של כל הליגות נמחקה (פעם בהפעלה)
     # פרטיות: כל ליגה בנתיב משלה lgv/<קוד> (קריא רק למי שיודע את הקוד), ולכולם רק מספרים
-    V = {r['pid']: r['v'] for r in json.loads(published.get('standings') or '{}').get('rows', [])}
+    V = published.get('stpf') or {}                                    # רווח כולל לפי הדירוג הרשמי האחרון
     rk = sorted(((lid, len(L['m']), sum(V.get(p, 0) for p in L['m']) / max(1, len(L['m']))) for lid, L in out.items() if len(L['m']) >= 2), key=lambda x: (-x[2], -x[1], x[0]))
     rkof = {lid: {'rk': i + 1, 'of': len(rk), 'avg': round(avg)} for i, (lid, c, avg) in enumerate(rk)}
     upd = {}
@@ -536,6 +533,10 @@ if __name__ == '__main__':
     for lg, v in (fb('pub/tables') or {}).items(): tables[lg] = v.get('rows', [])
     for e in (fb('pub/revealed') or {}): published['rv' + e] = ''        # כך ישנים יימחקו בסבב הראשון
     fb_log.update(fb('adminFb') or {})
+    st0 = fb('pub/standings') or {}
+    if st0.get('day'):
+        published['stday'] = st0['day']; published['strk'] = {r['pid']: r.get('rk') for r in st0.get('rows', []) if 'rk' in r}
+        published['stpf'] = {r['pid']: r.get('pf', 0) for r in st0.get('rows', [])}
     for lid in fb_keys('lgv'): published['lgv' + lid] = ''           # כך ליגות שנמחקו יימחקו גם מ-lgv
     if not once:
         for p in ('acct', 'names', 'lgdef'): Mirror(p)
