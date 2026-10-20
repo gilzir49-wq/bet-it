@@ -7,6 +7,7 @@ def req(m,p,b=None):
         with urllib.request.urlopen(r,timeout=20) as x: return x.status,json.loads(x.read().decode() or 'null')
     except urllib.error.HTTPError as e: return e.code,None
 rs=lambda n,a:''.join(secrets.choice(a) for _ in range(n)); AZM=string.ascii_letters+string.digits; AZ=string.ascii_lowercase+string.digits; SV={'.sv':'timestamp'}
+os.environ['FORCE_STANDINGS']='1'   # בבדיקה: הדירוג הרשמי מתפרסם בכל ריצה (באתר: פעם ביום ב-23:59)
 now=int(time.time()*1000); E='999000003'; day=R.day_key(now+86400000)
 R.fb(f'fixtures/{E}','PUT',{'lg':'isr1','home':'Maccabi Haifa','away':'Hapoel Haifa','ko':now+86400000,'day':day,'st':'none','h':0,'a':0,'odds':{'1':2.0,'X':3.0,'2':4.0,'cs':{'2-1':8.0}}})
 nk='e2e'+rs(8,AZ); sec,pid='s'+rs(48,AZM),'p'+rs(16,AZ)
@@ -23,6 +24,8 @@ st,a=req('GET',f'acct/{sec}'); w=a['wallet']
 assert w['bal']==1000, w; print('balance after settle:', w['bal'], '(expected 1000)', '| settled:', {k:v['st']+' '+str(v['pay']) for k,v in a.get('settled',{}).items()})
 st,rv=req('GET',f'pub/revealed/{E}'); print('revealed after lock:', len(rv or {}), 'bets')
 st,sd=req('GET','pub/standings'); row=[r for r in sd['rows'] if r['pid']==pid]; print('standings row:', row, '| bank:', sd['bank'])
+# רווח כולל: ג'וקר 300−100 + מדויק 400−50 + תיקו 0−50 = 500 · 2 פגיעות מתוך 3
+assert row and row[0]['pf']==500 and row[0]['won']==2 and row[0]['dn']==3 and row[0]['rk']>=1 and 'pp' in row[0] and sd.get('day'), row; print('profit ranking row ok: +500, 2/3')
 # שחזור: טלפון חדש מבקש, מנהל מאשר
 s2='s'+rs(48,AZM); print('recover req', req('PUT',f'recoverReq/{s2}',{'nk':nk,'at':SV})[0])
 K='k'+rs(40,AZM); R.fb(f'adminKeys/{K}','PUT',True)
@@ -39,6 +42,7 @@ assert req('PATCH','',{f'lgdef/{LID}':{'n':'e2e league','at':SV},f'acct/{s2}/lea
 assert req('PUT',f'acct/{sB}/leagues/{LID}',{'at':SV})[0]==200
 subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
 assert req('GET','pub/lg')[1] is None; print('public list of all leagues (pub/lg) is gone')
+assert pB not in [r['pid'] for r in req('GET','pub/standings')[1]['rows']]; print('new player without guesses is not in the national table')
 lv=req('GET',f'lgv/{LID}')[1]; assert lv and lv['o']==pid and set(lv['m'])=={pid,pB} and lv['rk']['of']>=1, lv; print('private league view (lgv) published, rank', lv['rk'])
 assert req('GET','lgv')[0]==401 and (req('GET','pub/stats')[1] or {}).get('leagues',0)>=1; print('league list is private, only a count is public')
 assert req('PUT',f'acct/{s2}/lgkick/{LID}/{pB}',True)[0]==200
