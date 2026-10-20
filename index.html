@@ -530,6 +530,7 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 .ntf .tx{flex:1;display:flex;flex-direction:column;gap:2px}.ntf b{font-size:14px}.ntf .tx span{font-size:12px;color:var(--mut)}
 .soon{font-size:11px;font-weight:900;color:var(--p2);background:rgba(169,123,255,.14);border-radius:999px;padding:3px 9px;white-space:nowrap}
 .afb{padding:8px 16px;border-top:1px solid var(--line)}.afb div{white-space:pre-wrap;margin-top:3px}
+.restb{background:rgba(255,201,77,.12);border:1px solid #FFC94D;border-radius:14px;padding:10px 12px;margin:8px 0;font-size:13px;font-weight:700}.restb a{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -657,16 +658,30 @@ const weekLabel = wk => { const a=dkToDate(wk), b=dkToDate(addDays(wk,6)); retur
 // ================= חיבור ל-Firebase =================
 // חיבור אחד (WebSocket) לכל ההאזנות והכתיבות – בלי מגבלת חיבורים של הדפדפן, גם עם כמה לשוניות פתוחות.
 const FBV='10.12.5';
+// אם ה-SDK של Firebase לא עלה תוך 6 שניות (דפדפן בתוך וואטסאפ/אינסטגרם, חוסם פרסומות שחוסם את gstatic) –
+// עוברים לקריאה ישירה (REST) עם ריענון כל 30 שניות, וגם הכתיבות עוברות ב-REST. אף פעם לא נתקעים על "טוען".
+let REST_MODE=false;
 const fbReady=(async()=>{
-  const [appM,dbM]=await Promise.all([import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-app.js`),import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-database.js`)]);
-  const app=appM.initializeApp({databaseURL:DB});
-  const db=dbM.getDatabase(app);
-  dbM.onValue(dbM.ref(db,'.info/connected'), s=>{ connected=!!s.val(); renderTop(); });
-  return {...dbM, db};
+  try{
+    const [appM,dbM]=await Promise.race([Promise.all([import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-app.js`),import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-database.js`)]),
+                                         new Promise((_,rej)=>setTimeout(()=>rej(new Error('sdk timeout')),6000))]);
+    const app=appM.initializeApp({databaseURL:DB});
+    const db=dbM.getDatabase(app);
+    dbM.onValue(dbM.ref(db,'.info/connected'), s=>{ connected=!!s.val(); renderTop(); });
+    return {...dbM, db};
+  }catch(e){ console.warn('Firebase SDK blocked/slow – REST mode', e&&e.message); REST_MODE=true; restStart(); return null; }
 })();
+// ===== מצב REST (גיבוי) =====
+const restUrl=(path,q)=>{ const u=new URL(DB); u.pathname=(u.pathname.replace(/\/$/,'')+'/'+(path||'')).replace(/\/+$/,'')+'.json'; if(q) Object.entries(q).forEach(([k,v])=>u.searchParams.set(k,v)); return u.toString(); };
+const pollers={};
+async function restGet(path,since){ const r=await fetch(restUrl(path,since?{orderBy:'"ko"',startAt:String(since)}:null),{cache:'no-store'}); if(r.status===401||r.status===403) return {denied:true}; if(!r.ok) throw new Error('http '+r.status); return {v:await r.json()}; }
+async function restPoll(name){ const P=pollers[name]; if(!P) return;
+  try{ const x=await restGet(P.path,P.since); if(!x.denied&&pollers[name]===P){ connected=true; P.onData(x.v); } }catch(e){ connected=false; } renderTop(); }
+function restStart(){ toast('החיבור החי חסום בדפדפן הזה – הנתונים מתעדכנים כל 30 שניות',false,null,5000); setInterval(()=>Object.keys(pollers).forEach(restPoll),30000); render(); }
 const unsubs={}, pendingBids=new Set();
 async function stream(name, path, onData, since){
   const F=await fbReady; if(unsubs[name]) unsubs[name]();
+  if(!F){ const P={path,onData,since}; pollers[name]=P; unsubs[name]=()=>{ if(pollers[name]===P) delete pollers[name]; }; restPoll(name); return; }
   let r=F.ref(F.db,path); if(since) r=F.query(r,F.orderByChild('ko'),F.startAt(since));
   unsubs[name]=F.onValue(r, snap=>onData(snap.val()), err=>console.warn('listen',name,err&&err.message));
 }
@@ -694,11 +709,19 @@ function lgStreams(){ const want=new Set(Object.keys((A&&A.leagues)||{}));
     stream('lg_'+l,`lgv/${l}`, v=>{ if(v&&v.m) S.lg[l]=v; else delete S.lg[l]; if(tab==='table'&&!sheetSt) render(); });
   }); }
 const otherLeagues = () => Math.max(0, ((S.stats&&S.stats.leagues)||0) - myLeagues().length);
-async function readOnce(path){ const F=await fbReady; return Promise.race([F.get(F.ref(F.db,path)).then(s=>s.val()), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]); }
+async function readOnce(path){ const F=await fbReady;
+  if(!F){ const x=await restGet(path); if(x.denied) throw new Error('permission denied'); return x.v; }
+  return Promise.race([F.get(F.ref(F.db,path)).then(s=>s.val()), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]); }
 
 // ================= כתיבה: אישור מהשרת בלבד; דחייה של חוקי האבטחה = 'denied', בלי קליטה = 'fail' =================
+async function restWrite(method,path,body){
+  const m=method==='PATCH'?'PATCH':(method==='DELETE'||body===null)?'DELETE':'PUT';
+  try{ const r=await Promise.race([fetch(restUrl(path),{method:m,headers:{'Content-Type':'application/json'},body:m==='DELETE'?undefined:JSON.stringify(body)}),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),12000))]);
+    if(r.ok){ Object.keys(pollers).forEach(restPoll); return 'ok'; } return (r.status===401||r.status===403)?'denied':'fail'; }catch(e){ return 'fail'; } }
 async function write(method, path, body, quiet){
-  const F=await fbReady, r=path?F.ref(F.db,path):F.ref(F.db);
+  const F=await fbReady;
+  if(!F){ const res=await restWrite(method,path,body); if(res==='fail'&&!quiet) toast('אין קליטה 📶 – לא נשמר עדיין',false,'err'); return res; }
+  const r=path?F.ref(F.db,path):F.ref(F.db);
   const op = method==='PATCH' ? F.update(r,body) : (method==='DELETE'||body===null) ? F.remove(r) : F.set(r,body);
   const res = await Promise.race([ op.then(()=>'ok', e=>/permission/i.test(String(e&&(e.code||e.message)))?'denied':'fail'),
                                    new Promise(x=>setTimeout(()=>x('fail'),12000)) ]);
@@ -761,6 +784,7 @@ function animateBal(to){
   (function step(t){ const k=Math.min(1,(t-t0)/900), v=from+(to-from)*(1-Math.pow(1-k,3)); shownBal=v;
     const n=document.getElementById('balV'); if(n) n.textContent=fmt(v); if(k<1) balAnim=requestAnimationFrame(step); else shownBal=to; })(t0);
 }
+function restBanner(){ return REST_MODE?`<div class="restb" id="restBanner">📶 חיבור מוגבל בדפדפן הזה – מתעדכן כל 30 שניות. <a href="#" onclick="location.reload();return false">נסה שוב</a></div>`:''; }
 function renderTop(){
   const a=account(), bank=bankNow();
   const cd=document.getElementById('cdot'); if(cd) cd.className=connected?'on':'';
@@ -828,7 +852,7 @@ function viewGames(){
   let h=`<div class="chips">${liveN?`<button class="chip livec ${dayF==='live'?'on':''}" onclick="dayF='live';render()"><span class="pdot"></span>חי עכשיו<span class="n">${liveN}</span></button>`:''}
     ${days.map(d=>`<button class="chip ${dayF===d?'on':''}" onclick="dayF='${d}';render()">${dayLabel(d)}<span class="n">${list.filter(f=>dayKey(f.ko)===d).length}</span></button>`).join('')}</div>`;
   const shown=list.filter(f=>dayF==='live'?f.st==='live':dayKey(f.ko)===dayF);
-  if(!loaded.fx) return h+`<div class="empty"><div class="e">⏳</div>טוען משחקים…</div>`;
+  if(!loaded.fx) return h+(LOAD_SLOW?slowHTML('המשחקים לא נטענים'):`<div class="empty"><div class="e">⏳</div>טוען משחקים…</div>`);
   if(!shown.length) return h+`<div class="empty"><div class="e">📅</div>אין משחקים ביום הזה.<br>המשחקים מתעדכנים לשבוע קדימה.</div>`;
   if(A && dayF!=='live' && !jokerUsed(dayF) && shown.some(f=>!isLocked(f))) h+=`<div class="muted" style="margin:4px 2px">🃏 הג׳וקר היומי שלך פנוי – הימור אחד היום עם רווח כפול</div>`;
   const ord=f=>f.st==='live'?0:f.st==='none'?1:2; let crowdDone=false;
@@ -1619,14 +1643,16 @@ function renderNav(){
 function go(k){ tab=k; lsSet('bb_tab',k); render(); window.scrollTo(0,0); }
 function render(){
   renderTop(); const app=document.getElementById('app'); document.body.classList.toggle('anon',!A&&!AK); hideSplash(); if(!A&&!AK&&loginUnchanged(app)) return;
-  if(!A && !AK){ app.innerHTML=(SEC&&!loaded.me)?'<div class="empty"><div class="e">⏳</div>מתחבר…</div>':viewLogin()+footer(); renderNav(); return; }
+  if(!A && !AK){ app.innerHTML=(SEC&&!loaded.me)?(LOAD_SLOW?slowHTML('לא מצליח להתחבר לחשבון'):'<div class="empty"><div class="e">⏳</div>מתחבר…</div>'):viewLogin()+footer(); renderNav(); return; }
   if(!A && (tab==='mine'||tab==='ach')) tab='games'; if(tab==='admin'&&!AK) tab='games';
-  app.innerHTML=({games:viewGames,mine:viewMine,ach:viewAch,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
+  app.innerHTML=restBanner()+({games:viewGames,mine:viewMine,ach:viewAch,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
 }
 // מסך הכניסה לא נבנה מחדש כשמגיעים נתונים (משחקים/טבלה) – אחרת השם שהמשתמש כבר הקליד נמחק
 function loginUnchanged(app){ if(SEC&&!loaded.me) return false; const h=viewLogin(); if(app._lh===h&&document.getElementById('nameIn')) return true; app._lh=h; return false; }
 // מסך פתיחה: לפחות 0.6 שניות, נעלם כשהנתונים הראשונים הגיעו (ולכל היותר אחרי 2.5 שניות)
-const SPLASH_T0=Date.now();
+const SPLASH_T0=Date.now(); let LOAD_SLOW=false;
+const slowHTML = t => `<div class="empty" id="fxSlow"><div class="e">📶</div><b>${t}</b><br>אולי הקליטה חלשה, או שהדפדפן הזה (למשל בתוך וואטסאפ/אינסטגרם, או עם חוסם פרסומות) חוסם את החיבור.<br>נסה לפתוח בכרום/ספארי.<br><br><button class="btn" id="retryBtn" onclick="location.reload()">🔄 נסה שוב</button></div>`;
+setTimeout(()=>{ if(!loaded.fx||(SEC&&!loaded.me)){ LOAD_SLOW=true; render(); } },15000);   // אחרי 15 שניות בלי משחקים – הסבר וכפתור "נסה שוב" במקום "טוען" לנצח
 function hideSplash(force){ const sp=document.getElementById('splash'); if(!sp||sp.classList.contains('out')) return;
   if(!force && SEC && !loaded.me) return;
   const wait=Math.max(0,600-(Date.now()-SPLASH_T0)); setTimeout(()=>{ sp.classList.add('out'); setTimeout(()=>sp.remove(),400); },wait); }
@@ -1665,7 +1691,7 @@ setInterval(()=>{ if(tab==='games'&&!sheetSt&&!document.querySelector('details[o
 render(); listenAll();
 if(CODE_IN_LINK) useCode(CODE_IN_LINK,true);
 addEventListener('hashchange',()=>{ const c=grabCode(); if(c) useCode(c,true); });   // לחיצה על הלינק כשהאתר כבר פתוח
-if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('/sw.js?v=__BUILD__').then(r=>r.update()).catch(()=>{});   // __BUILD__ מוחלף בכל פריסה
 </script>
 </body>
 </html>
