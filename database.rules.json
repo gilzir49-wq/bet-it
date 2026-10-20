@@ -20,7 +20,7 @@
     "acct": {
       "$secret": {
         ".read": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/)",
-        ".write": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/) && !data.exists() && newData.hasChildren(['name','nk','pid','joined','wallet']) && !newData.hasChild('bets') && !newData.hasChild('settled') && !newData.hasChild('jokers') && newData.child('wallet/bal').val() === 500 && newData.child('wallet/op').val() === 'init' && newData.child('wallet').hasChildren(['bal','op']) && !newData.child('wallet/wk').exists() && newData.parent().parent().child('names').child(newData.child('nk').val()).val() === newData.child('pid').val() && !root.child('names').child(newData.child('nk').val()).exists()",
+        ".write": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/) && !data.exists() && newData.hasChildren(['name','nk','pid','joined','wallet']) && !newData.hasChild('bets') && !newData.hasChild('settled') && !newData.hasChild('jokers') && !newData.hasChild('rd') && !newData.hasChild('rdpick') && !newData.hasChild('fbk') && newData.child('wallet/bal').val() === 500 && newData.child('wallet/op').val() === 'init' && newData.child('wallet').hasChildren(['bal','op']) && !newData.child('wallet/wk').exists() && newData.parent().parent().child('names').child(newData.child('nk').val()).val() === newData.child('pid').val() && !root.child('names').child(newData.child('nk').val()).exists()",
         "name": {
           ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 20 && newData.val().matches(/^[^ .#$\\[\\]\\/<>\"`\\\\&;{}]([^.#$\\[\\]\\/<>\"`\\\\&;{}]{0,18}[^ .#$\\[\\]\\/<>\"`\\\\&;{}])?$/) && !newData.val().contains('\"') && !newData.val().contains('`') && !newData.val().contains('\\\\') && !newData.val().contains('&') && !newData.val().contains(';') && !newData.val().contains('{') && !newData.val().contains('}') && !newData.val().contains('<') && !newData.val().contains('>') && !newData.val().contains('\u200b') && !newData.val().contains('\u200c') && !newData.val().contains('\u200d') && !newData.val().contains('\u200e') && !newData.val().contains('\u200f') && !newData.val().contains('\u202a') && !newData.val().contains('\u202b') && !newData.val().contains('\u202c') && !newData.val().contains('\u202d') && !newData.val().contains('\u202e') && !newData.val().contains('\u2066') && !newData.val().contains('\u2067') && !newData.val().contains('\u2068') && !newData.val().contains('\u2069') && !newData.val().contains('\ufeff') && !newData.val().contains('\u00ad') && !newData.val().contains('\u180e') && !newData.val().contains('\u061c')"
         },
@@ -81,7 +81,7 @@
         },
         "leagues": {
           "$lid": {
-            ".write": "$lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (!newData.exists() || root.child('lgdef').child($lid).exists() || newData.parent().parent().parent().parent().child('lgdef').child($lid).exists())",
+            ".write": "root.child('acct').child($secret).child('pid').exists() && $lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && (!newData.exists() || root.child('lgdef').child($lid).exists() || newData.parent().parent().parent().parent().child('lgdef').child($lid).exists())",
             ".validate": "newData.hasChildren(['at']) && newData.child('at').isNumber() && newData.child('at').val() <= now + 60000 && (!newData.child('own').exists() || (newData.child('own').val() === true && !root.child('lgdef').child($lid).exists() && !data.exists()))",
             "at": {
               ".validate": true
@@ -105,6 +105,89 @@
         "jokers": {
           "$day": {
             ".write": "(!data.exists() && newData.isString() && !data.parent().parent().child('bets').child(newData.val()).exists() && newData.parent().parent().child('bets').child(newData.val()).child('j').val() === true && root.child('fixtures').child(newData.parent().parent().child('bets').child(newData.val()).child('e').val()).child('day').val() === $day) || (data.exists() && !newData.exists() && !newData.parent().parent().child('bets').child(data.val()).exists())"
+          }
+        },
+        "rdpick": {
+          "$lid": {
+            "$wk": {
+              ".write": "root.child('acct').child($secret).child('pid').exists() && !data.exists() && newData.exists() && $lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $wk.matches(/^20[0-9][0-9]-[01][0-9]-[0-3][0-9]$/) && root.child('acct').child($secret).child('leagues').child($lid).child('own').val() === true && !root.child('lgv').child($lid).child('rd').child($wk).exists()",
+              ".validate": "newData.hasChildren(['fx','at'])",
+              "fx": {
+                "$e": {
+                  ".validate": "$e.matches(/^[0-9]{1,12}$/) && newData.val() === true && root.child('fixtures').child($e).child('st').val() === 'none' && now < root.child('fixtures').child($e).child('ko').val() - 120000"
+                }
+              },
+              "at": {
+                ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+              },
+              "$x": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "rd": {
+          "$lid": {
+            "$wk": {
+              ".validate": "$lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && $wk.matches(/^20[0-9][0-9]-[01][0-9]-[0-3][0-9]$/)",
+              "wallet": {
+                ".write": "data.exists() && newData.child('bal').isNumber() && newData.child('bal').val() >= 0 && ((newData.child('op').val().beginsWith('b:') && !data.parent().child('bets').child(newData.child('op').val().replace('b:', '')).exists() && newData.parent().child('bets').child(newData.child('op').val().replace('b:', '')).exists() && newData.child('bal').val() === data.child('bal').val() - newData.parent().child('bets').child(newData.child('op').val().replace('b:', '')).child('s').val()) || (newData.child('op').val().beginsWith('c:') && !data.parent().child('settled').child(newData.child('op').val().replace('c:', '')).exists() && data.parent().child('bets').child(newData.child('op').val().replace('c:', '')).exists() && !newData.parent().child('bets').child(newData.child('op').val().replace('c:', '')).exists() && newData.child('bal').val() === data.child('bal').val() + data.parent().child('bets').child(newData.child('op').val().replace('c:', '')).child('s').val()))",
+                "bal": {
+                  ".validate": "newData.isNumber()"
+                },
+                "op": {
+                  ".validate": "newData.isString()"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              },
+              "bets": {
+                "$bid": {
+                  ".write": "$bid.matches(/^b[a-z0-9]{8,24}$/) && root.child('lgv').child($lid).child('m').child(root.child('acct').child($secret).child('pid').val() + '').exists() && !root.child('acct').child($secret).child('rd').child($lid).child($wk).child('settled').child($bid).exists() && ((!data.exists() && newData.exists() && newData.parent().parent().child('wallet/op').val() === 'b:' + $bid) || (data.exists() && !newData.exists() && newData.parent().parent().child('wallet/op').val() === 'c:' + $bid && root.child('fixtures').child(data.child('e').val()).child('st').val() === 'none' && now < root.child('fixtures').child(data.child('e').val()).child('ko').val() - 120000))",
+                  ".validate": "newData.hasChildren(['e','m','p','s','o','at']) && newData.child('e').isString() && newData.child('e').val().matches(/^[0-9]{1,12}$/) && root.child('fixtures').child(newData.child('e').val()).child('st').val() === 'none' && now < root.child('fixtures').child(newData.child('e').val()).child('ko').val() - 120000 && ((newData.child('m').val() === 'W' && newData.child('p').val().matches(/^(1|X|2)$/) && newData.child('o').val() === root.child('fixtures').child(newData.child('e').val()).child('odds').child(newData.child('p').val()).val()) || (newData.child('m').val() === 'CS' && newData.child('p').val().matches(/^[0-9]-[0-9]$/) && newData.child('o').val() === root.child('fixtures').child(newData.child('e').val()).child('odds/cs').child(newData.child('p').val()).val())) && root.child('lgv').child($lid).child('rd').child($wk).child('fx').child(newData.child('e').val()).val() === true && root.child('lgv').child($lid).child('rd').child($wk).child('st').val() !== 'done'",
+                  "s": {
+                    ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 1000000 && newData.val() % 1 === 0"
+                  },
+                  "o": {
+                    ".validate": "newData.isNumber() && newData.val() >= 1"
+                  },
+                  "at": {
+                    ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+                  },
+                  "e": {
+                    ".validate": true
+                  },
+                  "m": {
+                    ".validate": true
+                  },
+                  "p": {
+                    ".validate": true
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
+                }
+              },
+              "$other": {
+                ".validate": "$other === 'settled'"
+              }
+            }
+          }
+        },
+        "fbk": {
+          "$fid": {
+            ".write": "root.child('acct').child($secret).child('pid').exists() && !data.exists() && newData.exists() && $fid.matches(/^f[a-z0-9]{8,24}$/)",
+            ".validate": "newData.hasChildren(['t','at'])",
+            "t": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 500 && !newData.val().contains('<') && !newData.val().contains('>') && !newData.val().contains('`') && !newData.val().contains('{') && !newData.val().contains('}') && !newData.val().contains('\\\\')"
+            },
+            "at": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 60000 && newData.val() >= now - 600000"
+            },
+            "$x": {
+              ".validate": false
+            }
           }
         },
         "$other": {
