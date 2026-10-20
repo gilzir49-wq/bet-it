@@ -180,7 +180,9 @@ try:
         check(True, 'SDK חסום → המשחקים נטענים בכל זאת (REST)')
         pgR.wait_for_selector('#nameIn', timeout=10000); pgR.fill('#nameIn', RNAME); pgR.click('#loginBtn')
         pgR.wait_for_function('() => A && A.wallet && A.wallet.bal === 500', timeout=25000); check(pgR.locator('#restBanner').count() == 1, 'SDK חסום → אפשר להירשם, ומוצג "חיבור מוגבל · נסה שוב"')
-        pgR.evaluate(f"() => {{ closeSheet(); document.getElementById('final').classList.remove('show'); go('games'); dayF=S.fixtures['{E}'].day; render(); }}")
+        pgR.wait_for_selector('#final.show', timeout=10000); pgR.click('#final .btn.sec')            # מסך "זה המפתח שלך" אחרי הרשמה
+        pgR.wait_for_function("() => !document.getElementById('final').classList.contains('show')", timeout=5000)
+        pgR.evaluate(f"() => {{ closeSheet(); go('games'); dayF=S.fixtures['{E}'].day; render(); }}")
         pgR.click(f"button.ob[onclick*=\"'{E}','W','1'\"]"); pgR.fill('#stakeIn', '20'); pgR.click('#betBtn')
         pgR.wait_for_function('() => A && A.wallet.bal === 480', timeout=25000)
         ra = [a for s_, a in (R.fb('acct') or {}).items() if a and a.get('name') == RNAME]
