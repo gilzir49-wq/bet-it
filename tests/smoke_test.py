@@ -23,7 +23,7 @@ for _e, _h in ((E3, 7), (E4, 8)):
                                    'st': 'none', 'h': 0, 'a': 0, 'odds': {'1': 2.2, 'X': 3.1, '2': 3.3}})
 R.fb(f'fixtures/{E}', 'PUT', {'lg': 'isr1', 'home': 'Maccabi Haifa', 'away': 'Hapoel Haifa', 'ko': now + 6 * 3600000, 'day': R.day_key(now + 6 * 3600000),
                               'st': 'none', 'h': 0, 'a': 0, 'odds': {'1': 2.0, 'X': 3.0, '2': 4.0, 'cs': {'1-0': 7.0}}})
-name = 'smoke' + ''.join(secrets.choice(string.ascii_lowercase) for _ in range(6))
+name = 'smoke' + ''.join(secrets.choice(string.ascii_lowercase) for _ in range(6)); RNAME = 'rest' + ''.join(secrets.choice(string.ascii_lowercase) for _ in range(6))
 def acct():
     for s, a in (R.fb('acct') or {}).items():
         if a and a.get('name') == name: return s, a
@@ -173,6 +173,26 @@ try:
         pg4.goto('http://127.0.0.1:8765/index.html#code=ZZZZ<img src=x onerror=alert(1)>'); pg4.wait_for_timeout(2500)
         check(pg4.evaluate(f'() => !location.hash && A && A.name === "{OTHER_NAME}"'), 'לינק שבור/זדוני – לא קורס, לא מחליף חשבון, הכתובת נוקתה')
         ctx4.close()
+        # --- "משחקים לא נטענים": דפדפן שחוסם את ה-SDK של Firebase (בתוך וואטסאפ/אינסטגרם, חוסם פרסומות)
+        ctxR = b.new_context(viewport={'width': 390, 'height': 844}); ctxR.route('**/www.gstatic.com/**', lambda r: r.abort())
+        pgR = ctxR.new_page(); pgR.on('pageerror', lambda e: errs.append(str(e))); pgR.goto('http://127.0.0.1:8765/index.html')
+        pgR.wait_for_function(f"() => REST_MODE && S.fixtures && S.fixtures['{E}']", timeout=25000)
+        check(True, 'SDK חסום → המשחקים נטענים בכל זאת (REST)')
+        pgR.wait_for_selector('#nameIn', timeout=10000); pgR.fill('#nameIn', RNAME); pgR.click('#loginBtn')
+        pgR.wait_for_function('() => A && A.wallet && A.wallet.bal === 500', timeout=25000); check(pgR.locator('#restBanner').count() == 1, 'SDK חסום → אפשר להירשם, ומוצג "חיבור מוגבל · נסה שוב"')
+        pgR.wait_for_selector('#final.show', timeout=10000); pgR.click('#final .btn.sec')            # מסך "זה המפתח שלך" אחרי הרשמה
+        pgR.wait_for_function("() => !document.getElementById('final').classList.contains('show')", timeout=5000)
+        pgR.evaluate(f"() => {{ closeSheet(); go('games'); dayF=S.fixtures['{E}'].day; render(); }}")
+        pgR.click(f"button.ob[onclick*=\"'{E}','W','1'\"]"); pgR.fill('#stakeIn', '20'); pgR.click('#betBtn')
+        pgR.wait_for_function('() => A && A.wallet.bal === 480', timeout=25000)
+        ra = [a for s_, a in (R.fb('acct') or {}).items() if a and a.get('name') == RNAME]
+        check(ra and ra[0]['wallet']['bal'] == 480 and len(ra[0].get('bets') or {}) == 1, 'SDK חסום → הימור נשמר בשרת (REST)')
+        ctxR.close()
+        ctxX = b.new_context(); ctxX.route('**/*', lambda r: r.abort() if ('gstatic.com' in r.request.url or '.json' in r.request.url) else r.continue_())
+        ctxX.add_init_script("localStorage.setItem('bb_sec','s'+'a'.repeat(48))")          # משתמש שכבר מחובר (רוב המשתמשים)
+        pgX = ctxX.new_page(); pgX.goto('http://127.0.0.1:8765/index.html')
+        pgX.wait_for_selector('#fxSlow #retryBtn', timeout=25000); check(True, 'אין חיבור בכלל → אחרי 15 שניות הסבר + "נסה שוב" (לא "מתחבר…" לנצח)')
+        ctxX.close()
         check(not errs, 'אין שגיאות JavaScript בדף' + (f': {errs[:2]}' if errs else ''))
         b.close()
 except Exception as ex:
@@ -182,5 +202,7 @@ finally:
     upd = {f'fixtures/{E}': None, f'fixtures/{E2}': None, f'fixtures/{E3}': None, f'fixtures/{E4}': None, **CLEAN}
     if s: upd.update({f'acct/{s}': None, f"names/{a['nk']}": None}); upd.update({f"rc/{a['rc']}": None} if a.get('rc') else {}); upd.update({f'lgdef/{l}': None for l in (a.get('leagues') or {})})
     upd.update({f'acct/{OTHER_SEC}': None, f'names/{OTHER_NAME}': None, f'rc/{OTHER_RC}': None, f'pub/profiles/{OTHER_PID}': None})
+    for s_, a_ in (R.fb('acct') or {}).items():
+        if a_ and a_.get('name') == RNAME: upd.update({f'acct/{s_}': None, f"names/{a_['nk']}": None, **({f"rc/{a_['rc']}": None} if a_.get('rc') else {})})
     R.fb('', 'PATCH', upd); srv.shutdown()
 sys.exit(1 if fails else 0)
