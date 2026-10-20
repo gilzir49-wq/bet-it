@@ -255,6 +255,17 @@ def settle_account(sec):
                 pay = payout(b) if st == 'won' else (b['s'] if st == 'void' else 0)
                 settled[bid] = {'st': st, 'pay': pay, 'at': now_ms()}
                 w['bal'] = w.get('bal', 0) + pay; w['op'] = 's:' + bid; changed += 1
+        for lid, W in (acct.get('rd') or {}).items():          # מחזור שבועי: נסגר רק לתוך ערימת המחזור (לא נוגע ביתרה הראשית ובקופה)
+            for w_, Rd in (W or {}).items():
+                if not isinstance(Rd, dict) or not isinstance(Rd.get('wallet'), dict): continue
+                rs_ = Rd.setdefault('settled', {}); rw = Rd['wallet']
+                for bid, b in (Rd.get('bets') or {}).items():
+                    if bid in rs_: continue
+                    st = state(b)
+                    if st in ('won', 'lost', 'void'):
+                        pay = payout(b) if st == 'won' else (b['s'] if st == 'void' else 0)
+                        rs_[bid] = {'st': st, 'pay': pay, 'at': now_ms()}
+                        rw['bal'] = rw.get('bal', 0) + pay; rw['op'] = 's:' + bid; changed += 1
         wk = week_key(now_ms())
         if w.get('wk') != wk:
             if week_key(acct.get('joined', 0)) != wk:            # מי שהצטרף השבוע כבר קיבל 500
@@ -268,7 +279,9 @@ def settle_account(sec):
 def needs_settle(acct):
     w = acct.get('wallet') or {}; settled = acct.get('settled') or {}
     if w.get('wk') != week_key(now_ms()): return True
-    return any(bid not in settled and state(b) in ('won', 'lost', 'void') for bid, b in (acct.get('bets') or {}).items())
+    if any(bid not in settled and state(b) in ('won', 'lost', 'void') for bid, b in (acct.get('bets') or {}).items()): return True
+    return any(bid not in ((Rd or {}).get('settled') or {}) and state(b) in ('won', 'lost', 'void')
+               for W in (acct.get('rd') or {}).values() for Rd in (W or {}).values() if isinstance(Rd, dict) for bid, b in (Rd.get('bets') or {}).items())
 
 # ---------- פרסום: טבלאות, בנק, הימורים שנחשפו ----------
 def calc(a, F):
@@ -394,6 +407,171 @@ def leagues_tick(accts):
     if upd: fb('', 'PATCH', upd)
     return out
 
+# ---------- המחזור השבועי של ליגת חברים ----------
+# כל שבוע (שלישי→שני) בכל ליגה: בעל הליגה בוחר 3–12 משחקים (acct/<מפתח>/rdpick/<lid>/<wk>), ואם לא בחר עד חמישי 12:00 –
+# הרובוט בוחר לבד. כל חבר מקבל ערימה נפרדת של 1,000 (acct/<מפתח>/rd/<lid>/<wk>) – לא נוגעת ביתרה הראשית ולא בקופת הבנק.
+# משחק מחזור שננעל ואין עליו הימור → "הבית" מהמר במקום החבר (auto:true, רק הרובוט יכול לכתוב את זה).
+# הכול תחת lgv/<lid>/... – פרטי לליגה (רק מי שיודע את הקוד).
+RD_STACK, RD_MIN, RD_MAX, RD_AUTO_MIN = 1000, 3, 12, 10
+RD_POINTS = {1: 10, 2: 7, 3: 5}; RD_POINTS_REST = 2
+AUTO_GRACE = 30000                    # מחכים 30 שניות אחרי הנעילה (הפרשי שעון) לפני הימור אוטומטי
+rd_cache = {}                         # lid -> {wk: round}
+auto_done = set()
+def week_start_ms(wk):
+    y, m, d = map(int, wk.split('-')); return int(datetime.datetime(y, m, d, tzinfo=IL).timestamp() * 1000)
+def week_end_ms(wk):
+    y, m, d = map(int, wk.split('-')); return int((datetime.datetime(y, m, d, tzinfo=IL) + datetime.timedelta(days=7)).timestamp() * 1000)
+def autopick_at(wk):
+    y, m, d = map(int, wk.split('-')); return int((datetime.datetime(y, m, d, 12, tzinfo=IL) + datetime.timedelta(days=2)).timestamp() * 1000)   # חמישי 12:00
+def table_pos(lg, team):
+    for i, r in enumerate(tables.get(lg, [])):
+        if r['t'] == team: return i + 1
+    return 99
+def auto_pick(wk, now=None):
+    """המשחקים הבולטים של השבוע: כל ליגת העל + 3 הגדולים בפרמייר ליג (לפי מקום בטבלה); משלימים מאיטליה/לאומית."""
+    now = now or now_ms(); end = week_end_ms(wk)
+    c = [(e, f) for e, f in fixtures.items() if f.get('st') == 'none' and f.get('odds') and now + LOCK_MS + 60000 < f['ko'] < end]
+    big = lambda f: table_pos(f['lg'], f['home']) + table_pos(f['lg'], f['away'])
+    by = lambda lg: sorted([x for x in c if x[1]['lg'] == lg], key=lambda x: (big(x[1]), x[1]['ko']))
+    isr = sorted(by('isr1'), key=lambda x: x[1]['ko'])[:RD_MAX - 3]
+    pick = isr + by('eng')[:3]
+    for lg in ('ita', 'isr2', 'eng'):
+        if len(pick) >= RD_MIN: break
+        pick += [x for x in by(lg) if x not in pick][:RD_MIN - len(pick)]
+    return sorted(e for e, f in pick[:RD_MAX])
+def rd_state(r):
+    fs = [fixtures.get(e) for e in r['fx']]
+    if fs and all(f and f.get('st') in ('finished', 'postp') for f in fs): return 'done'
+    if any(f and (f.get('st') != 'none' or now_ms() >= f['ko'] - LOCK_MS) for f in fs): return 'live'
+    return 'open'
+def rd_valid_pick(pk, wk):
+    fx = sorted(e for e, v in ((pk or {}).get('fx') or {}).items() if v is True)
+    s, e_ = week_start_ms(wk), week_end_ms(wk)
+    if not (RD_MIN <= len(fx) <= RD_MAX): return None
+    if any(e not in fixtures or not (s <= fixtures[e]['ko'] < e_) for e in fx): return None
+    return fx
+def rd_pick_side(pid, e, wk):
+    return ('1', 'X', '2')[int(hashlib.sha256(f'{pid}:{e}:{wk}'.encode()).hexdigest(), 16) % 3]   # "רנדומלי" אבל קבוע – ריצה חוזרת לא משנה
+def auto_bet(sec, lid, wk, e):
+    """הימור של הבית על משחק מחזור שננעל בלי הימור – אטומי (ETag), פעם אחת, לא חורג מהערימה."""
+    f = fixtures.get(e)
+    for _ in range(5):
+        acct, et = fb(f'acct/{sec}', etag=True)
+        Rd = ((acct or {}).get('rd') or {}).get(lid, {}).get(wk)
+        if not acct or not isinstance(Rd, dict) or not isinstance(Rd.get('wallet'), dict): return 0
+        bets = Rd.setdefault('bets', {})
+        if any(b.get('e') == e for b in bets.values()): return 0                      # כבר יש הימור (שלו או אוטומטי)
+        w = Rd['wallet']; bal = int(w.get('bal', 0))
+        if bal < 1: return 0
+        fx = (rd_cache.get(lid, {}).get(wk) or {}).get('fx') or {}
+        left = sum(1 for x in fx if not any(b.get('e') == x for b in bets.values()) and (fixtures.get(x) or {}).get('st') not in ('finished', 'postp'))
+        s = min(bal, max(RD_AUTO_MIN, jsround(bal / max(1, left))))
+        p = rd_pick_side(acct.get('pid', sec), e, wk); o = (f.get('odds') or {}).get(p)
+        if not o: return 0
+        bid = 'ba' + hashlib.sha256(f'{sec}:{lid}:{wk}:{e}'.encode()).hexdigest()[:14]
+        bets[bid] = {'e': e, 'm': 'W', 'p': p, 's': s, 'o': o, 'at': now_ms(), 'auto': True}
+        w['bal'] = bal - s; w['op'] = 'a:' + bid
+        if fb(f'acct/{sec}', 'PUT', acct, if_match=et) != 'CONFLICT': return 1
+        time.sleep(0.3)
+    return 0
+def rd_value(Rd):
+    w = Rd.get('wallet') or {}; v = w.get('bal', 0); won = dn = 0; ss = Rd.get('settled') or {}; shown = []
+    for bid, b in (Rd.get('bets') or {}).items():
+        s = ss.get(bid); st = s['st'] if s else state(b)
+        if not s: v += payout(b) if st == 'live-win' else (b['s'] if st == 'open' else 0)
+        if s and st in ('won', 'lost'): dn += 1; won += st == 'won'
+        f = fixtures.get(b['e'])
+        if f and (f['st'] != 'none' or now_ms() >= f['ko'] - LOCK_MS):
+            shown.append({'e': b['e'], 'p': b['p'], 'm': b['m'], 's': b['s'], 'st': st, **({'a': True} if b.get('auto') else {})})
+    return v, won, dn, shown
+def rounds_tick(accts, lg):
+    now = now_ms(); wk = week_key(now); upd = {}; n_auto = 0
+    by_pid = {a['pid']: s for s, a in accts.items() if a and 'pid' in a}
+    for lid, L in lg.items():
+        if lid not in rd_cache: rd_cache[lid] = fb(f'lgv/{lid}/rd') or {}
+        R_ = rd_cache[lid]
+        if wk not in R_:                                                   # פתיחת המחזור של השבוע
+            osec = by_pid.get(L.get('o')); pk = ((((accts.get(osec) or {}).get('rdpick') or {}).get(lid) or {}).get(wk)) if osec else None
+            fx = rd_valid_pick(pk, wk); by = 'owner'
+            if not fx and now >= autopick_at(wk): fx = auto_pick(wk, now); by = 'auto'
+            if fx and len(fx) >= RD_MIN:
+                fs = [fixtures[e]['ko'] for e in fx]
+                R_[wk] = {'fx': {e: True for e in fx}, 'by': by, 'at': now, 'dl': min(fs) - LOCK_MS, 'last': max(fs) - LOCK_MS, 'st': 'open'}
+        for w_, r in R_.items():
+            st = rd_state(r)
+            if r.get('st') != st: r['st'] = st
+            if published.get(f'rd{lid}{w_}') != json.dumps(r, sort_keys=True):
+                upd[f'lgv/{lid}/rd/{w_}'] = r; published[f'rd{lid}{w_}'] = json.dumps(r, sort_keys=True)
+        r = R_.get(wk)
+        if r and r['st'] != 'done':
+            for pid in L['m']:                                              # ערימה לכל חבר (גם מי שהצטרף באמצע השבוע)
+                sec = by_pid.get(pid); a = accts.get(sec) or {}
+                if sec and not (((a.get('rd') or {}).get(lid) or {}).get(wk) or {}).get('wallet'):
+                    upd[f'acct/{sec}/rd/{lid}/{wk}/wallet'] = {'bal': RD_STACK, 'op': 'init'}
+    if upd: fb('', 'PATCH', upd); upd = {}; accts = fb('acct') or accts
+    # הימורים אוטומטיים: משחק מחזור שננעל, לחבר עם ערימה ובלי הימור עליו
+    for lid, L in lg.items():
+        r = rd_cache.get(lid, {}).get(wk)
+        if not r: continue
+        for e in r['fx']:
+            f = fixtures.get(e)
+            if not f or f.get('st') not in ('none', 'live') or now < f['ko'] - LOCK_MS + AUTO_GRACE: continue
+            for pid in L['m']:
+                sec = by_pid.get(pid); Rd = (((accts.get(sec) or {}).get('rd') or {}).get(lid) or {}).get(wk)
+                if not sec or (sec, lid, wk, e) in auto_done or not isinstance(Rd, dict) or not Rd.get('wallet'): continue
+                if any(b.get('e') == e for b in (Rd.get('bets') or {}).values()): auto_done.add((sec, lid, wk, e)); continue
+                n_auto += auto_bet(sec, lid, wk, e); auto_done.add((sec, lid, wk, e))
+    if n_auto: accts = fb('acct') or accts
+    # טבלת מחזור + פודיום, וטבלה עונתית מצטברת
+    rows_of = {}
+    for a in accts.values():
+        if not a or 'pid' not in a: continue
+        for lid, W in (a.get('rd') or {}).items():
+            for w_, Rd in (W or {}).items():
+                if not isinstance(Rd, dict) or not isinstance(Rd.get('wallet'), dict) or w_ not in rd_cache.get(lid, {}): continue
+                v, won, dn, shown = rd_value(Rd)
+                rows_of.setdefault((lid, w_), []).append({'pid': a['pid'], 'n': a['name'], 'v': round(v), 'won': won, 'dn': dn,
+                                                          'nb': sum(1 for b in (Rd.get('bets') or {}).values() if not b.get('auto')), 'na': sum(1 for b in (Rd.get('bets') or {}).values() if b.get('auto')), 'b': shown})
+    for lid in lg:
+        summ = {}
+        for w_, r in rd_cache.get(lid, {}).items():
+            rows = rows_of.get((lid, w_), []); rk = ranks('v', rows)
+            for x in rows: x['rk'] = rk[x['pid']]
+            rows.sort(key=lambda x: (x['rk'], x['n']))
+            body = {'rows': rows, 'st': r['st']}
+            if r['st'] == 'done':
+                body['podium'] = [{'pid': x['pid'], 'n': x['n'], 'v': x['v'], 'rk': x['rk']} for x in rows if x['rk'] <= 3]
+                for x in rows:
+                    S_ = summ.setdefault(x['pid'], {'pid': x['pid'], 'n': x['n'], 'pts': 0, 'rds': 0, 'w': 0})
+                    S_['pts'] += RD_POINTS.get(x['rk'], RD_POINTS_REST); S_['rds'] += 1; S_['w'] += x['rk'] == 1; S_['n'] = x['n']
+            if published.get(f'rdst{lid}{w_}') != json.dumps(body, sort_keys=True):
+                upd[f'lgv/{lid}/rdst/{w_}'] = body; published[f'rdst{lid}{w_}'] = json.dumps(body, sort_keys=True)
+        rows = sorted(summ.values(), key=lambda x: (-x['pts'], -x['w'], x['n'])); prev = None
+        for i, x in enumerate(rows): x['rk'] = prev['rk'] if prev and prev['pts'] == x['pts'] else i + 1; prev = x
+        body = {'rows': rows}
+        if published.get('rdsum' + lid) != json.dumps(body, sort_keys=True): upd[f'lgv/{lid}/rdsum'] = body; published['rdsum' + lid] = json.dumps(body, sort_keys=True)
+    if upd: fb('', 'PATCH', upd)
+    return n_auto
+
+# ---------- פידבק משחקנים → מסך המנהל ----------
+FB_KEEP, FB_PER_ACCT = 200, 20
+fb_log = {}            # fid -> {...} (נטען מ-adminFb בהפעלה)
+def feedback_tick(accts):
+    keys = None; dele = {}; new = 0
+    for sec, a in accts.items():
+        items = sorted(((a or {}).get('fbk') or {}).items(), key=lambda x: -((x[1] or {}).get('at', 0)))
+        for i, (fid, x) in enumerate(items):
+            dele[f'acct/{sec}/fbk/{fid}'] = None
+            if i < FB_PER_ACCT and isinstance(x, dict) and fid not in fb_log and isinstance(x.get('t'), str):   # הצפה מחשבון אחד – רק 20 אחרונים
+                fb_log[fid] = {'t': x['t'][:500], 'at': x.get('at', 0), 'pid': a.get('pid'), 'n': a.get('name', '')}; new += 1
+    if not dele: return 0
+    for fid in sorted(fb_log, key=lambda k: fb_log[k]['at'])[:-FB_KEEP]: fb_log.pop(fid)   # רק 200 אחרונים
+    fb('adminFb', 'PUT', fb_log or None)                     # קודם שומרים (לא קריא מבחוץ) …
+    keys = fb('adminKeys') or {}
+    for k in keys: fb(f'adminView/{k}/fb', 'PUT', fb_log or None)
+    for i in range(0, len(dele), 500): fb('', 'PATCH', dict(list(dele.items())[i:i + 500]))   # … ורק אז מוחקים מהחשבון
+    return new
+
 # ---------- מנהל ----------
 rid = lambda s: hashlib.sha256(s.encode()).hexdigest()[:10]
 def admin_tick(accts):
@@ -478,6 +656,7 @@ if __name__ == '__main__':
     fixtures.update(fb('fixtures') or {})
     for lg, v in (fb('pub/tables') or {}).items(): tables[lg] = v.get('rows', [])
     for e in (fb('pub/revealed') or {}): published['rv' + e] = ''        # כך ישנים יימחקו בסבב הראשון
+    fb_log.update(fb('adminFb') or {})
     for lid in fb_keys('lgv'): published['lgv' + lid] = ''           # כך ליגות שנמחקו יימחקו גם מ-lgv
     if not once:
         for p in ('acct', 'names', 'lgdef'): Mirror(p)
@@ -493,7 +672,9 @@ if __name__ == '__main__':
             if n: msg.append(f'settled {n}'); accts = fb('acct') or {}
             publish(accts, prev)
             admin_tick(accts)
-            leagues_tick(accts)
+            n_auto = rounds_tick(accts, leagues_tick(accts) or {})
+            if n_auto: msg.append(f'auto bets {n_auto}')
+            if feedback_tick(accts): msg.append('feedback')
             cleanup_names(accts)
             if int(time.time()) % 300 < POLL: heal_codes(accts)   # כל ~5 דקות
             fb('pub/meta/robotAt', 'PUT', now_ms())
