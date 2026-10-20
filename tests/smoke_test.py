@@ -100,11 +100,11 @@ try:
         R.fb('pub/standings', 'PUT', {'day': R.official_day(now), 'at': now, 'bank': 10000, 'rows': [
             {'pid': me0, 'n': name, 'pf': 40, 'won': 3, 'dn': 4, 'nb': 5, 'rk': 1, 'pp': 2}, {'pid': 'pzzzzzzzzzzzz1', 'n': 'זר', 'pf': -10, 'won': 1, 'dn': 2, 'nb': 2, 'rk': 2, 'pp': 1}]})
         pg.wait_for_function('() => S.standings && S.standings.rows && S.standings.rows.some(r => r.pf === 40)', timeout=15000)
-        pg.evaluate('() => render()'); txt = pg.locator('#app').inner_text()
+        pg.evaluate('() => { tblLive=false; render(); }'); txt = pg.locator('#app').inner_text()   # הבדיקה הזו – על הדירוג הרשמי
         check('75%' in txt and 'מתוך 4' in txt and '+40' in txt, 'טבלה: רווח כולל (+40) ו"75% מתוך 4"')
         check('עודכן לאחרונה' in pg.locator('#tblInfo').inner_text() and 'שבועית' not in txt, 'טבלה: "עודכן לאחרונה", בלי טבלה שבועית')
         check(pg.locator('.natc .mv').first.inner_text().strip().startswith('▲'), 'חץ: עלית מקום מאתמול')
-        R.fb('pub/standings', 'PUT', ST0); pg.evaluate("() => go('games')")
+        R.fb('pub/standings', 'PUT', ST0); pg.evaluate("() => { tblLive=null; go('games'); }")
         sec, a = acct(); check(a and a['wallet']['bal'] == 450 and len(a.get('bets') or {}) == 1, 'ההימור קיים בשרת')
         pg.reload(); pg.wait_for_function('() => (typeof A!=="undefined" && A) && A.wallet && Object.keys(A.bets||{}).length === 1', timeout=20000)
         check(True, 'אחרי רענון – ההימור עדיין שם')
@@ -131,6 +131,21 @@ try:
         res = pg.evaluate(SCORE_JS.replace('__E2__', E2))
         for where, r in res.items():
             check(r.get('ok'), f'תוצאה בכיוון הנכון (שערי הבית ליד קבוצת הבית): {where}' + ('' if r.get('ok') else f' {r}'))
+        # --- טבלה: דירוג לייב + לחיצה על שחקן מראה רק הימורים על משחקים שהתחילו
+        me1 = pg.evaluate('() => A.pid'); LV0 = R.fb('pub/standingsLive')
+        pg.evaluate(f"async () => {{ await write('PATCH','',{{['acct/'+SEC+'/bets/bopen77x01']:{{e:'{E}',m:'W',p:'2',s:77,o:4.0,at:SV}},['acct/'+SEC+'/wallet/bal']:A.wallet.bal-77,['acct/'+SEC+'/wallet/op']:'b:bopen77x01'}}); }}")
+        R.fb('', 'PATCH', {f'pub/revealed/{E2}': {f'{me1}_bseen00001': {'n': name, 'm': 'W', 'p': '1', 's': 30, 'o': 2.0, 'j': False, 'st': 'live-win'}},
+                           'pub/standingsLive': {'live': True, 'at': now, 'rows': [{'pid': me1, 'n': name, 'pf': 30, 'won': 1, 'dn': 2, 'rk': 1, 'pp': 2}]}})
+        pg.wait_for_function("() => S.stLive && S.stLive.rows && S.stLive.rows.length === 1 && S.revealed && Object.keys(S.revealed).length", timeout=15000)
+        pg.evaluate("() => { tblLive=null; setScope('all'); go('table'); }")
+        check(pg.locator('#liveSw button.on').inner_text().strip() == '🔴 לייב' and 'לייב' in pg.locator('#tblInfo').inner_text(), 'יש משחק חי → הטבלה פותחת בדירוג לייב')
+        pg.click(f'.lbd .r[data-pid="{me1}"]'); pg.wait_for_selector('#pbets', timeout=5000); pt = pg.locator('#sheet').inner_text()
+        check('ביחס 2.00' in pt and 'כרגע זוכה' in pt and '+30' in pt and '50% מתוך 2' in pt.replace('\n', ' '), 'לחיצה על שחקן: ההימורים שלו על משחקים שהתחילו + רווח, פגיעות, % מתוך N')
+        check('77' not in pt, 'לחיצה על שחקן: הימור על משחק שעוד לא התחיל – לא מוצג')
+        pg.evaluate('() => closeSheet()'); pg.click('#liveSw button:nth-child(2)')
+        check('עודכן לאחרונה' in pg.locator('#tblInfo').inner_text() or 'הלילה' in pg.locator('#tblInfo').inner_text(), 'מתג "רשמי (23:59)" מחזיר לדירוג היומי')
+        pg.evaluate("async () => { const b=A.bets.bopen77x01; await write('PATCH','',{['acct/'+SEC+'/bets/bopen77x01']:null,['acct/'+SEC+'/wallet/bal']:A.wallet.bal+77,['acct/'+SEC+'/wallet/op']:'c:bopen77x01'}); tblLive=null; go('games'); }")
+        R.fb('', 'PATCH', {f'pub/revealed/{E2}': None, 'pub/standingsLive': LV0})
         pg.evaluate("() => { go('table'); leagueMenu(); }"); pg.fill('#lgName', 'smoke league'); pg.click("button[onclick='createLeague()']")
         pg.wait_for_function('() => A && A.leagues && Object.values(A.leagues).some(l => l.own)', timeout=20000)
         check(True, 'פתיחת ליגת חברים מהאפליקציה'); pg.wait_for_selector('#sheet a[href^="https://wa.me/"]', timeout=10000)

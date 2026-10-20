@@ -184,5 +184,23 @@ check('ב-23:59 של מחר: הדירוג מתעדכן והחץ מראה את ה
 check('הקופה (בנק) מתעדכנת לייב בנפרד', db._get('pub/bank') is not None)
 R.now_ms = lambda: int(time.time() * 1000)
 
+print('--- דירוג לייב (בנוסף לרשמי): כולל משחקים שרצים, מתפרסם רק כשמשהו השתנה')
+db = fresh(); R.published.clear(); now = R.now_ms()
+R.fixtures['L1'] = {'lg': 'isr1', 'home': 'H', 'away': 'A', 'ko': now - 3600e3, 'st': 'live', 'h': 0, 'a': 0}
+R.fixtures['O1'] = {'lg': 'isr1', 'home': 'H', 'away': 'A', 'ko': now + 86400e3, 'st': 'none', 'h': 0, 'a': 0}
+pA = {'pid': 'pa', 'name': 'a', 'bets': {'x1': B_('L1', 100, 3.0, 'W', '1'), 'x2': B_('O1', 50)}}
+pB = {'pid': 'pb', 'name': 'b', 'bets': {'y1': B_('L1', 100, 2.0, 'W', 'X')}}
+accts = {'sA': pA, 'sB': pB}
+check('רווח לייב: משחק רץ 0-0 → מי שהימר תיקו "כרגע זוכה" +100, מי שהימר בית −100', R.stats_of(pB, True)[0] == 100 and R.stats_of(pA, True)[0] == -100 and R.stats_of(pA)[0] == 0)
+R.publish(accts); l1 = db._get('pub/standingsLive'); st1 = db._get('pub/standings')
+check('standingsLive פורסם: b ראשון, a שני, live=true', [r['pid'] for r in l1['rows']] == ['pb', 'pa'] and l1['live'] is True and 'nb' not in l1['rows'][0])
+R.publish(accts); check('בלי שינוי – לא מתפרסם שוב (חוסך תעבורה)', db._get('pub/standingsLive') == l1)
+pA['bets']['x3'] = B_('O1', 20); R.publish(accts); check('הימור חדש על משחק פתוח – הדירוג הלייב לא נשלח שוב', db._get('pub/standingsLive') == l1)
+R.fixtures['L1'].update({'h': 1}); R.publish(accts); l2 = db._get('pub/standingsLive')
+ra = [r for r in l2['rows'] if r['pid'] == 'pa'][0]
+check('גול 1-0: a עולה למקום 1 (+200), החץ מראה שהיה 2', ra['rk'] == 1 and ra['pf'] == 200 and ra['pp'] == 2)
+check('הדירוג הרשמי לא השתנה בגלל הגול (רק ב-23:59)', db._get('pub/standings') == st1)
+check('הימור על משחק שלא התחיל לא נחשף (pub/revealed)', not (db._get('pub/revealed') or {}).get('O1') and 'pa_x1' in (db._get('pub/revealed/L1') or {}) and db._get('pub/revealed/L1/pa_x1/o') == 3.0)
+
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)
