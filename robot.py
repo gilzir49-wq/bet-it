@@ -94,6 +94,11 @@ class Mirror:
             with self.lock: self.ready = False
             time.sleep(3)
 
+def fb_keys(path):
+    """רק המפתחות (shallow) – בלי להוריד את כל התוכן."""
+    req = urllib.request.Request(f'{DB}/{path}.json?shallow=true', headers={'Authorization': 'Bearer ' + tok()})
+    with urllib.request.urlopen(req, timeout=20) as r: return list((json.loads(r.read().decode() or 'null') or {}).keys())
+
 def ls(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     with urllib.request.urlopen(req, timeout=20) as r: return json.loads(r.read().decode())
@@ -372,7 +377,22 @@ def leagues_tick(accts):
         fb('', 'PATCH', dict(list(dead.items())[i:i + 500]))
     out = {k: v for k, v in out.items() if v['o']}
     sig = json.dumps(out, sort_keys=True)
-    if published.get('lg') != sig: fb('pub/lg', 'PUT', out or None); published['lg'] = sig
+    if published.get('lg') != sig: fb('pub/lg', 'PUT', out or None); published['lg'] = sig      # מעבר: לקוח ישן עוד קורא את זה (יימחק ב-PR הבא)
+    # פרטיות: כל ליגה בנתיב משלה lgv/<קוד> (קריא רק למי שיודע את הקוד), ולכולם רק מספרים
+    V = {r['pid']: r['v'] for r in json.loads(published.get('standings') or '{}').get('rows', [])}
+    rk = sorted(((lid, len(L['m']), sum(V.get(p, 0) for p in L['m']) / max(1, len(L['m']))) for lid, L in out.items() if len(L['m']) >= 2), key=lambda x: (-x[2], -x[1], x[0]))
+    rkof = {lid: {'rk': i + 1, 'of': len(rk), 'avg': round(avg)} for i, (lid, c, avg) in enumerate(rk)}
+    upd = {}
+    for lid, L in out.items():
+        body = {'n': L['n'], 'o': L['o'], 'm': L['m'], 'at': L['at'], 'rk': rkof.get(lid)}
+        if published.get('lgv' + lid) != json.dumps(body, sort_keys=True):
+            upd.update({f'lgv/{lid}/{k}': v for k, v in body.items()}); published['lgv' + lid] = json.dumps(body, sort_keys=True)
+    for k in [k for k in published if k.startswith('lgv') and k[3:] not in out]:
+        upd[f'lgv/{k[3:]}'] = None; published.pop(k)                      # ליגה שנמחקה
+    stats = {'leagues': len(out), 'players': len(by_pid)}
+    if published.get('stats') != json.dumps(stats, sort_keys=True): upd['pub/stats'] = stats; published['stats'] = json.dumps(stats, sort_keys=True)
+    if upd: fb('', 'PATCH', upd)
+    return out
 
 # ---------- מנהל ----------
 rid = lambda s: hashlib.sha256(s.encode()).hexdigest()[:10]
@@ -458,6 +478,7 @@ if __name__ == '__main__':
     fixtures.update(fb('fixtures') or {})
     for lg, v in (fb('pub/tables') or {}).items(): tables[lg] = v.get('rows', [])
     for e in (fb('pub/revealed') or {}): published['rv' + e] = ''        # כך ישנים יימחקו בסבב הראשון
+    for lid in fb_keys('lgv'): published['lgv' + lid] = ''           # כך ליגות שנמחקו יימחקו גם מ-lgv
     if not once:
         for p in ('acct', 'names', 'lgdef'): Mirror(p)
     last_refresh = 0

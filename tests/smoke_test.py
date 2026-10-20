@@ -17,7 +17,7 @@ open(os.path.join(site, 'index.html'), 'w', encoding='utf-8').write(html.replace
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 8765), functools.partial(http.server.SimpleHTTPRequestHandler, directory=site))
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 
-now = int(time.time() * 1000); E = '998' + str(now)[-6:]; E2 = '997' + str(now)[-6:]
+now = int(time.time() * 1000); E = '998' + str(now)[-6:]; E2 = '997' + str(now)[-6:]; CLEAN = {}
 R.fb(f'fixtures/{E}', 'PUT', {'lg': 'isr1', 'home': 'Maccabi Haifa', 'away': 'Hapoel Haifa', 'ko': now + 6 * 3600000, 'day': R.day_key(now + 6 * 3600000),
                               'st': 'none', 'h': 0, 'a': 0, 'odds': {'1': 2.0, 'X': 3.0, '2': 4.0, 'cs': {'1-0': 7.0}}})
 name = 'smoke' + ''.join(secrets.choice(string.ascii_lowercase) for _ in range(6))
@@ -118,6 +118,20 @@ try:
         pg.wait_for_function('() => A && A.leagues && Object.values(A.leagues).some(l => l.own)', timeout=20000)
         check(True, 'פתיחת ליגת חברים מהאפליקציה'); pg.wait_for_selector('#sheet a[href^="https://wa.me/"]', timeout=10000)
         check(pg.locator('#sheet a[href^="https://wa.me/"]').count() == 1, 'מסך הזמנה עם כפתור וואטסאפ'); pg.evaluate('() => closeSheet()')
+        # --- פרטיות ליגות: הטלפון מאזין רק לליגה שלו; ליגות אחרות – רק מספר
+        lid = pg.evaluate('() => Object.keys(A.leagues).find(l => A.leagues[l].own)'); me = pg.evaluate('() => A.pid')
+        R.fb('', 'PATCH', {f'pub/lg/{lid}': {'n': 'smoke league', 'o': me, 'm': {me: name}, 'at': now}, 'pub/lg/ZZZZZZ': {'n': 'ליגה של אחרים', 'o': 'px', 'm': {'px': 'זר'}}})   # רובוט ישן
+        pg.evaluate(f"() => {{ unsubs['lg_{lid}']&&unsubs['lg_{lid}'](); delete lgSubs['{lid}']; lgStreams(); }}")
+        pg.wait_for_function(f"() => S.lg['{lid}'] && S.lg['{lid}'].n === 'smoke league'", timeout=15000)
+        check(True, 'מעבר: כשאין lgv עדיין – נופל ל-pub/lg של הליגה שלי בלבד')
+        R.fb('', 'PATCH', {f'lgv/{lid}': {'n': 'smoke league', 'o': me, 'm': {me: name}, 'at': now, 'rk': {'rk': 2, 'of': 5, 'avg': 640}}, 'pub/stats': {'leagues': 6, 'players': 40}})
+        pg.wait_for_function(f"() => S.lg['{lid}'] && S.lg['{lid}'].rk && S.stats && S.stats.leagues === 6", timeout=15000)
+        check(pg.evaluate("() => Object.keys(S.lg).length === 1 && !S.lg.ZZZZZZ"), 'פרטיות: בטלפון יש רק את הליגה שלי (לא של אחרים)')
+        pg.evaluate("() => { go('table'); setScope('all'); setNS('leagues'); }")
+        t = pg.locator('#lgOthers').inner_text(); check('יש עוד 5 ליגות חברים' in t and 'ליגה של אחרים' not in pg.content(), 'ליגות אחרות: רק "יש עוד 5 ליגות" בלי שמות')
+        check('מקום 2 מתוך 5' in pg.content(), 'הדירוג של הליגה שלי מול כל הליגות')
+        R.fb('', 'PATCH', {'pub/lg/ZZZZZZ': None}); CLEAN.update({f'pub/lg/{lid}': None, f'lgv/{lid}': None})
+        pg.evaluate("() => { setNS('players'); go('games'); }")
         ctx2 = b.new_context(viewport={'width': 390, 'height': 844}); pg2 = ctx2.new_page()
         pg2.goto('http://127.0.0.1:8765/index.html'); pg2.wait_for_selector('#nameIn', timeout=20000)
         pg2.click("a[onclick^=\"loginWithCode\"]"); pg2.wait_for_selector('#codeIn', timeout=5000)
@@ -147,7 +161,7 @@ except Exception as ex:
     check(False, f'הבדיקה נתקעה: {ex}')
 finally:
     s, a = acct()
-    upd = {f'fixtures/{E}': None, f'fixtures/{E2}': None}
+    upd = {f'fixtures/{E}': None, f'fixtures/{E2}': None, **CLEAN}
     if s: upd.update({f'acct/{s}': None, f"names/{a['nk']}": None}); upd.update({f"rc/{a['rc']}": None} if a.get('rc') else {}); upd.update({f'lgdef/{l}': None for l in (a.get('leagues') or {})})
     upd.update({f'acct/{OTHER_SEC}': None, f'names/{OTHER_NAME}': None, f'rc/{OTHER_RC}': None, f'pub/profiles/{OTHER_PID}': None})
     R.fb('', 'PATCH', upd); srv.shutdown()

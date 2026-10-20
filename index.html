@@ -662,15 +662,24 @@ function listenAll(){
   stream('st','pub/standings', v=>{ S.standings=v; if(!sheetSt) render(); });
   stream('rv','pub/revealed', v=>{ S.revealed=v||{}; if(tab==='games'&&!sheetSt) render(); });
   stream('mt','pub/meta', v=>{ S.meta=v||{}; if(tab==='admin') render(); });
-  stream('lg','pub/lg', v=>{ S.lg=v||{}; if(tab==='table'&&!sheetSt) render(); });
+  stream('stats','pub/stats', v=>{ S.stats=v||{}; if(tab==='table'&&!sheetSt) render(); });
   stream('cnt','pub/cnt', v=>{ S.cnt=v||{}; if(tab==='games'&&!sheetSt) render(); });
   listenMine();
   if(AK) stream('av',`adminView/${AK}`, v=>{ AV=v||{}; if(tab==='admin') render(); });
 }
 function listenMine(){
-  if(SEC) stream('me',`acct/${SEC}`, v=>{ A=v; loaded.me=true; if(!A){ SEC=null; lsSet('bb_sec',null); } else { if(!A.rc && !ensureRc.busy) ensureRc(); const j=lsGet('bb_join'); if(j){ lsSet('bb_join',null); setTimeout(()=>joinLeague(j),700); } } render(); if(sheetSt&&!sheetSt.custom) renderSheet(); });
+  if(SEC) stream('me',`acct/${SEC}`, v=>{ A=v; loaded.me=true; if(!A){ SEC=null; lsSet('bb_sec',null); } else { if(!A.rc && !ensureRc.busy) ensureRc(); lgStreams(); const j=lsGet('bb_join'); if(j){ lsSet('bb_join',null); setTimeout(()=>joinLeague(j),700); } } render(); if(sheetSt&&!sheetSt.custom) renderSheet(); });
   else if(PENDING) stream('me',`acct/${PENDING}`, v=>{ if(v){ SEC=PENDING; PENDING=null; lsSet('bb_sec',SEC); lsSet('bb_pending',null); A=v; toast('השחזור אושר! ברוך השב 🎉',true); listenMine(); } render(); });
 }
+// פרטיות ליגות: מאזינים רק לליגות שאני חבר בהן (lgv/<קוד>). אף אחד לא מוריד את רשימת כל הליגות.
+const lgSubs={};
+function lgStreams(){ const want=new Set(Object.keys((A&&A.leagues)||{}));
+  Object.keys(lgSubs).forEach(l=>{ if(!want.has(l)){ if(unsubs['lg_'+l]){ unsubs['lg_'+l](); delete unsubs['lg_'+l]; } delete lgSubs[l]; delete S.lg[l]; } });
+  want.forEach(l=>{ if(lgSubs[l]) return; lgSubs[l]=1;
+    stream('lg_'+l,`lgv/${l}`, v=>{ if(v&&v.m){ S.lg[l]=v; if(tab==='table'&&!sheetSt) render(); return; }
+      readOnce(`pub/lg/${l}`).then(x=>{ if(x&&lgSubs[l]&&!(S.lg[l]&&S.lg[l].rk!==undefined)){ S.lg[l]=x; if(tab==='table'&&!sheetSt) render(); } }).catch(()=>{}); });   // מעבר: רובוט ישן עוד לא כתב lgv
+  }); }
+const otherLeagues = () => Math.max(0, ((S.stats&&S.stats.leagues)||0) - myLeagues().length);
 async function readOnce(path){ const F=await fbReady; return Promise.race([F.get(F.ref(F.db,path)).then(s=>s.val()), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]); }
 
 // ================= כתיבה: אישור מהשרת בלבד; דחייה של חוקי האבטחה = 'denied', בלי קליטה = 'fail' =================
@@ -900,14 +909,15 @@ function scopeMenu(){
   const mine=myLeagues(), row=(id,lab,sub)=>`<button class="${tblScope===id?'on':''}" data-s="${esc(id)}" onclick="closeSheet();setScope(this.dataset.s)">${lab}<span>${sub}</span></button>`;
   sheet(`<h2 style="margin:0 0 4px">איזו טבלה?</h2><div class="scpl">${row('all','🌍 ארצית',`${((S.standings&&S.standings.rows)||[]).length} שחקנים`)}
     ${mine.map(l=>row(l,'👥 '+esc(S.lg[l].n),`${Object.keys(S.lg[l].m||{}).length} חברים`)).join('')}</div>
+    <div class="muted" style="text-align:center;margin-top:10px">${otherLeagues()?`👥 יש עוד ${fmt(otherLeagues())} ליגות חברים בקהילה`:''}</div>
     <button class="btn sec" style="margin-top:12px" onclick="leagueMenu()">➕ פתח ליגה או הצטרף עם קוד</button>`);
 }
 function setNS(k){ natSub=k; lsSet('bb_ns',k); render(); }
-// ליגות החברים החזקות בארץ – לפי ממוצע השווי של החברים (מחושב מהטבלה הציבורית)
+// הדירוג של הליגות שלי מול כל ליגות החברים בארץ (הרובוט מחשב; שמות של ליגות אחרות לא מגיעים לטלפון)
 function leagueRanks(){
   const V={}; ((S.standings&&S.standings.rows)||[]).forEach(r=>V[r.pid]=r.v);
-  return Object.entries(S.lg||{}).map(([id,L])=>{ const ps=Object.keys(L.m||{}).filter(p=>V[p]!=null); return {id,n:L.n,cnt:Object.keys(L.m||{}).length,avg:ps.length?ps.reduce((t,p)=>t+V[p],0)/ps.length:0}; })
-    .filter(x=>x.cnt>=2).sort((a,b)=>b.avg-a.avg||b.cnt-a.cnt).map((x,i)=>({...x,rk:i+1}));
+  return myLeagues().map(id=>{ const L=S.lg[id], r=L.rk||{}; return {id,n:L.n,cnt:Object.keys(L.m||{}).length,rk:r.rk||0,of:r.of||0,avg:r.avg||0}; })
+    .sort((a,b)=>(a.rk||1e9)-(b.rk||1e9));          // הדירוג מחושב ברובוט מול כל הליגות; כאן רואים רק את שלך
 }
 function viewTable(){
   const st=S.standings, mode=tblMode, wk=weekKey(dayKey(Date.now())), me=A&&A.pid, mine=myLeagues();
@@ -933,10 +943,11 @@ function viewTable(){
       <div class="ft"><span>התחילה ב-${fmt(BANK_START)}</span><span>${bd>0?'הבנק מנצח את החבר׳ה 😈':bd<0?'החבר׳ה מנצחים את הבנק 🤑':'הבנק מחכה להימור הראשון'}</span></div></div></section>`; }
   if(all) h+=`<div class="chips" style="padding-top:0"><button class="chip ${natSub==='players'?'on':''}" onclick="setNS('players')">שחקנים</button><button class="chip ${natSub==='leagues'?'on':''}" onclick="setNS('leagues')">ליגות חברים</button></div>`;
   if(all && natSub==='leagues'){
-    const lr=leagueRanks(), shown=lr.filter(x=>x.rk<=10||mine.includes(x.id));
-    h+=`<div class="dayh" style="margin-top:8px">ליגת החברים הכי חזקה בארץ</div>`;
-    if(!shown.length) h+=`<div class="empty"><div class="e">👥</div>עוד אין ליגות חברים עם 2 חברים ומעלה</div>`;
-    h+=shown.map(x=>{ const m=mine.includes(x.id); return `<div class="lgr ${m?'mine':''}" ${m?`data-s="${esc(x.id)}" onclick="setScope(this.dataset.s)"`:''}><span class="n">${fmt(x.rk)}</span><span class="tx"><b>${esc(x.n)}${m?' · הליגה שלך':''}</b><span>${x.cnt} חברים · ממוצע ${fmt(x.avg)}</span></span></div>`; }).join('');
+    const lr=leagueRanks(), oth=otherLeagues();
+    h+=`<div class="dayh" style="margin-top:8px">הליגות שלך מול כל ליגות החברים בארץ</div>`;
+    if(!lr.length) h+=`<div class="empty"><div class="e">👥</div>${mine.length?'הליגה שלך תיכנס לדירוג כשיהיו בה 2 חברים ומעלה':'עוד אין לך ליגת חברים – פתח אחת והזמן את החבר׳ה'}</div>`;
+    h+=lr.map(x=>`<div class="lgr mine" data-s="${esc(x.id)}" onclick="setScope(this.dataset.s)"><span class="n">${x.rk?fmt(x.rk):'–'}</span><span class="tx"><b>${esc(x.n)} · הליגה שלך</b><span>${x.cnt} חברים${x.of?` · מקום ${fmt(x.rk)} מתוך ${fmt(x.of)} ליגות`:''}${x.avg?` · ממוצע ${fmt(x.avg)}`:''}</span></span></div>`).join('');
+    h+=`<div class="muted" id="lgOthers" style="text-align:center;margin:12px 0">👥 ${oth?`יש עוד ${fmt(oth)} ליגות חברים בקהילה – כל ליגה רואה רק את עצמה 🔒`:'עוד אין ליגות חברים אחרות בקהילה'}</div>`;
     return h+(my?`<div class="mesticky"><b>${fmt(my._rk)}</b><b>${esc(my.n)} (אתה)</b><b>${fmt(my.v)}</b></div>`:'');
   }
   h+=`<div class="mtabs" role="tablist" style="margin-top:4px"><button role="tab" aria-selected="${mode==='week'}" class="${mode==='week'?'on':''}" onclick="setTM('week')">שבועית <small style="font-weight:500;opacity:.7">${weekLabel(wk)}</small></button><button role="tab" aria-selected="${mode==='season'}" class="${mode==='season'?'on':''}" onclick="setTM('season')">עונתית</button></div>

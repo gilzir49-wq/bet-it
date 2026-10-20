@@ -22,7 +22,7 @@
         ".read": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/)",
         ".write": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/) && !data.exists() && newData.hasChildren(['name','nk','pid','joined','wallet']) && !newData.hasChild('bets') && !newData.hasChild('settled') && !newData.hasChild('jokers') && newData.child('wallet/bal').val() === 500 && newData.child('wallet/op').val() === 'init' && newData.child('wallet').hasChildren(['bal','op']) && !newData.child('wallet/wk').exists() && newData.parent().parent().child('names').child(newData.child('nk').val()).val() === newData.child('pid').val() && !root.child('names').child(newData.child('nk').val()).exists()",
         "name": {
-          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 20 && newData.val().matches(/^[^ .#$\\[\\]\\/<>\"`\\\\&;{}]([^.#$\\[\\]\\/<>\"`\\\\&;{}]{0,18}[^ .#$\\[\\]\\/<>\"`\\\\&;{}])?$/) && !newData.val().contains('\"') && !newData.val().contains('`') && !newData.val().contains('\\\\') && !newData.val().contains('&') && !newData.val().contains(';') && !newData.val().contains('{') && !newData.val().contains('}') && !newData.val().contains('<') && !newData.val().contains('>') && !newData.val().contains('\u200B') && !newData.val().contains('\u200C') && !newData.val().contains('\u200D') && !newData.val().contains('\u200E') && !newData.val().contains('\u200F') && !newData.val().contains('\u202A') && !newData.val().contains('\u202B') && !newData.val().contains('\u202C') && !newData.val().contains('\u202D') && !newData.val().contains('\u202E') && !newData.val().contains('\u2066') && !newData.val().contains('\u2067') && !newData.val().contains('\u2068') && !newData.val().contains('\u2069') && !newData.val().contains('\uFEFF') && !newData.val().contains('\u00AD') && !newData.val().contains('\u180E') && !newData.val().contains('\u061C')"
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 20 && newData.val().matches(/^[^ .#$\\[\\]\\/<>\"`\\\\&;{}]([^.#$\\[\\]\\/<>\"`\\\\&;{}]{0,18}[^ .#$\\[\\]\\/<>\"`\\\\&;{}])?$/) && !newData.val().contains('\"') && !newData.val().contains('`') && !newData.val().contains('\\\\') && !newData.val().contains('&') && !newData.val().contains(';') && !newData.val().contains('{') && !newData.val().contains('}') && !newData.val().contains('<') && !newData.val().contains('>') && !newData.val().contains('\u200b') && !newData.val().contains('\u200c') && !newData.val().contains('\u200d') && !newData.val().contains('\u200e') && !newData.val().contains('\u200f') && !newData.val().contains('\u202a') && !newData.val().contains('\u202b') && !newData.val().contains('\u202c') && !newData.val().contains('\u202d') && !newData.val().contains('\u202e') && !newData.val().contains('\u2066') && !newData.val().contains('\u2067') && !newData.val().contains('\u2068') && !newData.val().contains('\u2069') && !newData.val().contains('\ufeff') && !newData.val().contains('\u00ad') && !newData.val().contains('\u180e') && !newData.val().contains('\u061c')"
         },
         "nk": {
           ".validate": "newData.isString() && newData.val() === newData.parent().child('name').val().toLowerCase().replace(' ', '')"
@@ -115,10 +115,21 @@
     "lgdef": {
       "$lid": {
         ".read": "$lid.matches(/^[A-HJ-NP-Z2-9]{6}$/)",
-        ".write": "!data.exists() && $lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['n','at']) && newData.child('n').isString() && newData.child('n').val().length >= 2 && newData.child('n').val().length <= 24 && !newData.child('n').val().matches(/[<>\"`\\\\&;{}]/) && newData.child('at').isNumber() && newData.child('at').val() <= now + 60000 && !newData.child('n').val().contains('\"') && !newData.child('n').val().contains('`') && !newData.child('n').val().contains('\\\\') && !newData.child('n').val().contains('&') && !newData.child('n').val().contains(';') && !newData.child('n').val().contains('{') && !newData.child('n').val().contains('}') && !newData.child('n').val().contains('<') && !newData.child('n').val().contains('>') && !newData.child('n').val().contains('\u200B') && !newData.child('n').val().contains('\u200C') && !newData.child('n').val().contains('\u200D') && !newData.child('n').val().contains('\u200E') && !newData.child('n').val().contains('\u200F') && !newData.child('n').val().contains('\u202A') && !newData.child('n').val().contains('\u202B') && !newData.child('n').val().contains('\u202C') && !newData.child('n').val().contains('\u202D') && !newData.child('n').val().contains('\u202E') && !newData.child('n').val().contains('\u2066') && !newData.child('n').val().contains('\u2067') && !newData.child('n').val().contains('\u2068') && !newData.child('n').val().contains('\u2069') && !newData.child('n').val().contains('\uFEFF') && !newData.child('n').val().contains('\u00AD') && !newData.child('n').val().contains('\u180E') && !newData.child('n').val().contains('\u061C')",
-        "n": { ".validate": true },
-        "at": { ".validate": true },
-        "$x": { ".validate": false }
+        ".write": "!data.exists() && $lid.matches(/^[A-HJ-NP-Z2-9]{6}$/) && newData.hasChildren(['n','at']) && newData.child('n').isString() && newData.child('n').val().length >= 2 && newData.child('n').val().length <= 24 && !newData.child('n').val().matches(/[<>\"`\\\\&;{}]/) && newData.child('at').isNumber() && newData.child('at').val() <= now + 60000 && !newData.child('n').val().contains('\"') && !newData.child('n').val().contains('`') && !newData.child('n').val().contains('\\\\') && !newData.child('n').val().contains('&') && !newData.child('n').val().contains(';') && !newData.child('n').val().contains('{') && !newData.child('n').val().contains('}') && !newData.child('n').val().contains('<') && !newData.child('n').val().contains('>') && !newData.child('n').val().contains('\u200b') && !newData.child('n').val().contains('\u200c') && !newData.child('n').val().contains('\u200d') && !newData.child('n').val().contains('\u200e') && !newData.child('n').val().contains('\u200f') && !newData.child('n').val().contains('\u202a') && !newData.child('n').val().contains('\u202b') && !newData.child('n').val().contains('\u202c') && !newData.child('n').val().contains('\u202d') && !newData.child('n').val().contains('\u202e') && !newData.child('n').val().contains('\u2066') && !newData.child('n').val().contains('\u2067') && !newData.child('n').val().contains('\u2068') && !newData.child('n').val().contains('\u2069') && !newData.child('n').val().contains('\ufeff') && !newData.child('n').val().contains('\u00ad') && !newData.child('n').val().contains('\u180e') && !newData.child('n').val().contains('\u061c')",
+        "n": {
+          ".validate": true
+        },
+        "at": {
+          ".validate": true
+        },
+        "$x": {
+          ".validate": false
+        }
+      }
+    },
+    "lgv": {
+      "$lid": {
+        ".read": "$lid.matches(/^[A-HJ-NP-Z2-9]{6}$/)"
       }
     },
     "rc": {
@@ -130,9 +141,15 @@
     "recoverReq": {
       "$secret": {
         ".write": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/) && !data.exists() && !root.child('acct').child($secret).exists() && newData.hasChildren(['nk','at']) && root.child('names').child(newData.child('nk').val()).exists()",
-        "nk": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 20" },
-        "at": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
-        "$x": { ".validate": false },
+        "nk": {
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 20"
+        },
+        "at": {
+          ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+        },
+        "$x": {
+          ".validate": false
+        },
         ".read": "$secret.matches(/^s[a-zA-Z0-9]{40,64}$/)"
       }
     },
