@@ -134,35 +134,6 @@ try:
         check('מקום 2 מתוך 5' in pg.content(), 'הדירוג של הליגה שלי מול כל הליגות')
         R.fb('', 'PATCH', {'pub/lg/ZZZZZZ': None}); CLEAN.update({f'pub/lg/{lid}': None, f'lgv/{lid}': None})
         pg.evaluate("() => { setNS('players'); go('games'); }")
-        # --- המחזור השבועי: בעל הליגה בוחר → (הרובוט פותח וחלק ערימות) → הימור מהערימה → תזכורת → הזמנה → פידבק
-        WK = R.week_key(now)
-        if R.week_end_ms(WK) - now > 10 * 3600000:
-            pg.evaluate(f"() => {{ go('table'); setScope('{lid}'); }}"); pg.wait_for_selector('#rdPick', timeout=15000)
-            pg.click('#rdPick'); pg.wait_for_selector('#rdFx', timeout=5000)
-            for e in (E, E3, E4): pg.check(f'#rdFx input[value="{e}"]')
-            pg.click('#rdGo')
-            for _ in range(20):
-                pk = (((acct()[1] or {}).get('rdpick') or {}).get(lid) or {}).get(WK)
-                if pk: break
-                time.sleep(0.5)
-            check(pk and set(pk['fx']) == {E, E3, E4}, 'בעל הליגה בחר משחקי מחזור מהאפליקציה')
-            sec_ = acct()[0]
-            R.fb('', 'PATCH', {f'lgv/{lid}/rd/{WK}': {'fx': {E: True, E3: True, E4: True}, 'by': 'owner', 'st': 'open', 'at': now, 'dl': now + 6 * 3600000 - 120000},
-                               f'acct/{sec_}/rd/{lid}/{WK}/wallet': {'bal': 1000, 'op': 'init'}})          # כמו שהרובוט עושה
-            pg.wait_for_selector('#rdLeft', timeout=15000)
-            check('נשארו לך 3 משחקים להמר' in pg.locator('#rdLeft').inner_text(), 'תזכורת "נשארו לך 3 משחקים להמר"')
-            pg.click(f'#rdSec ~ .card button.ob[data-e="{E}"][data-p="1"]'); pg.wait_for_selector('#sheet .mtag', timeout=5000)
-            check(pg.locator('#sheet .jk').count() == 0, 'גיליון הימור במצב מחזור (בלי ג׳וקר)')
-            pg.fill('#stakeIn', '100'); pg.click('#betBtn')
-            pg.wait_for_function(f"() => {{ const R=myRd('{lid}'); return R && R.wallet.bal === 900 && Object.keys(R.bets||{{}}).length === 1; }}", timeout=20000)
-            a2 = acct()[1]; check(a2['rd'][lid][WK]['wallet']['bal'] == 900 and a2['wallet']['bal'] == 500, 'הימור במחזור יורד מהערימה (900), היתרה הראשית לא נגעה (500)')
-            pg.wait_for_function("() => document.getElementById('rdLeft') && document.getElementById('rdLeft').innerText.includes('נשארו לך 2')", timeout=10000); check(True, 'התזכורת התעדכנה ל-2')
-            R.fb(f'lgv/{lid}/rdst/{WK}', 'PUT', {'st': 'open', 'rows': [{'pid': me, 'n': name, 'v': 1000, 'won': 0, 'dn': 0, 'nb': 1, 'rk': 1}]})
-            pg.wait_for_selector('.rdt .r.me', timeout=10000); check(True, 'טבלת המחזור מוצגת')
-            pg.evaluate("() => { window.__wa=null; window.open=u=>{ window.__wa=u; return null; }; }"); pg.click('#rdInv')
-            inv = urllib.parse.unquote(pg.evaluate('() => window.__wa') or '')
-            check('היי אח, נפתח המחזור בליגה שלנו' in inv and 'להמר' in inv and f'#join={lid}' in inv, 'הודעת וואטסאפ "נפתח המחזור"')
-        else: print('⏭️  סוף השבוע קרוב – מדלג על בדיקת המחזור')
         pg.evaluate("() => go('mine')"); pg.click('#fbBtn'); pg.fill('#fbIn', 'בדיקת פידבק – "אחלה" משחק'); pg.click('#fbGo')
         pg.wait_for_function('() => A && A.fbk && Object.keys(A.fbk).length === 1', timeout=15000); check(True, 'שליחת פידבק')
         ctx2 = b.new_context(viewport={'width': 390, 'height': 844}); pg2 = ctx2.new_page()

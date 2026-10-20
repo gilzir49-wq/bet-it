@@ -133,53 +133,30 @@ R.admin_tick(db._get('acct'))
 check('שחזור תקין: החשבון עבר לטלפון החדש עם כל הז\'יטונים', (db._get('acct/sNew') or {}).get('wallet', {}).get('bal') == 777)
 check('שחזור תקין: הישן נמחק רק אחרי אימות, הקוד עבר', db._get('acct/sOld') is None and db._get('rc/RC1') == 'sNew')
 
-# ---------- המחזור השבועי ----------
-print('--- מחזור שבועי: בחירה אוטומטית והימור של הבית')
-check('חמישי 12:00 בישראל (שבוע של 20.10)', R.autopick_at('2026-10-20') == ms(2026, 10, 22, 9, 0))       # IDT = UTC+3
-check('סוף השבוע: שני בחצות (אחרי מעבר לשעון חורף)', R.week_end_ms('2026-10-20') == ms(2026, 10, 26, 22, 0))  # IST = UTC+2
-db = fresh(); now = R.now_ms(); wk = R.week_key(now); end = R.week_end_ms(wk)
-R.tables['eng'] = [{'t': f'E{i}'} for i in range(1, 21)]
-t0 = min(now + 3 * 3600e3, end - 3 * 3600e3)
-od = {'1': 2.0, 'X': 3.0, '2': 4.0}
-for i in range(10): R.fixtures[f'i{i}'] = {'lg': 'isr1', 'home': f'H{i}', 'away': f'A{i}', 'ko': t0 + i * 1000, 'st': 'none', 'odds': od}
-for i, (h, a) in enumerate([('E1', 'E2'), ('E19', 'E20'), ('E3', 'E5'), ('E10', 'E11'), ('E4', 'E6')]):
-    R.fixtures[f'e{i}'] = {'lg': 'eng', 'home': h, 'away': a, 'ko': t0 + i * 1000, 'st': 'none', 'odds': od}
-R.fixtures['late'] = {'lg': 'isr1', 'home': 'x', 'away': 'y', 'ko': end + 3600e3, 'st': 'none', 'odds': od}
-R.fixtures['soon'] = {'lg': 'isr1', 'home': 'x', 'away': 'y', 'ko': now + 60000, 'st': 'none', 'odds': od}
-pk = R.auto_pick(wk, now)
-check('בחירה אוטומטית: עד 12 משחקים', len(pk) == 12)
-check('…כל ליגת העל (עד 9) + 3 הגדולים בפרמייר ליג', sum(e.startswith('i') for e in pk) == 9 and set(e for e in pk if e.startswith('e')) == {'e0', 'e2', 'e4'})
-check('…בלי משחק של השבוע הבא ובלי משחק שכבר ננעל', 'late' not in pk and 'soon' not in pk)
-R.fixtures.clear(); R.fixtures.update({'x1': {'lg': 'ita', 'home': 'a', 'away': 'b', 'ko': t0, 'st': 'none', 'odds': od}, 'x2': {'lg': 'ita', 'home': 'c', 'away': 'd', 'ko': t0 + 1, 'st': 'none', 'odds': od},
-                                       'x3': {'lg': 'isr2', 'home': 'e', 'away': 'f', 'ko': t0 + 2, 'st': 'none', 'odds': od}})
-check('שבוע בלי ליגת העל (פגרה) – משלים מאיטליה/לאומית', sorted(R.auto_pick(wk, now)) == ['x1', 'x2', 'x3'])
-check('הצד של הימור אוטומטי קבוע (ריצה חוזרת לא משנה) ומתוך 1/X/2', R.rd_pick_side('p1', 'e', wk) == R.rd_pick_side('p1', 'e', wk) in ('1', 'X', '2'))
-sides = {R.rd_pick_side(f'p{i}', 'e', wk) for i in range(30)}; check('…ומתפזר בין כל שלוש האפשרויות', sides == {'1', 'X', '2'})
-# הימור של הבית
-db = fresh(); F3 = ['f1', 'f2', 'f3']
-for e in F3: R.fixtures[e] = {'lg': 'isr1', 'home': 'H', 'away': 'A', 'ko': now - 60000, 'st': 'none', 'odds': od}
-R.rd_cache['L1'] = {wk: {'fx': {e: True for e in F3}}}
-db._set('acct/sA', {'pid': 'pa', 'name': 'a', 'rd': {'L1': {wk: {'wallet': {'bal': 1000, 'op': 'init'}}}}})
-check('הימור אוטומטי כשאין הימור', R.auto_bet('sA', 'L1', wk, 'f1') == 1)
-Rd = db._get('acct/sA/rd/L1/' + wk); b = list(Rd['bets'].values())[0]
-check('…סכום = הערימה / משחקים שנותרו (1000/3 = 333), auto:true, ביחס של הנעילה', b['s'] == 333 and b['auto'] is True and b['o'] == od[b['p']] and Rd['wallet']['bal'] == 667)
-check('לא נוצר פעמיים', R.auto_bet('sA', 'L1', wk, 'f1') == 0 and len(db._get('acct/sA/rd/L1/' + wk)['bets']) == 1)
-db._set('acct/sA/rd/L1/' + wk + '/bets/bmine', {'e': 'f2', 'm': 'W', 'p': '1', 's': 600, 'o': 2.0})
-db._set('acct/sA/rd/L1/' + wk + '/wallet/bal', 67)
-check('לא נוצר כשיש לשחקן הימור משלו', R.auto_bet('sA', 'L1', wk, 'f2') == 0)
-check('לא חורג מהערימה (נשארו 67 → מהמר 67, לא מינימום 10 מעבר)', R.auto_bet('sA', 'L1', wk, 'f3') == 1 and db._get('acct/sA/rd/L1/' + wk)['wallet']['bal'] == 0)
-db._set('acct/sB', {'pid': 'pb', 'name': 'b', 'rd': {'L1': {wk: {'wallet': {'bal': 0, 'op': 'x'}}}}})
-check('ערימה ריקה – אין הימור אוטומטי', R.auto_bet('sB', 'L1', wk, 'f1') == 0)
-db._set('acct/sC', {'pid': 'pc', 'name': 'c', 'rd': {'L1': {wk: {'wallet': {'bal': 25, 'op': 'x'}}}}})
-R.auto_bet('sC', 'L1', wk, 'f1'); check('מינימום 10 (25/3 → 10)', list(db._get('acct/sC/rd/L1/' + wk)['bets'].values())[0]['s'] == 10)
-db._set('acct/sD', {'pid': 'pd', 'name': 'd'})
-check('בלי ערימה (לא חבר במחזור) – אין הימור', R.auto_bet('sD', 'L1', wk, 'f1') == 0)
-# סגירה לתוך ערימת המחזור בלבד
-for e, (h, a) in zip(F3, [(2, 0), (1, 1), (0, 3)]): R.fixtures[e].update({'st': 'finished', 'h': h, 'a': a})
-db._set('acct/sA/wallet', {'bal': 500, 'wk': R.week_key(now)}); db._set('acct/sA/joined', now)
-R.settle_account('sA'); a = db._get('acct/sA')
-won = sum(x['pay'] for x in a['rd']['L1'][wk]['settled'].values())
-check('סגירת מחזור נכנסת לערימת המחזור בלבד; היתרה הראשית 500', a['wallet']['bal'] == 500 and a['rd']['L1'][wk]['wallet']['bal'] == won and not a.get('settled'))
+# ---------- ניקוי המחזור שבוטל ----------
+print('--- ניקוי "המחזור השבועי" (אסור לגעת ביתרה הראשית)')
+db = fresh(); now = R.now_ms()
+main = {'pid': 'pa', 'name': 'a', 'wallet': {'bal': 734, 'op': 's:b1', 'wk': 'w'}, 'bets': {'b1': {'e': '1', 'm': 'W', 'p': '1', 's': 50, 'o': 2.0}}, 'settled': {'b1': {'st': 'won', 'pay': 100}}, 'leagues': {'L1': {'at': 1}}}
+db._set('acct/sA', {**main, 'rd': {'L1': {'2026-10-20': {'wallet': {'bal': 900}}}}, 'rdpick': {'L1': {'2026-10-20': {'fx': {'1': True}}}}})
+db._set('acct/sB', dict(main, pid='pb'))
+db._set('lgv/L1', {'n': 'x', 'o': 'pa', 'm': {'pa': 'a'}, 'rd': {'w': {'fx': {}}}, 'rdst': {'w': {'rows': []}}, 'rdsum': {'rows': []}})
+R.fb_keys = lambda path: list((db._get(path) or {}).keys())
+n = R.cleanup_rounds(db._get('acct'))
+a = db._get('acct/sA')
+check('ניקוי: נתוני המחזור נמחקו מהחשבון', 'rd' not in a and 'rdpick' not in a)
+check('ניקוי: היתרה הראשית, ההימורים, הסגירות והליגות – זהים בדיוק', {k: a[k] for k in main} == main)
+check('ניקוי: עותק בארכיון לפני המחיקה', db._get('archive/rounds/acct/sA/rd/L1/2026-10-20/wallet/bal') == 900)
+check('ניקוי: חשבון בלי מחזור – לא נגעו בו', db._get('acct/sB') == dict(main, pid='pb'))
+L = db._get('lgv/L1'); check('ניקוי: טבלאות מחזור נמחקו מהליגה, החברים נשארו', L == {'n': 'x', 'o': 'pa', 'm': {'pa': 'a'}} and db._get('archive/rounds/lgv/L1/rdsum') == {'rows': []})
+db = fresh(); db._set('acct/sC', {**main, 'rd': {'L1': {'w': {'wallet': {'bal': 5}}}}}); db.drop_put = set()
+orig = db.__call__
+class Drop(FakeDB):
+    def __call__(self, path, method='GET', body=None, etag=False, if_match=None):
+        if path.startswith('archive') and method == 'PATCH': return None                 # הארכיון "נכשל"
+        return FakeDB.__call__(self, path, method, body, etag, if_match)
+d2 = Drop(); d2.d = db.d; R.fb = d2; R.published.clear()
+R.cleanup_rounds(d2._get('acct'))
+check('ניקוי: אם ההעתקה לארכיון נכשלה – לא מוחקים כלום', d2._get('acct/sC/rd/L1/w/wallet/bal') == 5)
 
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)
