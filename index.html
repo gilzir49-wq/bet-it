@@ -806,7 +806,12 @@ function fxCard(f){
     h+=`<div class="mybet ${b.j?'jk':''}"><span>שלך: <b>${esc(pickLabel(f,b))} · ${fmt(b.s)}</b>${b.j?' <b style="color:var(--p2)">×2</b>':''} <span style="color:var(--mut)">ביחס ${b.o.toFixed(2)}</span></span>
       <span style="display:flex;align-items:center;gap:8px">${statusPill(st,b,f)}${!L?`<button class="x" style="border:0;color:var(--mut);padding:2px 6px" title="בטל" onclick="cancelBet('${id}')">✕</button>`:''}</span></div>`; });
   const rv=Object.values(S.revealed[f.id]||{}), cnt=(S.cnt&&S.cnt[f.id])||0;
-  if(rv.length) h+=`<details class="who"><summary>👀 מי הימר מה · ${rv.length}</summary>${rv.map(b=>`<div class="wr"><span>${b.j?'🃏 ':''}${esc(b.n)}</span><span>${esc(pickLabel(f,b))} · ${fmt(b.s)} ${statusPill(b.st,b,f)}</span></div>`).join('')}</details>`;
+  if(rv.length){   // אחרי שהמשחק מתחיל – ההימורים של כולם פתוחים לעיני כולם, החברים מהליגות שלך קודם
+    const friends=new Set(); Object.values(S.lg||{}).forEach(L=>Object.values((L&&L.m)||{}).forEach(n=>friends.add(n)));
+    const me=A&&A.name, ord=b=>b.n===me?0:friends.has(b.n)?1:2, list=rv.slice().sort((a,b)=>ord(a)-ord(b)||b.s-a.s);
+    const W=rv.filter(b=>b.m==='W'), c={'1':0,'X':0,'2':0}; W.forEach(b=>c[b.p]++); const cs=rv.length-W.length;
+    const sum=`<div class="muted" style="font-size:12px;margin:6px 2px">${esc(he(f.home))} ${c['1']} · תיקו ${c.X} · ${esc(he(f.away))} ${c['2']}${cs?` · מדויק ${cs}`:''}</div>`;
+    h+=`<details class="who" ${f.st!=='none'?'open':''}><summary>👀 ההימורים של כולם · ${rv.length}</summary>${sum}${list.map(b=>`<div class="wr"><span>${ord(b)===0?'⭐ ':ord(b)===1?'👥 ':''}${b.j?'🃏 ':''}${esc(b.n)}</span><span>${esc(pickLabel(f,b))} · ${fmt(b.s)} ${statusPill(b.st,b,f)}</span></div>`).join('')}</details>`; }
   else if(!L && cnt) h+=`<div class="crowd"><span class="av">${Array.from({length:Math.min(3,cnt)},(_,i)=>`<span style="background:${['#3A4470','#5A4A8A','#2E6B5A'][i]}"></span>`).join('')}</span>${cnt} מהחבר׳ה כבר הימרו · נחשף בנעילה</div>`;
   return h+`</article>`;
 }
