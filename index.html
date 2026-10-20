@@ -522,6 +522,19 @@ canvas#conf{position:fixed;inset:0;pointer-events:none;z-index:90}
 .ntf>div{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--line)}.ntf>div:last-child{border-bottom:0}
 .ntf .tx{flex:1;display:flex;flex-direction:column;gap:2px}.ntf b{font-size:14px}.ntf .tx span{font-size:12px;color:var(--mut)}
 .soon{font-size:11px;font-weight:900;color:var(--p2);background:rgba(169,123,255,.14);border-radius:999px;padding:3px 9px;white-space:nowrap}
+/* המפגש השבועי */
+.mtl{display:flex;flex-direction:column;gap:8px}.mtc{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:right;background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:12px 14px;color:var(--txt);cursor:pointer}
+.mtc b{font-size:16px}.mtc span{font-size:12.5px;color:var(--mut)}.mst{font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px;background:var(--card3);color:var(--txt2)}.mst.live{background:rgba(255,77,94,.18);color:#FF6B7A}.mst.done{color:var(--mut)}
+.mtsum,.mtt{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:6px 12px;margin-top:6px}.mtsum>b{display:block;padding:8px 0 4px}
+.mtsum .r,.mtt .r{display:grid;grid-template-columns:28px 1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}.mtt .r:first-child{border-top:0}.mtt .r.me{color:var(--gold)}.mtt .n,.mtsum .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mtt .v{font-variant-numeric:tabular-nums}
+.mtt.big .r{font-size:28px;padding:16px 0;grid-template-columns:56px 1fr auto auto}.mthd{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.mtw{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--gold);border-radius:16px;padding:12px 14px;margin-top:12px}.mtw b{font-size:24px;color:var(--gold)}.mtw .btn{width:auto;padding:10px 16px}
+.mtfx{display:flex;flex-direction:column;gap:6px;max-height:40vh;overflow:auto}.mtfx label{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:13.5px;background:var(--card);border-radius:12px;padding:9px 10px}
+.mtfr .tt{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0}.mtfr .sc{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}.mtag{font-size:12px;color:var(--gold)}
+.podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;margin:12px 0}.podium>div{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--card);border-radius:16px;padding:12px 6px;text-align:center}.podium .p1{order:2;padding-top:26px;border:1px solid var(--gold)}.podium .p2{order:1}.podium .p3{order:3}.podium span:first-child{font-size:30px}
+#tv{position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 50% 0,#1c1f4a,#070A14 70%);color:var(--txt);padding:24px 5vw;overflow:auto;display:none}#tv.show{display:block}#tv h1{font-size:44px;text-align:center;margin:10px 0}
+#tv .tvx{position:absolute;top:14px;left:14px;width:44px;height:44px;border-radius:50%;border:1px solid #555;background:transparent;color:#ccc;font-size:18px;cursor:pointer}.tvfx{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:16px}.tvfx span{background:var(--card);border-radius:12px;padding:8px 14px;font-size:20px}.tvfx .lv{border:1px solid #FF6B7A}
+.afb{padding:8px 16px;border-top:1px solid var(--line)}.afb div{white-space:pre-wrap;margin-top:3px}
 </style>
 </head>
 <body>
@@ -579,7 +592,7 @@ const DB = 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app';
 <script>
 // ================= מצב =================
 // ציבורי: משחקים, טבלאות, דירוג, הימורים שנחשפו. פרטי: החשבון שלי בלבד (לפי המפתח הסודי של המכשיר).
-let S = { fixtures:{}, tables:{}, standings:null, revealed:{}, meta:{}, lg:{} };
+let S = { fixtures:{}, tables:{}, standings:null, revealed:{}, meta:{}, lg:{}, mt:{}, mtsum:{}, mtst:{} };
 let A = null;            // החשבון שלי (acct/<secret>) – רק מי שמחזיק את המפתח יכול לקרוא/לכתוב
 let AV = null;           // תצוגת מנהל
 let connected=false, loaded={}, seenGoals=null, goalTimer=null;
@@ -625,6 +638,7 @@ function grabCode(){ const m=location.hash.match(/(?:^#|&)code=([^&]*)/); if(!m)
   const rest=location.hash.replace(/^#/,'').split('&').filter(x=>x&&!x.startsWith('code=')).join('&');
   history.replaceState(null,'',location.pathname+location.search+(rest?'#'+rest:'')); try{ return decodeURIComponent(m[1]); }catch(e){ return m[1]; } }
 const CODE_IN_LINK=grabCode();
+(function grabMt(){ const m=location.hash.match(/(?:^#|&)mt=(m[a-z0-9]{8,20})(?=&|$)/); if(m){ lsSet('bb_mtgo',m[1]); if(!/join=/.test(location.hash)) history.replaceState(null,'',location.pathname+location.search); } })();
 (function grabJoin(){ const m=location.hash.match(/join=([A-Za-z0-9]{6})/); if(m){ lsSet('bb_join',m[1].toUpperCase()); history.replaceState(null,'',location.pathname+location.search); } })();
 (function grabAdminKey(){ const m=location.hash.match(/k=(k[A-Za-z0-9]{40})/); if(m){ AK=m[1]; lsSet('bb_ak',AK); history.replaceState(null,'',location.pathname+location.search); tab='admin'; } })();
 
@@ -668,7 +682,7 @@ function listenAll(){
   if(AK) stream('av',`adminView/${AK}`, v=>{ AV=v||{}; if(tab==='admin') render(); });
 }
 function listenMine(){
-  if(SEC) stream('me',`acct/${SEC}`, v=>{ A=v; loaded.me=true; if(!A){ SEC=null; lsSet('bb_sec',null); } else { if(!A.rc && !ensureRc.busy) ensureRc(); const j=lsGet('bb_join'); if(j){ lsSet('bb_join',null); setTimeout(()=>joinLeague(j),700); } } render(); if(sheetSt&&!sheetSt.custom) renderSheet(); });
+  if(SEC) stream('me',`acct/${SEC}`, v=>{ A=v; loaded.me=true; if(!A){ SEC=null; lsSet('bb_sec',null); } else { if(!A.rc && !ensureRc.busy) ensureRc(); mtStreams(); const j=lsGet('bb_join'); if(j){ lsSet('bb_join',null); setTimeout(()=>joinLeague(j),700); } } render(); if(sheetSt&&!sheetSt.custom) renderSheet(); });
   else if(PENDING) stream('me',`acct/${PENDING}`, v=>{ if(v){ SEC=PENDING; PENDING=null; lsSet('bb_sec',SEC); lsSet('bb_pending',null); A=v; toast('השחזור אושר! ברוך השב 🎉',true); listenMine(); } render(); });
 }
 async function readOnce(path){ const F=await fbReady; return Promise.race([F.get(F.ref(F.db,path)).then(s=>s.val()), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]); }
@@ -883,6 +897,7 @@ function viewMine(){
     ${POKER?`<div class="card" style="text-align:center"><div class="muted" style="margin-bottom:8px">הקופה שלך על השולחן</div>${stacksHTML(a.avail,true)}<div class="muted" style="margin-top:6px">כל 1,000 ז'יטונים = מטיל זהב 🥇</div></div>`:''}`;
   h+=`<div class="codec"><span class="ki">${IC.key}</span><span class="tx"><b>קוד הכניסה שלך</b><span>${esc(fmtRc(A.rc||'').slice(0,4))}${A.rc?'-••••-••••':'…'}</span></span><button onclick="showCode(A.rc)" ${A.rc?'':'disabled'}>הצג</button><button aria-label="שלח לעצמי בוואטסאפ" data-c="${esc(A.rc||'')}" data-n="${esc(A.name)}" onclick="sendSelfWA(this.dataset.c,this.dataset.n)" ${A.rc?'':'disabled'}>📲</button></div>
     <div class="muted" style="margin:6px 4px 0;font-size:12px">לכניסה מטלפון או מחשב נוסף. אל תשתף.</div>`;
+  h+=`<button class="btn sec" id="fbBtn" style="margin-top:12px" onclick="feedbackSheet()">💬 שלח פידבק</button>`;
   return h+`<footer>מחובר כ-${esc(A.name)} 🔐</footer>`;
 }
 // ================= טבלאות: ארצית + ליגות חברים =================
@@ -910,6 +925,7 @@ function leagueRanks(){
     .filter(x=>x.cnt>=2).sort((a,b)=>b.avg-a.avg||b.cnt-a.cnt).map((x,i)=>({...x,rk:i+1}));
 }
 function viewTable(){
+  if(MTV) return viewMeetup(MTV);
   const st=S.standings, mode=tblMode, wk=weekKey(dayKey(Date.now())), me=A&&A.pid, mine=myLeagues();
   if(tblScope!=='all' && !mine.includes(tblScope)) tblScope='all';
   const L=tblScope==='all'?null:S.lg[tblScope], all=!L;
@@ -999,6 +1015,7 @@ function leagueHub(lid,L,rows,prevRk,my){
   if(rows.length) h+=`<div class="lb c3">${rows.map(r=>{ const pi=fromBottom.indexOf(r._rk), pen=mode==='week'&&rows.length>=3&&pi===0, isMe=r.pid===me, d=(prevRk[r.pid]||r._rk)-r._rk;
       const k=r._rk===1&&rows.length>1&&(mode==='season'||r.wp>0);
       return `<div class="r ${isMe?'me':''}">${k?CROWN:`<b>${r._rk}</b>`}<span class="nm"><span><span class="t">${esc(r.n)}${isMe?' (אתה)':''}</span>${d>0?`<span class="mv2 up" dir="ltr">▲${d}</span>`:d<0?`<span class="mv2 dn" dir="ltr">▼${-d}</span>`:''}${pen?`<span style="font-size:12px;color:var(--red2);font-weight:500">· ${esc(PENALTIES[0].replace(/ [^ ]+$/,''))}</span>`:''}</span></span>${val(r)}</div>`; }).join('')}</div>`;
+  h+=meetupSection(lid,L);
   const feed=leagueFeed(L), last=rows.length>=3?rows[rows.length-1]:null;
   if(feed.length||last){ h+=`<div class="dayh">מה קורה בליגה</div><div class="feed">`+feed.map(x=>`<div class="fi"><span class="av" style="${avBg(x.pid,x.pid===me)}${x.pid===me?';background:var(--gold);color:var(--on-accent)':''}">${initial(L.m[x.pid])}</span><span style="flex:1">${x.h} <span class="tm2">${agoTxt(x.t)}</span></span></div>`).join('');
     if(last&&mode==='week') h+=`<div class="fi warn"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFC94D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>השבוע נסגר ביום שני 23:59. ${esc(last.n)} — ${last.pid===me?'אתה בתחתית, יש עוד זמן!':'תכין ארנק.'}</span></div>`;
@@ -1394,9 +1411,9 @@ function updStake(){ const s=Math.max(0,Math.floor(sheetSt.s||0)); const i=docum
   const p=document.getElementById('potAmt'); if(p) p.textContent=fmt(s); const st=document.getElementById('potStk'); if(st) st.innerHTML=stacksHTML(s); updWin(); }
 
 // ================= גיליון הימור =================
-function openBet(eid,m,p){
+function openBet(eid,m,p,mt){
   const f=S.fixtures[eid]; if(!f||isLocked(f)) return toast('המשחק ננעל 🔒',false,'err'); if(!A) return toast('קודם נכנסים עם שם 🙂');
-  const a=account(); sheetSt={eid,m,p,s:Math.min(a.avail,Math.max(10,Math.round(a.avail/10/5)*5)),j:false};
+  const a=mt?mtAcc(mt):account(); sheetSt={eid,m,p,s:Math.min(a.avail,Math.max(10,Math.round(a.avail/10/5)*5)),j:false,mt:mt||null};
   if(m==='CS'){ const [h,x]=p.split('-').map(Number); sheetSt.ch=h; sheetSt.ca=x; }
   renderSheet(); document.getElementById('sheet').classList.add('show'); document.getElementById('sheetBg').classList.add('show');
 }
@@ -1404,11 +1421,11 @@ function closeSheet(){ sheetSt=null; document.getElementById('sheet').classList.
 function sheetOdds(){ const f=S.fixtures[sheetSt.eid], o=(f&&f.odds)||{}; return sheetSt.m==='CS'?(o.cs||{})[`${sheetSt.ch}-${sheetSt.ca}`]:o[sheetSt.p]; }
 function renderSheet(){
   if(!sheetSt||sheetSt.custom) return; const f=S.fixtures[sheetSt.eid]; if(!f||!A) return closeSheet();
-  const L=isLocked(f), a=account(), dk=f.day||dayKey(f.ko), jkFree=!jokerUsed(dk);
+  const L=isLocked(f), a=sheetSt.mt?mtAcc(sheetSt.mt):account(), dk=f.day||dayKey(f.ko), jkFree=!sheetSt.mt&&!jokerUsed(dk);
   if(sheetSt.m==='CS') sheetSt.p=`${sheetSt.ch}-${sheetSt.ca}`;
   const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)), win=o?(sheetSt.j?s+2*(s*o-s):s*o):0;
   const cdm=f.ko-LOCK_BEFORE_MS-Date.now(), cdh=Math.floor(cdm/3600e3), cdmm=Math.floor(cdm%3600e3/60e3);
-  let h=`<div class="shd"><div><b>${esc(he(f.home))} נגד ${esc(he(f.away))}</b><span>${LEAGUES[f.lg]?.n||''} · ${dayLabel(dk)} ${hm(f.ko)}${cdm>0&&cdm<6*3600e3?` · ננעל בעוד ${cdh?cdh+':'+String(cdmm).padStart(2,'0'):cdmm+' דק׳'}`:''}</span></div>
+  let h=`<div class="shd"><div><b>${sheetSt.mt?'<span class="mtag">🃏 מפגש</span> ':''}${esc(he(f.home))} נגד ${esc(he(f.away))}</b><span>${LEAGUES[f.lg]?.n||''} · ${dayLabel(dk)} ${hm(f.ko)}${cdm>0&&cdm<6*3600e3?` · ננעל בעוד ${cdh?cdh+':'+String(cdmm).padStart(2,'0'):cdmm+' דק׳'}`:''}</span></div>
     <button class="sclose" aria-label="סגירה" onclick="closeSheet()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="stabs"><button class="${sheetSt.m==='W'?'on':''}" onclick="sheetSt.m='W';sheetSt.p=sheetSt.p.includes('-')?'1':sheetSt.p;renderSheet()">מי מנצח</button><button class="${sheetSt.m==='CS'?'on':''}" onclick="sheetSt.m='CS';sheetSt.ch=sheetSt.ch??1;sheetSt.ca=sheetSt.ca??0;renderSheet()">תוצאה מדויקת</button></div>`;
   if(sheetSt.m==='CS') h+=`<div class="pick"><div class="csgrid"><div><div style="font-weight:900;font-size:13px;margin-bottom:6px">${esc(he(f.home))}</div><div class="step"><button class="minus" onclick="csB('ch',-1)">−</button><span class="val">${sheetSt.ch}</span><button class="plus" onclick="csB('ch',1)">+</button></div></div>
@@ -1478,6 +1495,7 @@ async function flushQueue(){
 }
 addEventListener('online', flushQueue); setInterval(flushQueue, 10000);
 async function placeBet(){
+  if(sheetSt&&sheetSt.mt) return placeMtBet();
   const f=S.fixtures[sheetSt.eid]; if(!f||isLocked(f)) return toast('המשחק ננעל 🔒',false,'err');
   const s=Math.floor(sheetSt.s||0), o=sheetOdds(), bal=A.wallet.bal, dk=f.day||dayKey(f.ko);
   if(!o) return toast('אין יחס לבחירה הזו',false,'err'); if(s<1) return toast("כמה ז'יטונים? 🙂",false,'err');
@@ -1500,6 +1518,124 @@ async function cancelBet(bid){
   const r=await write('PATCH','',upd);
   if(r==='ok') toast('ההימור בוטל ↩️',true); else toast(r==='denied'?'לא ניתן לבטל כרגע':'אין קליטה – הביטול לא נשלח, נסה שוב',false,'err',4000);
 }
+
+// ================= המפגש השבועי: ערב ניחושים לליגת חברים (ארנק נפרד של 1,000 – לא נוגע ביתרה הראשית) =================
+const MT_STACK=1000, MTST={open:'פתוח',live:'🔴 חי',done:'הסתיים'};
+let MTV=null; const mtSubs={};
+const mtOf = mid => { for(const l in (S.mt||{})) if(S.mt[l]&&S.mt[l][mid]) return {mid,...S.mt[l][mid]}; return null; };
+const mtMine = mid => (A&&A.mt&&A.mt[mid])||null;
+const mtAcc = mid => { const M=mtMine(mid); return {avail:M&&M.wallet?M.wallet.bal:MT_STACK}; };
+const whenTxt = ms => ms?`${dayLabel(dayKey(ms))} ${hm(ms)}`:'';
+const fval = id => ((document.getElementById(id)||{}).value||'');
+function mtStreams(){ if(!A) return; Object.keys(A.leagues||{}).forEach(l=>{ if(mtSubs[l]) return; mtSubs[l]=1;
+  stream('mt_'+l,`pub/mt/${l}`,v=>{ S.mt[l]=v||{}; mtGoCheck(); if(tab==='table'&&!sheetSt) render(); });
+  stream('ms_'+l,`pub/mtsum/${l}`,v=>{ S.mtsum[l]=v; if(tab==='table'&&!sheetSt) render(); }); }); }
+function mtGoCheck(){ const g=lsGet('bb_mtgo'); if(g&&mtOf(g)){ lsSet('bb_mtgo',null); openMeetup(g); } }
+function openMeetup(mid){ MTV=mid; stream('mtst',`pub/mtst/${mid}`,v=>{ S.mtst[mid]=v; if(MTV===mid&&!sheetSt) render(); tvRender(); }); tab='table'; lsSet('bb_tab','table'); render(); window.scrollTo(0,0); }
+function closeMeetup(){ MTV=null; tvClose(); render(); }
+function mtBetState(mid,bid,b){ const M=mtMine(mid), s=M&&M.settled&&M.settled[bid]; if(s) return s.st; const f=S.fixtures[b.e]; if(!f) return 'open';
+  if(f.st==='postp') return 'void'; if(f.st==='finished') return legWins(f,b)?'won':'lost'; if(f.st==='live') return legWins(f,b)?'live-win':'live-lose'; return 'open'; }
+function meetupSection(lid,L){
+  const ms=Object.entries((S.mt||{})[lid]||{}).map(([mid,m])=>({mid,...m})).sort((a,b)=>(a.st==='done')-(b.st==='done')||(a.when||0)-(b.when||0));
+  const own=L.o===(A&&A.pid), sum=(S.mtsum||{})[lid];
+  let h=`<div class="dayh">🃏 מפגשים</div><div class="mtl">`;
+  if(!ms.length) h+=`<div class="empty" style="padding:14px 10px">עוד אין מפגש. ${own?'פתח ערב ניחושים לחבר׳ה – כל אחד מקבל 1,000 ז׳יטוני מפגש.':'בעל הליגה יכול לפתוח ערב ניחושים.'}</div>`;
+  h+=ms.map(m=>`<button class="mtc" data-m="${esc(m.mid)}" onclick="openMeetup(this.dataset.m)"><span class="mst ${esc(m.st)}">${MTST[m.st]||''}</span><b>${esc(m.n)}</b><span>${whenTxt(m.when)} · ${Object.keys(m.fx||{}).length} משחקים${m.prize?` · 🏆 ${esc(m.prize)}`:''}</span></button>`).join('');
+  if(own) h+=`<button class="btn sec" id="mtNew" data-lid="${esc(lid)}" onclick="mtCreateSheet(this.dataset.lid)">➕ מפגש חדש</button>`;
+  if(sum&&sum.rows&&sum.rows.length) h+=`<div class="mtsum"><b>טבלת המפגשים של הליגה</b>${sum.rows.map(r=>`<div class="r"><b>${r.rk}</b><span class="n">${esc(r.n)}</span><span class="muted">${r.mts} מפגשים${r.w?` · 🏆×${r.w}`:''}</span><b>${r.pts} נק׳</b></div>`).join('')}</div>`;
+  return h+'</div>';
+}
+function mtCreateSheet(lid){
+  const now=Date.now(), fx=fxList().filter(f=>f.st==='none'&&!isLocked(f)&&f.odds&&f.ko<now+14*86400e3).sort((a,b)=>a.ko-b.ko).slice(0,40);
+  const d0=fx.length?new Date(fx[0].ko-1800e3):new Date(now+86400e3), pad=n=>String(n).padStart(2,'0');
+  const loc=`${d0.getFullYear()}-${pad(d0.getMonth()+1)}-${pad(d0.getDate())}T${pad(d0.getHours())}:${pad(d0.getMinutes())}`;
+  sheet(`<h2 style="margin-top:0">🃏 מפגש חדש</h2><div class="muted">בוחרים 3–12 משחקים. כל חבר מקבל ${fmt(MT_STACK)} ז׳יטוני מפגש, מי שמסיים עם הכי הרבה – מנצח.</div>
+    <input class="name" id="mtName" maxlength="30" placeholder="שם המפגש (למשל: חמישי אצל דני)">
+    <label class="muted">מתי נפגשים<input class="name" id="mtWhen" type="datetime-local" value="${loc}" style="direction:ltr"></label>
+    <input class="name" id="mtPrize" maxlength="60" placeholder="על מה משחקים? (לא חובה – למשל: המפסיד מביא פיצה)">
+    <div class="muted" style="margin-top:6px">משחקים (<span id="mtCnt">0</span> נבחרו)</div>
+    <div id="mtFx" class="mtfx">${fx.map(f=>`<label><input type="checkbox" value="${esc(f.id)}" onchange="document.getElementById('mtCnt').textContent=document.querySelectorAll('#mtFx input:checked').length"><span>${LEAGUES[f.lg]?.f||''} ${esc(he(f.home))} – ${esc(he(f.away))}</span><span class="muted">${whenTxt(f.ko)}</span></label>`).join('')||'<div class="empty">אין משחקים פתוחים בשבועיים הקרובים</div>'}</div>
+    <button class="btn" id="mtGo" data-lid="${esc(lid)}" onclick="mtCreate(this.dataset.lid)">פתח מפגש</button>`);
+}
+async function mtCreate(lid){
+  const n=fval('mtName').trim().replace(/\s+/g,' '), prize=fval('mtPrize').trim(), when=new Date(fval('mtWhen')).getTime(), fx=[...document.querySelectorAll('#mtFx input:checked')].map(i=>i.value);
+  const bad=/[.#$\[\]\/<>"`\\&;{}]/;
+  if(n.length<2) return toast('שם של לפחות 2 תווים',false,'err'); if(bad.test(n)||bad.test(prize)) return toast('בלי סימנים מיוחדים 🙂',false,'err');
+  if(fx.length<3||fx.length>12) return toast('בוחרים בין 3 ל-12 משחקים',false,'err'); if(!when) return toast('מתי נפגשים?',false,'err');
+  const mid='m'+Date.now().toString(36)+rnd(4,AZ), body={lid,n,when,fx:Object.fromEntries(fx.map(e=>[e,true])),at:SV}; if(prize) body.prize=prize;
+  const b=document.getElementById('mtGo'); if(b) b.disabled=true;
+  const r=await write('PUT',`acct/${SEC}/mtown/${mid}`,body);
+  if(r!=='ok'){ if(b) b.disabled=false; return toast(r==='denied'?'לא הצלחתי – אולי אחד המשחקים כבר ננעל':'אין קליטה – נסה שוב',false,'err',3500); }
+  closeSheet(); lsSet('bb_mtgo',mid); toast('המפגש נפתח! 🎉 עוד רגע הוא מופיע – ואז מזמינים את החבר׳ה',true,null,3500);
+}
+function mtTable(rows,me,big){ if(!rows.length) return `<div class="empty" style="padding:14px">עוד אף אחד לא הימר. הראשון שמהמר – מוביל 😉</div>`;
+  return `<div class="mtt ${big?'big':''}">${rows.map(r=>`<div class="r ${r.pid===me?'me':''}"><b>${r.rk===1?'👑':r.rk}</b><span class="n">${esc(r.n)}${r.pid===me?' (אתה)':''}</span><span class="muted">${r.dn?`${r.won}/${r.dn} פגיעות`:`${r.nb||0} הימורים`}</span><b class="v">${fmt(r.v)}</b></div>`).join('')}</div>`; }
+function podiumHTML(p){ const md=['🥇','🥈','🥉']; return `<div class="podium">${(p||[]).slice(0,3).map(r=>`<div class="p${r.rk}"><span>${md[r.rk-1]||''}</span><b>${esc(r.n)}</b><span>${fmt(r.v)}</span></div>`).join('')}</div>`; }
+function mtFxRow(mid,m,f){
+  const me=A&&A.pid, L=isLocked(f), live=f.st==='live', done=f.st==='finished', o=f.odds||{}, M=mtMine(mid), mine=Object.entries((M&&M.bets)||{}).filter(([id,b])=>b.e===f.id);
+  const ob=k=>`<button class="ob" ${L||!o[k]||m.st==='done'?'disabled':''} data-e="${esc(f.id)}" data-p="${k}" data-m="${esc(mid)}" onclick="openBet(this.dataset.e,'W',this.dataset.p,this.dataset.m)"><span class="l">${k==='X'?'תיקו':esc(he(k==='1'?f.home:f.away))}</span><span class="v">${o[k]?o[k].toFixed(2):'–'}</span></button>`;
+  let h=`<div class="card mtfr"><div class="muted">${LEAGUES[f.lg]?.f||''} ${whenTxt(f.ko)}${live?' · '+liveTag(f):''}</div><div class="tt"><b>${esc(he(f.home))}</b>${live||done?`<bdi dir="rtl" class="sc">${f.h}–${f.a}</bdi>`:'<span class="muted">נגד</span>'}<b>${esc(he(f.away))}</b></div>`;
+  if(f.st==='none') h+=`<div class="odds">${ob('1')}${ob('X')}${ob('2')}</div><button class="csb" ${L||!o.cs||m.st==='done'?'disabled':''} data-e="${esc(f.id)}" data-m="${esc(mid)}" onclick="openBet(this.dataset.e,'CS','1-0',this.dataset.m)">תוצאה מדויקת</button>`;
+  mine.forEach(([id,b])=>{ const st=mtBetState(mid,id,b);
+    h+=`<div class="mybet"><span>שלך: <b>${esc(pickLabel(f,b))} · ${fmt(b.s)}</b> <span class="muted">ביחס ${b.o.toFixed(2)}</span></span><span style="display:flex;gap:6px;align-items:center">${statusPill(st,b,f)}${!L&&!(M.settled&&M.settled[id])?`<button class="x" data-m="${esc(mid)}" data-b="${esc(id)}" onclick="cancelMtBet(this.dataset.m,this.dataset.b)" title="בטל">✕</button>`:''}</span></div>`; });
+  return h+'</div>';
+}
+function viewMeetup(mid){
+  const m=mtOf(mid); if(!m) return `<div class="empty"><div class="e">⏳</div>טוען מפגש…<br><br><button class="btn sec" onclick="closeMeetup()">חזרה</button></div>`;
+  const L=S.lg[m.lid], me=A&&A.pid, M=mtMine(mid), st=S.mtst[mid], rows=(st&&st.rows)||[], member=!!(L&&L.m&&me&&L.m[me]), bal=M&&M.wallet?M.wallet.bal:null;
+  let h=`<div class="mthd"><button class="x" onclick="closeMeetup()">→ חזרה לליגה</button><span class="mst ${esc(m.st)}">${MTST[m.st]||''}</span></div>
+    <h1 style="margin:6px 0 2px">🃏 ${esc(m.n)}</h1><div class="muted">${L?esc(L.n)+' · ':''}${whenTxt(m.when)} · מארח: ${esc(m.on||'')}${m.prize?`<br>🏆 על מה משחקים: <b>${esc(m.prize)}</b>`:''}</div>
+    <div class="mtw">${bal==null?`<span>כל משתתף מקבל <b>${fmt(MT_STACK)}</b> ז׳יטוני מפגש – לא מהיתרה שלך</span>${member&&m.st!=='done'?`<button class="btn" id="mtJoin" data-m="${esc(mid)}" onclick="mtJoin(this.dataset.m)">אני בפנים! 🙋</button>`:member?'':'<span class="muted">רק חברי הליגה משתתפים</span>'}`:`<span>הקופה שלך במפגש</span><b id="mtBal">${fmt(bal)}</b>`}</div>
+    <div style="display:flex;gap:8px;margin:10px 0"><button class="btn sec" id="mtInv" data-m="${esc(mid)}" onclick="mtInvite(this.dataset.m)">📲 הזמן בוואטסאפ</button><button class="btn sec" id="mtTv" data-m="${esc(mid)}" onclick="tvOpen(this.dataset.m)">📺 מצב טלוויזיה</button></div>`;
+  if(m.st==='done'&&st&&st.podium) h+=podiumHTML(st.podium)+`<button class="btn" id="mtShare" data-m="${esc(mid)}" onclick="mtShare(this.dataset.m)">📣 שתף את הפודיום</button>`;
+  h+=`<div class="dayh">טבלת המפגש</div>`+mtTable(rows,me,false);
+  h+=`<div class="dayh">משחקי המפגש</div>`+Object.keys(m.fx||{}).filter(e=>S.fixtures[e]).map(e=>({id:e,...S.fixtures[e]})).sort((a,b)=>a.ko-b.ko).map(f=>mtFxRow(mid,m,f)).join('');
+  return h;
+}
+async function mtJoin(mid){ const r=await write('PUT',`acct/${SEC}/mt/${mid}/wallet`,{bal:MT_STACK,op:'init'});
+  toast(r==='ok'?`יאללה! ${fmt(MT_STACK)} ז׳יטוני מפגש בפנים 🃏`:r==='denied'?'רק חברי הליגה משתתפים במפגש':'אין קליטה – נסה שוב',r==='ok',r==='ok'?null:'err'); }
+async function placeMtBet(){
+  const mid=sheetSt.mt, f=S.fixtures[sheetSt.eid], m=mtOf(mid); if(!f||isLocked(f)||!m||!(m.fx||{})[sheetSt.eid]||m.st==='done') return toast('המשחק ננעל 🔒',false,'err');
+  const s=Math.floor(sheetSt.s||0), o=sheetOdds(), btn=document.getElementById('betBtn'), reset=()=>{ if(btn){ btn.disabled=false; btn.textContent='הימור!'; } };
+  if(!o) return toast('אין יחס לבחירה הזו',false,'err'); if(s<1) return toast("כמה ז'יטונים? 🙂",false,'err');
+  if(btn){ btn.disabled=true; btn.textContent='שולח...'; }
+  if(!(mtMine(mid)||{}).wallet){ const r0=await write('PUT',`acct/${SEC}/mt/${mid}/wallet`,{bal:MT_STACK,op:'init'});
+    if(r0!=='ok'){ reset(); return toast(r0==='denied'?'רק חברי הליגה משתתפים במפגש':'אין קליטה – נסה שוב',false,'err'); } }
+  const W=(mtMine(mid)||{}).wallet, bal=W?W.bal:MT_STACK; if(s>bal){ reset(); return toast(`אין מספיק ז'יטוני מפגש – יש ${fmt(bal)}`,false,'err'); }
+  const bid='b'+Date.now().toString(36)+rnd(4,AZ), P=`acct/${SEC}/mt/${mid}`;
+  const r=await write('PATCH','',{[`${P}/bets/${bid}`]:{e:sheetSt.eid,m:sheetSt.m,p:sheetSt.p,s,o,at:SV},[`${P}/wallet/bal`]:bal-s,[`${P}/wallet/op`]:'b:'+bid});
+  if(r==='ok'){ closeSheet(); toast('ההימור נכנס למפגש 🃏✅',true); confetti(50); render(); }
+  else { reset(); toast(r==='denied'?'ההימור נדחה – אולי היחס התעדכן או שהמשחק ננעל':'אין קליטה – ההימור לא נשלח, נסה שוב',false,'err',4000); if(sheetSt) renderSheet(); }
+}
+async function cancelMtBet(mid,bid){ const M=mtMine(mid), b=M&&M.bets&&M.bets[bid]; if(!b) return; const f=S.fixtures[b.e];
+  if(M.settled&&M.settled[bid]) return toast('ההימור כבר נסגר',false,'err'); if(isLocked(f)) return toast('המשחק ננעל – אי אפשר לבטל 🔒',false,'err');
+  if(!confirm(`לבטל את ההימור (${fmt(b.s)} ז'יטוני מפגש יחזרו)?`)) return; const P=`acct/${SEC}/mt/${mid}`;
+  const r=await write('PATCH','',{[`${P}/bets/${bid}`]:null,[`${P}/wallet/bal`]:M.wallet.bal+b.s,[`${P}/wallet/op`]:'c:'+bid});
+  toast(r==='ok'?'ההימור בוטל ↩️':'לא ניתן לבטל כרגע',r==='ok',r==='ok'?null:'err'); }
+const mtInviteText = m => `היי אח, מפגש ניחושים אצלנו ב${dayLabel(dayKey(m.when))} ${hm(m.when)} – "${m.n}"${m.prize?` (על: ${m.prize})`:''} 🃏\nכל אחד מקבל ${fmt(MT_STACK)} ז׳יטונים, נכנסים ומהמרים מראש:\n👉 ${APP_URL}/#join=${m.lid}&mt=${m.mid}`;
+function mtInvite(mid){ const m=mtOf(mid); if(!m) return; window.open(`https://wa.me/?text=${encodeURIComponent(mtInviteText(m))}`,'_blank'); }
+function mtShare(mid){ const m=mtOf(mid), p=((S.mtst[mid]||{}).podium)||[]; if(!m||!p.length) return;
+  shareCard({title:`🏆 ${m.n}`, big:p[0].n, lines:p.slice(0,3).map(r=>`${['🥇','🥈','🥉'][r.rk-1]||''} ${r.n} · ${fmt(r.v)}`)}, `🏆 ${p[0].n} ניצח במפגש "${m.n}" ב-BET-IT!`); }
+// מצב טלוויזיה – מסך מלא לערב עצמו (טבלה גדולה; באנר הגול מופיע מעליו)
+function tvOpen(mid){ let el=document.getElementById('tv'); if(!el){ el=document.createElement('div'); el.id='tv'; document.body.appendChild(el); }
+  el.dataset.m=mid; el.classList.add('show'); tvRender();
+  try{ if(el.requestFullscreen) el.requestFullscreen().then(()=>{ if(!el.classList.contains('show')&&document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }).catch(()=>{}); }catch(e){} }   // נסגר לפני שהמסך המלא נכנס – יוצאים מיד
+function tvClose(){ const el=document.getElementById('tv'); if(el){ el.classList.remove('show'); el.innerHTML=''; } try{ if(document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }catch(e){} }
+document.addEventListener('fullscreenchange',()=>{ const el=document.getElementById('tv'); if(!document.fullscreenElement&&el&&el.classList.contains('show')) tvRender(); });
+function tvRender(){ const el=document.getElementById('tv'); if(!el||!el.classList.contains('show')) return; const mid=el.dataset.m, m=mtOf(mid), st=S.mtst[mid]||{};
+  const fx=m?Object.keys(m.fx||{}).filter(e=>S.fixtures[e]).map(e=>({id:e,...S.fixtures[e]})).sort((a,b)=>a.ko-b.ko):[];
+  el.innerHTML=`<button class="tvx" onclick="tvClose()" aria-label="יציאה">✕</button><h1>🃏 ${esc(m?m.n:'')}</h1>
+    <div class="tvfx">${fx.map(f=>`<span class="${f.st==='live'?'lv':''}">${esc(he(f.home))} ${f.st==='live'||f.st==='finished'?`<bdi dir="rtl">${f.h}–${f.a}</bdi>`:hm(f.ko)} ${esc(he(f.away))}</span>`).join('')}</div>
+    ${m&&m.st==='done'&&st.podium?podiumHTML(st.podium):''}${mtTable(st.rows||[],A&&A.pid,true)}`; }
+// ================= פידבק לשחקנים (רק המנהל רואה) =================
+function feedbackSheet(){ sheet(`<h2 style="margin-top:0">💬 שלח פידבק</h2><div class="muted">מה לשפר? מה מעצבן? מה בא לך שיהיה? רק המנהל רואה.</div>
+  <textarea id="fbIn" class="name" maxlength="500" rows="5" style="height:auto;min-height:110px"></textarea><button class="btn" id="fbGo" onclick="sendFeedback()">שלח</button>`); }
+async function sendFeedback(){ const t=fval('fbIn').trim(); if(!t) return toast('מה רצית לכתוב? 🙂',false,'err'); if(/[<>`{}\\]/.test(t)) return toast('בלי הסימנים < > { } ` \\ 🙂',false,'err');
+  const b=document.getElementById('fbGo'); if(b) b.disabled=true;
+  const r=await write('PUT',`acct/${SEC}/fbk/f${Date.now().toString(36)}${rnd(4,AZ)}`,{t,at:SV});
+  if(r==='ok'){ closeSheet(); toast('תודה! הפידבק נשלח 💚',true); } else { if(b) b.disabled=false; toast('לא נשלח – נסה שוב',false,'err'); } }
+function adminFbHTML(){ const l=Object.values((AV&&AV.fb)||{}).sort((a,b)=>b.at-a.at).slice(0,50);
+  return `<section class="asec"><div class="st" style="border:0"><b>💬 פידבק משחקנים${l.length?` (${l.length})`:''}</b></div>${l.length?l.map(x=>`<div class="afb"><b>${esc(x.n||'')}</b> <span class="muted">${agoAdm(x.at)}</span><div>${esc(x.t)}</div></div>`).join(''):'<div class="muted" style="padding:0 16px 14px">עוד אין פידבק</div>'}</section>`; }
 
 // ================= מנהל (רק עם המפתח האישי של המנהל) =================
 async function adminOp(t, extra){ if(!AK) return; const id='o'+Date.now().toString(36)+rnd(4,AZ);
@@ -1533,6 +1669,7 @@ function viewAdmin(){
             <div class="row"><label>בית<input id="fh_${f.id}" inputmode="numeric" value="${f.h|0}"></label><label>חוץ<input id="fa_${f.id}" inputmode="numeric" value="${f.a|0}"></label>
               <button class="abtn sec2" data-e="${f.id}" onclick="admFix(this.dataset.e,'postp')">סמן כנדחה</button><button class="abtn go" data-e="${f.id}" onclick="admFix(this.dataset.e,'finished')">שמור וסגור</button>
               ${f.manual?`<button class="abtn sec2" data-e="${f.id}" onclick="adminOp('unfix',{e:this.dataset.e})">החזר לרובוט</button>`:''}</div></div>`; }).join('')||'<div class="muted" style="padding:0 16px 14px">אין משחקים לתיקון</div>'}${admFxN<30?`<button class="abtn sec2" style="margin:12px 16px;width:calc(100% - 32px)" onclick="admFxN=30;render()">הצג עוד משחקים</button>`:''}</section></div></div>`;
+  h+=adminFbHTML();
   const log=Object.values(AV.log||{}).sort((a,b)=>b.at-a.at).slice(0,12);
   h+=`<section class="asec alog"><div class="st" style="border:0"><b>יומן פעולות</b></div>${log.length?log.map(l=>`<div><span>${T(l.at)}</span><span style="color:var(--warn)">מנהל</span><span>${esc(OPN[l.t]||l.t)} · <span style="color:${l.res==='ok'?'var(--em)':'var(--red2)'}">${l.res==='ok'?'בוצע':esc(l.res)}</span></span></div>`).join(''):'<div><span></span><span></span><span class="muted">עוד אין פעולות</span></div>'}</section></div>`;
   return h;
@@ -1561,12 +1698,12 @@ function renderNav(){
   if(AK) tabs.push(['admin','מנהל']);
   document.getElementById('nav').innerHTML=(A||AK)?tabs.map(([k,l])=>`<button class="${tab===k||(tab==='ach'&&k==='mine')?'on':''}" onclick="go('${k}')">${ICONS[k]}${l}${k==='mine'&&openN?`<span class="badge">${openN}</span>`:''}</button>`).join(''):'';
 }
-function go(k){ tab=k; lsSet('bb_tab',k); render(); window.scrollTo(0,0); }
+function go(k){ MTV=null; tvClose(); tab=k; lsSet('bb_tab',k); render(); window.scrollTo(0,0); }
 function render(){
   renderTop(); const app=document.getElementById('app'); document.body.classList.toggle('anon',!A&&!AK); hideSplash(); if(!A&&!AK&&loginUnchanged(app)) return;
   if(!A && !AK){ app.innerHTML=(SEC&&!loaded.me)?'<div class="empty"><div class="e">⏳</div>מתחבר…</div>':viewLogin()+footer(); renderNav(); return; }
   if(!A && (tab==='mine'||tab==='ach')) tab='games'; if(tab==='admin'&&!AK) tab='games';
-  app.innerHTML=({games:viewGames,mine:viewMine,ach:viewAch,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav();
+  app.innerHTML=({games:viewGames,mine:viewMine,ach:viewAch,table:viewTable,leagues:viewLeagues,admin:viewAdmin}[tab]||viewGames)()+footer(); renderNav(); tvRender();
 }
 // מסך הכניסה לא נבנה מחדש כשמגיעים נתונים (משחקים/טבלה) – אחרת השם שהמשתמש כבר הקליד נמחק
 function loginUnchanged(app){ if(SEC&&!loaded.me) return false; const h=viewLogin(); if(app._lh===h&&document.getElementById('nameIn')) return true; app._lh=h; return false; }

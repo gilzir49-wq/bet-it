@@ -28,6 +28,8 @@ jobs:
         run: python3 tests/settlement_test.py
       - name: מראה חיה של הרובוט (סקייל) – זהה לשרת אחרי כל כתיבה
         run: python3 tests/mirror_test.py
+      - name: המפגש השבועי מקצה לקצה (פתיחה, הימורים, סגירה, פודיום, טבלה מצטברת, פידבק)
+        run: python3 tests/meetup_test.py
       - name: דפדפן אמיתי – כניסה, הימור, רענון, ביטול
         run: python3 tests/smoke_test.py
   deploy:

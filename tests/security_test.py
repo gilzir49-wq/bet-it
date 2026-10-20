@@ -163,11 +163,72 @@ check('בקשת שחזור עם שדה זבל ענק', req('PUT', f'recoverReq/s
 check('בקשת שחזור עם nk ענק', req('PUT', f'recoverReq/s{rs(48, AZM)}', {'nk': JUNK, 'at': SV})[0], 401)
 check('תפיסת שם עם מפתח ענק', req('PUT', f'names/{"y" * 300}', 'p' + rs(16, AZ))[0], 401)
 
+print('--- המפגש השבועי (ארנק נפרד לליגת חברים)')
+LID2, MID, OPEN2 = rs(6, RCA), 'm' + rs(12, AZ), '999000005'
+R.fb('', 'PATCH', {f'fixtures/{OPEN2}': {'lg': 'isr1', 'home': 'Bnei Sakhnin', 'away': 'Hapoel Beer Sheva', 'ko': now + 2 * 86400000, 'day': day, 'st': 'none', 'h': 0, 'a': 0, 'odds': {'1': 2.5, 'X': 3.1, '2': 2.6}},
+                   f'lgdef/{LID2}': {'n': 'pentest mt', 'at': now}, f'acct/{A}/leagues/{LID2}': {'at': now, 'own': True}, f'acct/{B}/leagues/{LID2}': {'at': now},
+                   f'pub/lg/{LID2}': {'n': 'pentest mt', 'o': Apid, 'm': {Apid: 'a', Bpid: 'b'}}})   # כמו שהרובוט מפרסם
+st, X, Xpid, Xnk = new_acct('pentest_x' + RUN)
+mto = lambda **kw: {**{'lid': LID2, 'n': 'חמישי אצל דני', 'when': now + 86400000, 'fx': {OPEN: True}, 'at': SV}, **kw}
+check('מפגש: מי שאינו בעל הליגה פותח מפגש', req('PUT', f'acct/{B}/mtown/{MID}', mto())[0], 401)
+check('מפגש: פתיחה עם משחק נעול', req('PUT', f'acct/{A}/mtown/{MID}', mto(fx={OPEN: True, LOCKED: True}))[0], 401)
+check('מפגש: הזרקה בשם המפגש', req('PUT', f'acct/{A}/mtown/{MID}', mto(n='x"onclick=alert(1)'))[0], 401)
+check('מפגש: הזרקה/תו בלתי נראה בפרס', req('PUT', f'acct/{A}/mtown/{MID}', mto(prize='<img src=x>'))[0], 401)
+check('מפגש: תו בלתי נראה בשם', req('PUT', f'acct/{A}/mtown/{MID}', mto(n='מפגש\u202e'))[0], 401)
+check('מפגש: קופה מנופחת (stack) בהגדרה', req('PUT', f'acct/{A}/mtown/{MID}', mto(stack=99999))[0], 401)
+check('מפגש: פרס ארוך מ-60', req('PUT', f'acct/{A}/mtown/{MID}', mto(prize='x' * 61))[0], 401)
+check('מפגש: מועד בעוד שנה', req('PUT', f'acct/{A}/mtown/{MID}', mto(when=now + 365 * 86400000))[0], 401)
+check('מפגש: פתיחה תקינה ע"י בעל הליגה', req('PUT', f'acct/{A}/mtown/{MID}', mto(prize='המפסיד מביא פיצה'))[0], 200)
+check('מפגש: דריסת מפגש קיים', req('PUT', f'acct/{A}/mtown/{MID}', mto(n='hacked'))[0], 401)
+check('מפגש: זיוף פרסום (pub/mt)', req('PUT', f'pub/mt/{LID2}/{MID}', {'st': 'open'})[0], 401)
+check('מפגש: זיוף טבלת מפגש (pub/mtst)', req('PUT', f'pub/mtst/{MID}', {'rows': []})[0], 401)
+check('מפגש: זיוף שיוך מפגש לליגה (pub/mtx)', req('PUT', f'pub/mtx/{MID}', LID2)[0], 401)
+check('מפגש: ארנק לפני שהרובוט פרסם', req('PUT', f'acct/{B}/mt/{MID}/wallet', {'bal': 1000, 'op': 'init'})[0], 401)
+R.fb('', 'PATCH', {f'pub/mtx/{MID}': LID2, f'pub/mt/{LID2}/{MID}': {'lid': LID2, 'n': 'x', 'fx': {OPEN: True}, 'st': 'open', 'stack': 1000, 'o': Apid}})
+check('מפגש: מי שלא בליגה מצטרף', req('PUT', f'acct/{X}/mt/{MID}/wallet', {'bal': 1000, 'op': 'init'})[0], 401)
+check('מפגש: ארנק מנופח (5,000)', req('PUT', f'acct/{B}/mt/{MID}/wallet', {'bal': 5000, 'op': 'init'})[0], 401)
+check('מפגש: ארנק עם שדה נוסף', req('PUT', f'acct/{B}/mt/{MID}/wallet', {'bal': 1000, 'op': 'init', 'wk': 'x'})[0], 401)
+check('מפגש: הצטרפות תקינה (1,000)', req('PUT', f'acct/{B}/mt/{MID}/wallet', {'bal': 1000, 'op': 'init'})[0], 200)
+mtb = lambda sec, bid, bal, e=OPEN, s=100, o=1.8, dec=None, p='1', extra=None: {f'acct/{sec}/mt/{MID}/bets/{bid}': {'e': e, 'm': 'W', 'p': p, 's': s, 'o': o, 'at': SV, **(extra or {})},
+    f'acct/{sec}/mt/{MID}/wallet/bal': bal - (s if dec is None else dec), f'acct/{sec}/mt/{MID}/wallet/op': 'b:' + bid}
+check('מפגש: הימור על משחק שלא במפגש', req('PATCH', '', mtb(B, 'bmtpent01', 1000, e=OPEN2, o=2.5))[0], 401)
+check('מפגש: יחס מזויף', req('PATCH', '', mtb(B, 'bmtpent02', 1000, o=9.9))[0], 401)
+check('מפגש: הימור בלי להוריד מהקופה', req('PATCH', '', mtb(B, 'bmtpent03', 1000, dec=0))[0], 401)
+check('מפגש: הימור מעל הקופה (1,500)', req('PATCH', '', mtb(B, 'bmtpent04', 1000, s=1500))[0], 401)
+check('מפגש: ג\'וקר במפגש', req('PATCH', '', mtb(B, 'bmtpent05', 1000, extra={'j': True}))[0], 401)
+check('מפגש: מי שלא בליגה מהמר', req('PATCH', '', mtb(X, 'bmtpent06', 1000))[0], 401)
+check('מפגש: הימור תקין', req('PATCH', '', mtb(B, 'bmtpent07', 1000))[0], 200)
+check('מפגש: איפוס הקופה ל-1,000 אחרי הימור', req('PUT', f'acct/{B}/mt/{MID}/wallet', {'bal': 1000, 'op': 'init'})[0], 401)
+check('מפגש: זכייה מזויפת (settled)', req('PUT', f'acct/{B}/mt/{MID}/settled/bmtpent07', {'st': 'won', 'pay': 9999})[0], 401)
+check('מפגש: שינוי סכום של הימור קיים', req('PUT', f'acct/{B}/mt/{MID}/bets/bmtpent07/s', 1)[0], 401)
+check('מפגש: הימור מהקופה הראשית לתוך המפגש', req('PATCH', '', {f'acct/{B}/mt/{MID}/bets/bmtpent08': {'e': OPEN, 'm': 'W', 'p': '1', 's': 50, 'o': 1.8, 'at': SV}, f'acct/{B}/wallet/bal': 450, f'acct/{B}/wallet/op': 'b:bmtpent08'})[0], 401)
+canm = lambda sec, bid, bal, s: {f'acct/{sec}/mt/{MID}/bets/{bid}': None, f'acct/{sec}/mt/{MID}/wallet/bal': bal + s, f'acct/{sec}/mt/{MID}/wallet/op': 'c:' + bid}
+check('מפגש: ביטול עם החזר מנופח', req('PATCH', '', canm(B, 'bmtpent07', 900, 500))[0], 401)
+check('מפגש: ביטול תקין', req('PATCH', '', canm(B, 'bmtpent07', 900, 100))[0], 200)
+R.fb(f'pub/lg/{LID2}/m/{Bpid}', 'DELETE')
+check('מפגש: חבר שהורחק מהליגה מהמר', req('PATCH', '', mtb(B, 'bmtpent09', 1000))[0], 401)
+R.fb('', 'PATCH', {f'pub/lg/{LID2}/m/{Bpid}': 'b', f'pub/mt/{LID2}/{MID}/st': 'done'})
+check('מפגש: הימור על מפגש שהסתיים', req('PATCH', '', mtb(B, 'bmtpent10', 1000))[0], 401)
+check('מפגש: הצטרפות למפגש שהסתיים', req('PUT', f'acct/{A}/mt/{MID}/wallet', {'bal': 1000, 'op': 'init'})[0], 401)
+sq, pq = 's' + rs(48, AZM), 'p' + rs(16, AZ)
+check('חשבון חדש עם ארנק מפגש מוכן מראש', req('PATCH', '', {f'names/ptmt{RUN}': pq, f'acct/{sq}': {'name': 'ptmt' + RUN, 'nk': 'ptmt' + RUN, 'pid': pq, 'joined': SV, 'wallet': {'bal': 500, 'op': 'init'}, 'mt': {MID: {'wallet': {'bal': 99999, 'op': 'init'}}}}})[0], 401)
+
+print('--- פידבק')
+check('פידבק תקין', req('PUT', f'acct/{B}/fbk/f{rs(10, AZ)}', {'t': 'אחלה משחק! "מעולה" & תודה', 'at': SV})[0], 200)
+check('פידבק ארוך מ-500', req('PUT', f'acct/{B}/fbk/f{rs(10, AZ)}', {'t': 'x' * 501, 'at': SV})[0], 401)
+check('פידבק עם קוד (<script>)', req('PUT', f'acct/{B}/fbk/f{rs(10, AZ)}', {'t': '<script>alert(1)</script>', 'at': SV})[0], 401)
+check('פידבק עם שדה זבל', req('PUT', f'acct/{B}/fbk/f{rs(10, AZ)}', {'t': 'hi', 'at': SV, 'junk': 'x' * 5000})[0], 401)
+check('פידבק בזמן מזויף (עבר רחוק)', req('PUT', f'acct/{B}/fbk/f{rs(10, AZ)}', {'t': 'hi', 'at': 1000})[0], 401)
+check('הצטרפות לליגה מחשבון שלא קיים (זבל ב-acct)', req('PUT', f'acct/s{rs(48, AZM)}/leagues/{LID2}', {'at': SV})[0], 401)
+check('פידבק מחשבון שלא קיים (זבל ב-acct)', req('PUT', f'acct/s{rs(48, AZM)}/fbk/f{rs(10, AZ)}', {'t': 'hi', 'at': SV})[0], 401)
+check('קריאת כל הפידבק (adminFb)', req('GET', 'adminFb')[0], 401)
+check('כתיבה ישירה לפידבק של המנהל', req('PUT', f'adminFb/f{rs(10, AZ)}', {'t': 'x'})[0], 401)
+
 st, a = req('GET', f'acct/{A}')
 check('יתרה סופית של A נכונה (500−50−10 = 440)', (a or {}).get('wallet', {}).get('bal'), 440)
 
 # ניקוי
-R.fb('', 'PATCH', {f'acct/{G}': None, f'names/{Gnk}': None, f'rc/{CODES[G]}': None, f'pub/profiles/{Gpid}': None, f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None, f'lgdef/{LID}': None,
+R.fb('', 'PATCH', {f'acct/{X}': None, f'names/{Xnk}': None, f'rc/{CODES[X]}': None, f'lgdef/{LID2}': None, f'pub/lg/{LID2}': None, f'pub/mt/{LID2}': None, f'pub/mtx/{MID}': None, f'fixtures/{OPEN2}': None, f'pub/profiles/{Xpid}': None, f'acct/{G}': None, f'names/{Gnk}': None, f'rc/{CODES[G]}': None, f'pub/profiles/{Gpid}': None, f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None, f'lgdef/{LID}': None,
                    f'fixtures/{OPEN}': None, f'fixtures/{LOCKED}': None, f'pub/profiles/{Apid}': None, f'pub/profiles/{Bpid}': None, f'pub/revealed/{OPEN}': None})
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)

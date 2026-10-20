@@ -17,7 +17,10 @@ open(os.path.join(site, 'index.html'), 'w', encoding='utf-8').write(html.replace
 srv = http.server.ThreadingHTTPServer(('127.0.0.1', 8765), functools.partial(http.server.SimpleHTTPRequestHandler, directory=site))
 threading.Thread(target=srv.serve_forever, daemon=True).start()
 
-now = int(time.time() * 1000); E = '998' + str(now)[-6:]; E2 = '997' + str(now)[-6:]
+now = int(time.time() * 1000); E = '998' + str(now)[-6:]; E2 = '997' + str(now)[-6:]; E3 = '996' + str(now)[-6:]; E4 = '995' + str(now)[-6:]; CLEAN = {}
+for _e, _h in ((E3, 7), (E4, 8)):
+    R.fb(f'fixtures/{_e}', 'PUT', {'lg': 'isr1', 'home': 'Hapoel Tel Aviv', 'away': 'Beitar Jerusalem', 'ko': now + _h * 3600000, 'day': R.day_key(now + _h * 3600000),
+                                   'st': 'none', 'h': 0, 'a': 0, 'odds': {'1': 2.2, 'X': 3.1, '2': 3.3}})
 R.fb(f'fixtures/{E}', 'PUT', {'lg': 'isr1', 'home': 'Maccabi Haifa', 'away': 'Hapoel Haifa', 'ko': now + 6 * 3600000, 'day': R.day_key(now + 6 * 3600000),
                               'st': 'none', 'h': 0, 'a': 0, 'odds': {'1': 2.0, 'X': 3.0, '2': 4.0, 'cs': {'1-0': 7.0}}})
 name = 'smoke' + ''.join(secrets.choice(string.ascii_lowercase) for _ in range(6))
@@ -118,6 +121,36 @@ try:
         pg.wait_for_function('() => A && A.leagues && Object.values(A.leagues).some(l => l.own)', timeout=20000)
         check(True, 'פתיחת ליגת חברים מהאפליקציה'); pg.wait_for_selector('#sheet a[href^="https://wa.me/"]', timeout=10000)
         check(pg.locator('#sheet a[href^="https://wa.me/"]').count() == 1, 'מסך הזמנה עם כפתור וואטסאפ'); pg.evaluate('() => closeSheet()')
+        # --- המפגש השבועי: פתיחה ע"י בעל הליגה → (הרובוט מפרסם) → הצטרפות והימור בארנק המפגש → טלוויזיה → הזמנה
+        lid = pg.evaluate('() => Object.keys(A.leagues).find(l => A.leagues[l].own)'); me = pg.evaluate('() => A.pid')
+        R.fb(f'pub/lg/{lid}', 'PUT', {'n': 'smoke league', 'o': me, 'm': {me: name}, 'at': now})          # כמו שהרובוט מפרסם
+        pg.evaluate(f"() => {{ go('table'); setScope('{lid}'); }}"); pg.wait_for_selector('#mtNew', timeout=15000)
+        pg.click('#mtNew'); pg.wait_for_selector('#mtName', timeout=5000); pg.fill('#mtName', 'חמישי אצל דני'); pg.fill('#mtPrize', 'המפסיד מביא פיצה')
+        for e in (E, E3, E4): pg.check(f'#mtFx input[value="{e}"]')
+        pg.click('#mtGo'); pg.wait_for_function('() => A && A.mtown && Object.keys(A.mtown).length === 1', timeout=15000)
+        for _ in range(20):                                              # מחכים לאישור השרת (לא רק לעדכון המקומי)
+            mts = (acct()[1] or {}).get('mtown') or {}
+            if mts: break
+            time.sleep(0.5)
+        check(bool(mts), 'השרת קיבל את פתיחת המפגש'); mid, mo = list(mts.items())[0]
+        check(mo['lid'] == lid and set(mo['fx']) == {E, E3, E4} and mo['prize'] == 'המפסיד מביא פיצה', 'פתיחת מפגש מהאפליקציה (בעל הליגה)')
+        R.fb('', 'PATCH', {f'pub/mtx/{mid}': lid, f'pub/mt/{lid}/{mid}': {'lid': lid, 'n': mo['n'], 'when': mo['when'], 'fx': mo['fx'], 'stack': 1000, 'prize': mo['prize'], 'o': me, 'on': name, 'st': 'open', 'at': now}})
+        pg.wait_for_selector('#mtJoin', timeout=15000); check(True, 'המפגש נפתח אוטומטית אחרי פרסום – כפתור "אני בפנים"')
+        pg.click(f'button.ob[data-m="{mid}"][data-e="{E}"][data-p="1"]'); pg.wait_for_selector('#sheet .mtag', timeout=5000)
+        check(pg.locator('#sheet .jk').count() == 0, 'גיליון הימור במצב מפגש (בלי ג׳וקר)')
+        pg.fill('#stakeIn', '100'); pg.click('#betBtn')
+        pg.wait_for_function(f"() => A.mt && A.mt['{mid}'] && A.mt['{mid}'].wallet && A.mt['{mid}'].wallet.bal === 900 && Object.keys(A.mt['{mid}'].bets||{{}}).length === 1", timeout=20000)
+        a2 = acct()[1]; check(a2['mt'][mid]['wallet']['bal'] == 900 and a2['wallet']['bal'] == 500, 'הימור במפגש יורד מארנק המפגש (900), היתרה הראשית לא נגעה (500)')
+        R.fb(f'pub/mtst/{mid}', 'PUT', {'st': 'open', 'rows': [{'pid': me, 'n': name, 'v': 1000, 'won': 0, 'dn': 0, 'nb': 1, 'rk': 1}]})
+        pg.wait_for_selector('.mtt .r.me', timeout=10000); check(True, 'טבלת המפגש מוצגת')
+        pg.click('#mtTv'); check(pg.locator('#tv.show .mtt.big .r').count() == 1, 'מצב טלוויזיה – טבלה גדולה'); pg.evaluate('() => tvClose()'); pg.wait_for_timeout(800)
+        check(pg.evaluate('() => !document.fullscreenElement'), 'יציאה ממצב טלוויזיה מחזירה את המסך (גם בסגירה מהירה)')
+        pg.evaluate("() => { window.__wa=null; window.open=u=>{ window.__wa=u; return null; }; }"); pg.click('#mtInv')
+        inv = urllib.parse.unquote(pg.evaluate('() => window.__wa') or '')
+        check('היי אח, מפגש ניחושים אצלנו' in inv and f'#join={lid}&mt={mid}' in inv, 'הזמנה לוואטסאפ למפגש עם לינק')
+        pg.evaluate("() => go('mine')"); pg.click('#fbBtn'); pg.fill('#fbIn', 'בדיקת פידבק – "אחלה" משחק'); pg.click('#fbGo')
+        pg.wait_for_function('() => A && A.fbk && Object.keys(A.fbk).length === 1', timeout=15000); check(True, 'שליחת פידבק')
+        CLEAN.update({f'pub/lg/{lid}': None, f'pub/mt/{lid}': None, f'pub/mtx/{mid}': None, f'pub/mtst/{mid}': None})
         ctx2 = b.new_context(viewport={'width': 390, 'height': 844}); pg2 = ctx2.new_page()
         pg2.goto('http://127.0.0.1:8765/index.html'); pg2.wait_for_selector('#nameIn', timeout=20000)
         pg2.click("a[onclick^=\"loginWithCode\"]"); pg2.wait_for_selector('#codeIn', timeout=5000)
@@ -147,7 +180,7 @@ except Exception as ex:
     check(False, f'הבדיקה נתקעה: {ex}')
 finally:
     s, a = acct()
-    upd = {f'fixtures/{E}': None, f'fixtures/{E2}': None}
+    upd = {f'fixtures/{E}': None, f'fixtures/{E2}': None, f'fixtures/{E3}': None, f'fixtures/{E4}': None, **CLEAN}
     if s: upd.update({f'acct/{s}': None, f"names/{a['nk']}": None}); upd.update({f"rc/{a['rc']}": None} if a.get('rc') else {}); upd.update({f'lgdef/{l}': None for l in (a.get('leagues') or {})})
     upd.update({f'acct/{OTHER_SEC}': None, f'names/{OTHER_NAME}': None, f'rc/{OTHER_RC}': None, f'pub/profiles/{OTHER_PID}': None})
     R.fb('', 'PATCH', upd); srv.shutdown()

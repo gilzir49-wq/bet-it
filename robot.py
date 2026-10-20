@@ -250,6 +250,16 @@ def settle_account(sec):
                 pay = payout(b) if st == 'won' else (b['s'] if st == 'void' else 0)
                 settled[bid] = {'st': st, 'pay': pay, 'at': now_ms()}
                 w['bal'] = w.get('bal', 0) + pay; w['op'] = 's:' + bid; changed += 1
+        for mid, M in (acct.get('mt') or {}).items():           # מפגשים: נסגרים רק לתוך ארנק המפגש (לא נוגעים ביתרה הראשית ובקופה)
+            if not isinstance(M, dict) or not isinstance(M.get('wallet'), dict): continue
+            ms = M.setdefault('settled', {}); mw = M['wallet']
+            for bid, b in (M.get('bets') or {}).items():
+                if bid in ms: continue
+                st = state(b)
+                if st in ('won', 'lost', 'void'):
+                    pay = payout(b) if st == 'won' else (b['s'] if st == 'void' else 0)
+                    ms[bid] = {'st': st, 'pay': pay, 'at': now_ms()}
+                    mw['bal'] = mw.get('bal', 0) + pay; mw['op'] = 's:' + bid; changed += 1
         wk = week_key(now_ms())
         if w.get('wk') != wk:
             if week_key(acct.get('joined', 0)) != wk:            # מי שהצטרף השבוע כבר קיבל 500
@@ -263,7 +273,9 @@ def settle_account(sec):
 def needs_settle(acct):
     w = acct.get('wallet') or {}; settled = acct.get('settled') or {}
     if w.get('wk') != week_key(now_ms()): return True
-    return any(bid not in settled and state(b) in ('won', 'lost', 'void') for bid, b in (acct.get('bets') or {}).items())
+    if any(bid not in settled and state(b) in ('won', 'lost', 'void') for bid, b in (acct.get('bets') or {}).items()): return True
+    return any(bid not in ((M or {}).get('settled') or {}) and state(b) in ('won', 'lost', 'void')
+               for M in (acct.get('mt') or {}).values() if isinstance(M, dict) for bid, b in (M.get('bets') or {}).items())
 
 # ---------- פרסום: טבלאות, בנק, הימורים שנחשפו ----------
 def calc(a, F):
@@ -373,6 +385,99 @@ def leagues_tick(accts):
     out = {k: v for k, v in out.items() if v['o']}
     sig = json.dumps(out, sort_keys=True)
     if published.get('lg') != sig: fb('pub/lg', 'PUT', out or None); published['lg'] = sig
+    return out
+
+# ---------- המפגש השבועי (ערב ניחושים לליגת חברים) ----------
+# בעל הליגה כותב acct/<מפתח>/mtown/<mid>; הרובוט מאמת ומפרסם pub/mt/<lid>/<mid> + pub/mtx/<mid>=lid (לחוקים).
+# כל משתתף מקבל ארנק נפרד של 1,000 (acct/<מפתח>/mt/<mid>) – הימורי המפגש לא נוגעים ביתרה הראשית ולא בקופת הבנק.
+MT_STACK, MT_MIN_FX, MT_MAX_FX, MT_MAX_OPEN = 1000, 3, 12, 5
+MT_POINTS = {1: 10, 2: 7, 3: 5}; MT_POINTS_REST = 2
+mt_known = {}          # mid -> lid (מה שכבר פורסם; נטען מ-pub/mtx בהפעלה)
+def mt_state(m):
+    fs = [fixtures.get(e) for e in m['fx']]
+    if fs and all(f and f.get('st') in ('finished', 'postp') for f in fs): return 'done'
+    if any(f and (f.get('st') != 'none' or now_ms() >= f['ko'] - LOCK_MS) for f in fs): return 'live'
+    return 'open'
+def mt_value(M, F=None):
+    w = (M.get('wallet') or {}); v = w.get('bal', 0); won = dn = 0; ms = M.get('settled') or {}; shown = []
+    for bid, b in (M.get('bets') or {}).items():
+        s = ms.get(bid); st = s['st'] if s else state(b, F)
+        if not s: v += payout(b) if st == 'live-win' else (b['s'] if st == 'open' else 0)
+        if st in ('won', 'lost') and s: dn += 1; won += st == 'won'
+        f = fixtures.get(b['e'])
+        if f and (f['st'] != 'none' or now_ms() >= f['ko'] - LOCK_MS):          # נחשף רק אחרי הנעילה
+            shown.append({'e': b['e'], 'm': b['m'], 'p': b['p'], 's': b['s'], 'st': st})
+    return v, won, dn, shown
+def meetups_tick(accts, lg):
+    by_pid = {a['pid']: a for a in accts.values() if a and 'pid' in a}
+    cand = []
+    for sec, a in accts.items():
+        for mid, m in ((a or {}).get('mtown') or {}).items():
+            if isinstance(m, dict) and 'pid' in a: cand.append((m.get('at', 0), mid, m, a['pid']))
+    meets = {}                                                     # lid -> {mid: pub}
+    for at, mid, m, pid in sorted(cand, key=lambda x: (x[0], x[1])):
+        lid = m.get('lid'); fx = sorted(e for e, v in (m.get('fx') or {}).items() if v is True)
+        if mid not in mt_known:                                    # חדש – מאמתים לפני פרסום
+            L = lg.get(lid)
+            if not L or L.get('o') != pid: continue                       # רק בעל הליגה
+            if not (MT_MIN_FX <= len(fx) <= MT_MAX_FX) or any(e not in fixtures for e in fx): continue
+            if sum(1 for x in (meets.get(lid) or {}).values() if x['st'] != 'done') >= MT_MAX_OPEN: continue   # הצפה
+        elif mt_known[mid] != lid: continue
+        pub = {'lid': lid, 'n': str(m.get('n', ''))[:30], 'when': m.get('when', 0), 'fx': {e: True for e in fx}, 'stack': MT_STACK,
+               'prize': str(m.get('prize') or '')[:60], 'o': pid, 'on': (by_pid.get(pid) or {}).get('name', ''), 'at': at}
+        pub['st'] = mt_state(pub); meets.setdefault(lid, {})[mid] = pub
+    upd = {}
+    for lid, ms in meets.items():
+        for mid, pub in ms.items():
+            if mt_known.get(mid) != lid: upd[f'pub/mtx/{mid}'] = lid; mt_known[mid] = lid
+            if published.get('mt' + mid) != json.dumps(pub, sort_keys=True): upd[f'pub/mt/{lid}/{mid}'] = pub; published['mt' + mid] = json.dumps(pub, sort_keys=True)
+    # טבלה לייב לכל מפגש + פודיום בסוף
+    rows_of = {}
+    for a in accts.values():
+        if not a or 'pid' not in a: continue
+        for mid, M in (a.get('mt') or {}).items():
+            if not isinstance(M, dict) or not isinstance(M.get('wallet'), dict) or mid not in mt_known: continue
+            v, won, dn, shown = mt_value(M)
+            rows_of.setdefault(mid, []).append({'pid': a['pid'], 'n': a['name'], 'v': round(v), 'won': won, 'dn': dn, 'nb': len(M.get('bets') or {}), 'b': shown})
+    summ = {}
+    for lid, ms in meets.items():
+        for mid, pub in ms.items():
+            rows = rows_of.get(mid, []); rk = ranks('v', rows)
+            for r in rows: r['rk'] = rk[r['pid']]
+            rows.sort(key=lambda r: (r['rk'], r['n']))
+            body = {'rows': rows, 'st': pub['st']}
+            if pub['st'] == 'done':
+                body['podium'] = [{'pid': r['pid'], 'n': r['n'], 'v': r['v'], 'rk': r['rk']} for r in rows if r['rk'] <= 3]
+                for r in rows:                                     # טבלה מצטברת לליגה: 1=10, 2=7, 3=5, השאר 2
+                    S = summ.setdefault(lid, {}).setdefault(r['pid'], {'pid': r['pid'], 'n': r['n'], 'pts': 0, 'mts': 0, 'w': 0})
+                    S['pts'] += MT_POINTS.get(r['rk'], MT_POINTS_REST); S['mts'] += 1; S['w'] += r['rk'] == 1; S['n'] = r['n']
+            if published.get('mts' + mid) != json.dumps(body, sort_keys=True): upd[f'pub/mtst/{mid}'] = body; published['mts' + mid] = json.dumps(body, sort_keys=True)
+    for lid, S in summ.items():
+        rows = sorted(S.values(), key=lambda r: (-r['pts'], -r['w'], r['n'])); prev = None
+        for i, r in enumerate(rows): r['rk'] = prev['rk'] if prev and prev['pts'] == r['pts'] else i + 1; prev = r
+        body = {'rows': rows}
+        if published.get('mtsum' + lid) != json.dumps(body, sort_keys=True): upd[f'pub/mtsum/{lid}'] = body; published['mtsum' + lid] = json.dumps(body, sort_keys=True)
+    if upd: fb('', 'PATCH', upd)
+    return meets
+
+# ---------- פידבק משחקנים → מסך המנהל ----------
+FB_KEEP, FB_PER_ACCT = 200, 20
+fb_log = {}            # fid -> {...} (נטען מ-adminFb בהפעלה)
+def feedback_tick(accts):
+    keys = None; dele = {}; new = 0
+    for sec, a in accts.items():
+        items = sorted(((a or {}).get('fbk') or {}).items(), key=lambda x: -((x[1] or {}).get('at', 0)))
+        for i, (fid, x) in enumerate(items):
+            dele[f'acct/{sec}/fbk/{fid}'] = None
+            if i < FB_PER_ACCT and isinstance(x, dict) and fid not in fb_log and isinstance(x.get('t'), str):   # הצפה מחשבון אחד – רק 20 אחרונים
+                fb_log[fid] = {'t': x['t'][:500], 'at': x.get('at', 0), 'pid': a.get('pid'), 'n': a.get('name', '')}; new += 1
+    if not dele: return 0
+    for fid in sorted(fb_log, key=lambda k: fb_log[k]['at'])[:-FB_KEEP]: fb_log.pop(fid)   # רק 200 אחרונים
+    fb('adminFb', 'PUT', fb_log or None)                     # קודם שומרים (לא קריא מבחוץ) …
+    keys = fb('adminKeys') or {}
+    for k in keys: fb(f'adminView/{k}/fb', 'PUT', fb_log or None)
+    for i in range(0, len(dele), 500): fb('', 'PATCH', dict(list(dele.items())[i:i + 500]))   # … ורק אז מוחקים מהחשבון
+    return new
 
 # ---------- מנהל ----------
 rid = lambda s: hashlib.sha256(s.encode()).hexdigest()[:10]
@@ -458,6 +563,7 @@ if __name__ == '__main__':
     fixtures.update(fb('fixtures') or {})
     for lg, v in (fb('pub/tables') or {}).items(): tables[lg] = v.get('rows', [])
     for e in (fb('pub/revealed') or {}): published['rv' + e] = ''        # כך ישנים יימחקו בסבב הראשון
+    mt_known.update(fb('pub/mtx') or {}); fb_log.update(fb('adminFb') or {})
     if not once:
         for p in ('acct', 'names', 'lgdef'): Mirror(p)
     last_refresh = 0
@@ -472,7 +578,8 @@ if __name__ == '__main__':
             if n: msg.append(f'settled {n}'); accts = fb('acct') or {}
             publish(accts, prev)
             admin_tick(accts)
-            leagues_tick(accts)
+            meetups_tick(accts, leagues_tick(accts) or {})
+            if feedback_tick(accts): msg.append('feedback')
             cleanup_names(accts)
             if int(time.time()) % 300 < POLL: heal_codes(accts)   # כל ~5 דקות
             fb('pub/meta/robotAt', 'PUT', now_ms())
