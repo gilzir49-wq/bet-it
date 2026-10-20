@@ -42,7 +42,7 @@ assert req('PATCH','',{f'lgdef/{LID}':{'n':'e2e league','at':SV},f'acct/{s2}/lea
 assert req('PUT',f'acct/{sB}/leagues/{LID}',{'at':SV})[0]==200
 subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
 assert req('GET','pub/lg')[1] is None; print('public list of all leagues (pub/lg) is gone')
-assert pB not in [r['pid'] for r in req('GET','pub/standings')[1]['rows']]; print('new player without guesses is not in the national table')
+nr=[r for r in req('GET','pub/standings')[1]['rows'] if r['pid']==pB]; assert nr and nr[0].get('ng') and nr[0]['pf']==0 and nr[0]['rk']==max(r['rk'] for r in req('GET','pub/standings')[1]['rows']), nr; print('new player without guesses IS in the national table – at the bottom, 0, "not guessed yet"')
 lv=req('GET',f'lgv/{LID}')[1]; assert lv and lv['o']==pid and set(lv['m'])=={pid,pB} and lv['rk']['of']>=1, lv; print('private league view (lgv) published, rank', lv['rk'])
 assert req('GET','lgv')[0]==401 and (req('GET','pub/stats')[1] or {}).get('leagues',0)>=1; print('league list is private, only a count is public')
 assert req('PUT',f'acct/{s2}/lgkick/{LID}/{pB}',True)[0]==200
@@ -53,5 +53,27 @@ assert req('PUT',f'acct/{sB}/leagues/{LID}',{'at':SV})[0]==200   # מנסה לח
 subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
 assert pB not in req('GET',f'lgv/{LID}')[1]['m']; print('banned member cannot rejoin')
 R.fb('','PATCH',{f'acct/{sB}':None,f'names/{nB}':None,f'lgdef/{LID}':None,f'lgban/{LID}':None,f'lgv/{LID}':None})
+# דירוג לייב מול רשמי: גול משנה את standingsLive, הרשמי לא זז עד 23:59 · הימור על משחק פתוח לא נחשף
+E3,E4='999000031','999000032'
+R.fb('','PATCH',{f'fixtures/{E3}':{'lg':'isr1','home':'Maccabi Haifa','away':'Hapoel Haifa','ko':now+86400000,'day':day,'st':'none','h':0,'a':0,'odds':{'1':2.0,'X':3.0,'2':4.0}},
+                 f'fixtures/{E4}':{'lg':'isr1','home':'Hapoel Tel Aviv','away':'Beitar Jerusalem','ko':now+86400000,'day':day,'st':'none','h':0,'a':0,'odds':{'1':2.0,'X':3.0,'2':4.0}}})
+nL,sL,pL='e2e'+rs(8,AZ),'s'+rs(48,AZM),'p'+rs(16,AZ)
+assert req('PATCH','',{f'names/{nL}':pL,f'acct/{sL}':{'name':nL,'nk':nL,'pid':pL,'joined':SV,'wallet':{'bal':500,'op':'init'}}})[0]==200
+assert req('PATCH','',{f'acct/{sL}/bets/bliv0000001':{'e':E3,'m':'W','p':'1','s':100,'o':2.0,'at':SV},f'acct/{sL}/wallet/bal':400,f'acct/{sL}/wallet/op':'b:bliv0000001'})[0]==200
+assert req('PATCH','',{f'acct/{sL}/bets/bliv0000002':{'e':E4,'m':'W','p':'2','s':30,'o':4.0,'at':SV},f'acct/{sL}/wallet/bal':370,f'acct/{sL}/wallet/op':'b:bliv0000002'})[0]==200
+R.fb(f'fixtures/{E3}','PATCH',{'st':'live','ko':now-1800000,'min':"30'"})
+env2={k:v for k,v in os.environ.items() if k!='FORCE_STANDINGS'}
+def robot2(): subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=env2)
+robot2(); robot2()
+off1=req('GET','pub/standings')[1]; lv1=[r for r in (req('GET','pub/standingsLive')[1] or {}).get('rows',[]) if r['pid']==pL]
+assert lv1 and lv1[0]['pf']==-100, lv1; print('live ranking: 0-0 → -100 (bet on home)')
+R.fb(f'fixtures/{E3}','PATCH',{'h':1}); robot2()
+lv2=[r for r in req('GET','pub/standingsLive')[1]['rows'] if r['pid']==pL]
+assert lv2[0]['pf']==100 and 'pp' in lv2[0], lv2; print('goal 1-0 → live ranking +100')
+assert req('GET','pub/standings')[1]==off1; print('official ranking unchanged until 23:59')
+rv=req('GET','pub/revealed')[1] or {}
+assert f'{pL}_bliv0000001' in (rv.get(E3) or {}) and not rv.get(E4) and not any(k.startswith(pL+'_bliv0000002') for m in rv.values() for k in (m or {})), rv.get(E4)
+assert 'b' not in lv2[0] and set(lv2[0])<= {'pid','n','pf','won','dn','rk','pp'}; print('a bet on a match that has not started is not visible anywhere (revealed / live table)')
+R.fb('','PATCH',{f'acct/{sL}':None,f'names/{nL}':None,f'fixtures/{E3}':None,f'fixtures/{E4}':None,f'pub/profiles/{pL}':None,f'pub/revealed/{E3}':None})
 R.fb('','PATCH',{f'acct/{s2}':None,f'acct/{sec}':None,f'names/{nk}':None,f'fixtures/{E}':None,f'pub/revealed/{E}':None,f'pub/profiles/{pid}':None,f'adminView/{K}/log':None})
 R.fb(f'adminKeys/{K}','DELETE'); print('cleaned')

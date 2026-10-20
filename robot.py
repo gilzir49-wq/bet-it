@@ -277,29 +277,41 @@ def ranks(key, rs):
         out[r['pid']] = out[prev['pid']] if prev and prev[key] == r[key] else i + 1; prev = r
     return out
 
-def stats_of(a):
-    """סטטיסטיקה מהניחושים שנסגרו בלבד: רווח/הפסד לפי היחסים (pay − סכום; הוחזר = 0), פגיעות, כמה נסגרו."""
-    pf = won = dn = 0; bets = a.get('bets') or {}
-    for bid, s in (a.get('settled') or {}).items():
+def stats_of(a, live=False):
+    """סטטיסטיקה מהניחושים שנסגרו בלבד: רווח/הפסד לפי היחסים (pay − סכום; הוחזר = 0), פגיעות, כמה נסגרו.
+    live=True: גם משחקים שרצים/נגמרו ועוד לא נסגרו – לפי התוצאה הנוכחית (לדירוג הלייב בלבד)."""
+    pf = won = dn = 0; bets = a.get('bets') or {}; settled = a.get('settled') or {}
+    for bid, s in settled.items():
         b = bets.get(bid)
         if not b or s.get('st') not in ('won', 'lost'): continue
         dn += 1; won += s['st'] == 'won'; pf += (s.get('pay') or 0) - b['s']
+    if live:
+        for bid, b in bets.items():
+            if bid in settled: continue
+            st = state(b)
+            if st in ('won', 'live-win'): pf += payout(b) - b['s']
+            elif st in ('lost', 'live-lose'): pf -= b['s']
+            if st in ('won', 'lost'): dn += 1; won += st == 'won'
     return round(pf), won, dn, len(bets)
 def official_day(now):
     """לאיזה יום שייך הדירוג הרשמי האחרון שהיה צריך להתפרסם: היום אחרי 23:59, אחרת אתמול."""
     d = datetime.datetime.fromtimestamp(now / 1000, IL)
     if (d.hour, d.minute) >= (23, 59): return d.strftime('%Y-%m-%d')
     return (d - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-def standings_rows(accts):
-    """הטבלה הארצית: כל מי שניחש לפחות פעם אחת. מדורג לפי רווח כולל, אחר כך פגיעות."""
-    rows = []
+def standings_rows(accts, live=False):
+    """הטבלה הארצית: כל מי שנכנס לאפליקציה (גל: "זה יניע אנשים לפעולה"). מדורג לפי רווח כולל, אחר כך פגיעות;
+    מי שעוד לא ניחש – בתחתית, 0, מסומן ng (לא משתתף בדירוג של המנחשים)."""
+    rows, idle = [], []
     for a in accts.values():
         if not a or 'pid' not in a: continue
-        pf, won, dn, nb = stats_of(a)
-        if nb or dn: rows.append({'pid': a['pid'], 'n': a['name'], 'pf': pf, 'won': won, 'dn': dn, 'nb': nb})
+        pf, won, dn, nb = stats_of(a, live)
+        r = {'pid': a['pid'], 'n': a['name'], 'pf': pf, 'won': won, 'dn': dn, 'nb': nb}
+        if nb or dn: rows.append(r)
+        else: r['ng'] = True; idle.append(r)
     rk = ranks('pf', rows)
     for r in rows: r['rk'] = rk[r['pid']]
-    return sorted(rows, key=lambda r: (r['rk'], r['n']))
+    for r in idle: r['rk'] = len(rows) + 1
+    return sorted(rows, key=lambda r: (r['rk'], r['n'])) + sorted(idle, key=lambda r: r['n'])
 def publish(accts, prev_fx=None):
     now = now_ms()
     bank, revealed, profiles = BANK_START, {}, {}
@@ -313,7 +325,7 @@ def publish(accts, prev_fx=None):
             if st in ('lost', 'live-lose'): bank += b['s']
             elif st in ('won', 'live-win'): bank -= payout(b) - b['s']
             if f and (f['st'] != 'none' or now >= f['ko'] - LOCK_MS) and f['ko'] > now - REVEAL_MS:   # נחשף רק אחרי הנעילה; ישנים לא נשלחים לכולם
-                revealed.setdefault(b['e'], {})[f"{a['pid']}_{bid}"] = {'n': a['name'], 'm': b['m'], 'p': b['p'], 's': b['s'], 'j': bool(b.get('j')), 'st': st}
+                revealed.setdefault(b['e'], {})[f"{a['pid']}_{bid}"] = {'n': a['name'], 'm': b['m'], 'p': b['p'], 's': b['s'], 'o': b.get('o'), 'j': bool(b.get('j')), 'st': st}
     # הדירוג הרשמי – פעם ביום ב-23:59 (משחק שנגמר אחרי חצות נכנס לעדכון של מחר). חצים = שינוי מהעדכון הקודם.
     day = official_day(now); upd = {}
     if published.get('stday') != day or os.environ.get('FORCE_STANDINGS'):
@@ -322,6 +334,20 @@ def publish(accts, prev_fx=None):
         upd['pub/standings'] = {'rows': rows, 'day': day, 'at': now, 'bank': round(bank)}
         published['stday'] = day; published['strk'] = {r['pid']: r['rk'] for r in rows}; published['stpf'] = {r['pid']: r['pf'] for r in rows}
     if published.get('bank') != round(bank): upd['pub/bank'] = round(bank); published['bank'] = round(bank)       # הקופה – לייב
+    # דירוג לייב (בנוסף לרשמי): כולל משחקים שרצים לפי התוצאה הנוכחית; חצים = שינוי מאז הגול/התוצאה האחרונה.
+    # מתפרסם רק כשמשהו השתנה (לא כל 20 שניות).
+    lrows = standings_rows(accts, live=True)
+    for r in lrows: r.pop('nb', None)                                   # מספר הימורים משתנה בכל הימור – לא שולחים את כל הטבלה לכולם בגללו
+    g = json.dumps(sorted((e, f.get('h'), f.get('a'), f.get('st')) for e, f in fixtures.items() if f.get('st') in ('live', 'finished') and f['ko'] > now - 2 * 86400000))
+    base = published.get('lvbase') or {}
+    if g != published.get('lvg'):                                       # גול/סיום משחק – החצים נמדדים מהדירוג שלפני
+        base = published.get('lvrk') or base; published['lvg'] = g; published['lvbase'] = base
+    for r in lrows: r['pp'] = base.get(r['pid'], r['rk'])
+    live_now = any(f.get('st') == 'live' for f in fixtures.values())
+    sig = json.dumps([lrows, live_now], sort_keys=True)
+    if published.get('lvsig') != sig:
+        upd['pub/standingsLive'] = {'rows': lrows, 'live': live_now, 'at': now}
+        published['lvsig'] = sig; published['lvrk'] = {r['pid']: r['rk'] for r in lrows}
     # כמה הימורים יש על כל משחק שעוד לא ננעל ("9 מהחבר׳ה כבר הימרו") – רק מספר, בלי לחשוף מה
     cnt = {}
     for a in accts.values():
@@ -533,6 +559,8 @@ if __name__ == '__main__':
     for lg, v in (fb('pub/tables') or {}).items(): tables[lg] = v.get('rows', [])
     for e in (fb('pub/revealed') or {}): published['rv' + e] = ''        # כך ישנים יימחקו בסבב הראשון
     fb_log.update(fb('adminFb') or {})
+    lv0 = fb('pub/standingsLive') or {}
+    published['lvrk'] = published['lvbase'] = {r['pid']: r.get('rk') for r in lv0.get('rows', []) if 'rk' in r}
     st0 = fb('pub/standings') or {}
     if st0.get('day'):
         published['stday'] = st0['day']; published['strk'] = {r['pid']: r.get('rk') for r in st0.get('rows', []) if 'rk' in r}
