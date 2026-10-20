@@ -1318,18 +1318,25 @@ function loginWithCode(){
       <label for="codeUser">השם שלך <span style="color:var(--mut);font-weight:500">(לא חובה)</span></label>
       <input id="codeUser" name="username" autocomplete="username" placeholder="השם שהחבר׳ה מכירים" value="${esc(lastTakenName||'')}" maxlength="20">
       <label for="codeIn">קוד הכניסה (12 תווים)</label>
-      <div class="jr"><input id="codeIn" name="password" type="password" autocomplete="current-password" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" maxlength="16">
+      <div class="jr"><input id="codeIn" name="password" type="password" autocomplete="current-password" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" onpaste="setTimeout(()=>codePasted(this),0)">
         <button type="button" aria-label="הצג קוד" onclick="const i=document.getElementById('codeIn');i.type=i.type==='password'?'text':'password'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+      <button type="button" class="btn sec" style="margin-top:8px" onclick="pasteCode()">📋 הדבק את הקוד מהוואטסאפ</button>
       <button class="btn" id="codeGo" type="submit">כניסה</button></form>
+    <div class="muted" style="text-align:center;margin-top:6px">אפשר להדביק את כל ההודעה מהוואטסאפ – אנחנו נמצא בה את הקוד</div>
     <div class="optc" style="cursor:default"><span class="ic2" style="background:#25D366"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#04210F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/></svg></span><span class="tx"><b>שלחת את הקוד לעצמך?</b><span>חפש בוואטסאפ "הכניסה שלי ל-BET-IT" ולחץ שם על הלינק – זה הכי קל.</span></span></div></div>`);
   try{ if(window.PasswordCredential&&navigator.credentials) navigator.credentials.get({password:true,mediation:'optional'}).then(c=>{ const i=document.getElementById('codeIn'); if(c&&c.password&&i&&!i.value) i.value=c.password; }).catch(()=>{}); }catch(e){}
   setTimeout(()=>{ const i=document.getElementById('codeIn'); if(i) i.focus(); },50);
 }
+function codePasted(i){ const c=normCode(i.value); if(c.length===12){ i.value=fmtRc(c); codeSubmit(); } }
+async function pasteCode(){ const i=document.getElementById('codeIn'); try{ const t=await navigator.clipboard.readText(); i.value=t; codePasted(i); if(normCode(t).length!==12) toast('לא מצאתי קוד בטקסט שהועתק – נסה להעתיק את ההודעה מהוואטסאפ',false,'err',3500); }
+  catch(e){ i.focus(); toast('לחץ לחיצה ארוכה בשדה ובחר "הדבק"',true,null,3000); } }
 async function codeSubmit(){ const b=document.getElementById('codeGo'); if(b) b.disabled=true;
   const ok=await useCode((document.getElementById('codeIn')||{}).value); if(ok) closeSheet(); else if(b) b.disabled=false; }
 
 // ================= שחזור עצמי: לינק אישי, וואטסאפ לעצמי, מנהל הסיסמאות (בלי מנהל ובלי מייל) =================
-const normCode = raw => String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const normCode = raw => { const t=String(raw||'').toUpperCase();
+  const m = t.match(/CODE=([A-HJ-NP-Z2-9]{12})/) || t.match(/([A-HJ-NP-Z2-9]{4})[-\s–]?([A-HJ-NP-Z2-9]{4})[-\s–]?([A-HJ-NP-Z2-9]{4})/);
+  return m ? (m[2]?m[1]+m[2]+m[3]:m[1]) : t.replace(/[^A-Z0-9]/g,''); };   // מדביקים את כל הודעת הוואטסאפ / הלינק / הקוד – זה מוצא לבד
 const selfLink = rc => `${APP_URL}/#code=${rc}`;            // הלינק = הקוד = סיסמה. רק אחרי # – לא מגיע לשרת
 const selfMsg = (rc,name) => `🔐 הכניסה שלי ל-BET-IT – לא לשתף!\n${name?`שם: ${name}\n`:''}קוד: ${fmtRc(rc)}\nלכניסה מטלפון חדש: ${selfLink(rc)}`;
 async function useCode(raw, viaLink){
