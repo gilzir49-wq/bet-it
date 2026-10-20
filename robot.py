@@ -126,15 +126,15 @@ def calc_odds(table, home, away):
         w = r['pld'] / (r['pld'] + 5); return 1 + ((r[k] / r['pld']) / mu - 1) * w
     lh = max(0.25, mu * st(home, 'gf') * st(away, 'ga') * 1.12); la = max(0.2, mu * st(away, 'gf') * st(home, 'ga') * 0.9)
     p1 = px = p2 = 0.0; cs = {}
-    for i in range(9):
-        for j in range(9):
+    for i in range(13):
+        for j in range(13):
             p = poisson(i, lh) * poisson(j, la)
             if i > j: p1 += p
             elif i == j: px += p
             else: p2 += p
-            if i <= 4 and j <= 4: cs[f'{i}-{j}'] = p
+            if i <= 9 and j <= 9: cs[f'{i}-{j}'] = p          # תוצאה מדויקת: עד 9 שערים לכל צד
     o = lambda p, lo=1.05, hi=15: round(min(hi, max(lo, 1 / (p * MARGIN))), 2)
-    return {'1': o(p1), 'X': o(px), '2': o(p2), 'cs': {k: o(p, 3.0, 80) for k, p in cs.items()}, 'lam': {'h': round(lh, 3), 'a': round(la, 3)}}
+    return {'1': o(p1), 'X': o(px), '2': o(p2), 'cs': {k: o(p, 3.0, 250) for k, p in cs.items()}, 'lam': {'h': round(lh, 3), 'a': round(la, 3)}}
 
 # ---------- מצב ----------
 fixtures, tables = {}, {}
@@ -434,6 +434,14 @@ def admin_tick(accts):
             fb(f'adminView/{k}', 'PATCH', {'users': users, 'reqs': rq}); published['av' + k] = sig
         fb(f'adminView/{k}/robot', 'PUT', now_ms())
 
+def heal_codes(accts):
+    """קוד כניסה תמיד מצביע לחשבון הנכון (תיקון עצמי אם משהו השתבש, למשל אחרי שחזור)."""
+    rcmap = fb('rc') or {}
+    for sec, a in accts.items():
+        rc = (a or {}).get('rc')
+        if rc and rcmap.get(rc) != sec:
+            fb(f'rc/{rc}', 'PUT', sec); print('healed code link for', a.get('name'), flush=True)
+
 def cleanup_names(accts):
     """שמות שנתפסו בלי חשבון (ספאם) – נמחקים אחרי 3 דקות."""
     names = fb('names') or {}; pids = {a.get('pid') for a in accts.values() if a}; t = time.time()
@@ -466,6 +474,7 @@ if __name__ == '__main__':
             admin_tick(accts)
             leagues_tick(accts)
             cleanup_names(accts)
+            if int(time.time()) % 300 < POLL: heal_codes(accts)   # כל ~5 דקות
             fb('pub/meta/robotAt', 'PUT', now_ms())
             print(datetime.datetime.now(IL).strftime('%d.%m %H:%M:%S'), ' · '.join(msg) or 'ok', flush=True)
         except Exception as ex:

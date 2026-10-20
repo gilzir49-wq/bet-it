@@ -79,7 +79,7 @@ check('הימור בסכום לא שלם', req('PATCH', '', bet(A, 'bpentest06',
 check('הימור על משחק נעול (דקה לפני)', req('PATCH', '', bet(A, 'bpentest07', 500, e=LOCKED, o=2.0))[0], 401)
 check('הימור על משחק שלא קיים', req('PATCH', '', bet(A, 'bpentest08', 500, e='123456'))[0], 401)
 check('הימור עם נתיב זדוני במזהה משחק', req('PATCH', '', bet(A, 'bpentest09', 500, e='../acct'))[0], 401)
-check('הימור על תוצאה לא חוקית (9-9)', req('PATCH', '', bet(A, 'bpentest10', 500, m='CS', p='9-9', o=6.5))[0], 401)
+check('הימור על תוצאה לא חוקית (12-0)', req('PATCH', '', bet(A, 'bpentest10', 500, m='CS', p='12-0', o=6.5))[0], 401)
 check('הימור עם שדה נוסף ("won")', req('PATCH', '', bet(A, 'bpentest11', 500, extra={'won': True}))[0], 401)
 check('הימור תקין', req('PATCH', '', bet(A, 'bpentest12', 500))[0], 200)
 check('שידור חוזר של אותו הימור (הורדה כפולה/עקיפה)', req('PATCH', '', bet(A, 'bpentest12', 450))[0], 401)

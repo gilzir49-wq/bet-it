@@ -1345,6 +1345,8 @@ async function useCode(raw, viaLink){
   let sec=null; try{ sec=await readOnce(`rc/${c}`); }catch(e){ toast('אין חיבור – נסה שוב',false,'err'); return false; }
   if(!sec){ toast(viaLink?'הלינק לא תקף 🤔 אולי החשבון נמחק':'הקוד לא נמצא 🤔 בדוק שהקלדת נכון',false,'err',3500); return false; }
   if(sec===SEC){ toast('אתה כבר מחובר לחשבון הזה ✅',true); return true; }
+  let nmChk=null; try{ nmChk=await readOnce(`acct/${sec}/name`); }catch(e){ toast('אין חיבור – נסה שוב',false,'err'); return false; }
+  if(!nmChk){ toast('החשבון של הקוד הזה לא נמצא כרגע – נסה שוב בעוד כמה דקות, ואם זה ממשיך: פנה למנהל',false,'err',5000); return false; }   // לא מנתקים ולא מחזירים למסך הפתיחה
   if(SEC){ let nm=''; try{ nm=(await readOnce(`acct/${sec}/name`))||''; }catch(e){}
     if(!confirm(`להחליף לחשבון "${nm||'אחר'}"?\n\nהחשבון שמחובר עכשיו${A&&A.name?` ("${A.name}")`:''} יתנתק מהמכשיר הזה – ודא ששמרת את הקוד שלו.`)) return false; }
   QUEUE=[]; saveQ();                                            // הימורים שחיכו לקליטה שייכים לחשבון הקודם – לא שולחים אותם מהחדש
@@ -1435,7 +1437,7 @@ function paintRng(r){ const p=(r.value-r.min)/Math.max(1,(r.max-r.min))*100; r.s
 function winHTML(win,s){ return `<span>זכייה אפשרית</span><span style="display:flex;align-items:baseline;gap:8px"><b>${fmt(win)}</b><small style="color:var(--mut);font-weight:700;direction:ltr">+${fmt(Math.max(0,win-s))}</small></span>`; }
 function updWin(){ const o=sheetOdds(), s=Math.max(0,Math.floor(sheetSt.s||0)); document.getElementById('winTxt').innerHTML=winHTML(o?(sheetSt.j?s+2*(s*o-s):s*o):0,s); }
 function setStake(v){ sheetSt.s=Math.max(0,v); renderSheet(); }
-function csB(k,d){ sheetSt[k]=Math.max(0,Math.min(4,sheetSt[k]+d)); renderSheet(); }
+function csB(k,d){ sheetSt[k]=Math.max(0,Math.min(9,sheetSt[k]+d)); renderSheet(); }
 // ===== תור הימורים: בלי קליטה ההימור נשמר בטלפון ונשלח אוטומטית כשהקליטה חוזרת =====
 let QUEUE=[]; try{ QUEUE=JSON.parse(lsGet('bb_q')||'[]'); }catch(e){ QUEUE=[]; }
 const saveQ=()=>lsSet('bb_q', QUEUE.length?JSON.stringify(QUEUE):null);
