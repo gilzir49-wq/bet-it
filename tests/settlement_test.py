@@ -39,12 +39,15 @@ assert req('PATCH','',{f'lgdef/{LID}':{'n':'e2e league','at':SV},f'acct/{s2}/lea
 assert req('PUT',f'acct/{sB}/leagues/{LID}',{'at':SV})[0]==200
 subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
 lg=req('GET',f'pub/lg/{LID}')[1]; assert lg and lg['o']==pid and set(lg['m'])=={pid,pB}, lg; print('league published:', lg['n'], len(lg['m']), 'members')
+lv=req('GET',f'lgv/{LID}')[1]; assert lv and lv['o']==pid and set(lv['m'])=={pid,pB} and lv['rk']['of']>=1, lv; print('private league view (lgv) published, rank', lv['rk'])
+assert req('GET','lgv')[0]==401 and (req('GET','pub/stats')[1] or {}).get('leagues',0)>=1; print('league list is private, only a count is public')
 assert req('PUT',f'acct/{s2}/lgkick/{LID}/{pB}',True)[0]==200
 subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
 lg=req('GET',f'pub/lg/{LID}')[1]; assert pB not in lg['m'] and req('GET',f'acct/{sB}')[1].get('leagues') is None, lg; print('kick works: member removed')
+assert pB not in req('GET',f'lgv/{LID}')[1]['m']; print('kick reflected in lgv')
 assert req('PUT',f'acct/{sB}/leagues/{LID}',{'at':SV})[0]==200   # מנסה לחזור
 subprocess.run([sys.executable,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','robot.py'),'--once'],capture_output=True,text=True,env=os.environ)
 assert pB not in req('GET',f'pub/lg/{LID}')[1]['m']; print('banned member cannot rejoin')
-R.fb('','PATCH',{f'acct/{sB}':None,f'names/{nB}':None,f'lgdef/{LID}':None,f'lgban/{LID}':None})
+R.fb('','PATCH',{f'acct/{sB}':None,f'names/{nB}':None,f'lgdef/{LID}':None,f'lgban/{LID}':None,f'lgv/{LID}':None})
 R.fb('','PATCH',{f'acct/{s2}':None,f'acct/{sec}':None,f'names/{nk}':None,f'fixtures/{E}':None,f'pub/revealed/{E}':None,f'pub/profiles/{pid}':None,f'adminView/{K}/log':None})
 R.fb(f'adminKeys/{K}','DELETE'); print('cleaned')

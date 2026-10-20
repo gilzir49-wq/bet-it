@@ -149,6 +149,17 @@ check('הצטרפות לליגה שלא קיימת', req('PUT', f'acct/{B}/leagu
 check('הרחקה ע"י מי שאינו בעלים', req('PUT', f'acct/{B}/lgkick/{LID}/{Apid}', True)[0], 401)
 check('הרחקה ע"י הבעלים', req('PUT', f'acct/{A}/lgkick/{LID}/{Bpid}', True)[0], 200)
 check('זיוף טבלת ליגות (pub/lg)', req('PUT', f'pub/lg/{LID}', {'n': 'x', 'o': Bpid, 'm': {}})[0], 401)
+R.fb(f'lgv/{LID}', 'PUT', {'n': 'pentest league', 'o': Apid, 'm': {Apid: 'a', Bpid: 'b'}})      # כמו שהרובוט מפרסם
+check('פרטיות: רשימת כל הליגות (lgv) חסומה', req('GET', 'lgv')[0], 401)
+for q in ['shallow=true', 'orderBy="$key"&limitToFirst=5']:
+    try:
+        with urllib.request.urlopen(f'{DB}/lgv.json?{urllib.parse.quote(q, safe="=&$")}', timeout=20) as x: st = x.status
+    except urllib.error.HTTPError as e: st = e.code
+    check(f'פרטיות: גילוי ליגות בשאילתה ({q.split("=")[0]})', st, 401)
+check('פרטיות: ליגה נקראת רק עם הקוד שלה (קוד ההזמנה)', (req('GET', f'lgv/{LID}')[1] or {}).get('o'), Apid)
+check('פרטיות: ניחוש קוד ליגה לא קיים', req('GET', f'lgv/{rs(6, RCA)}')[1], None)
+check('פרטיות: זיוף חברי ליגה (lgv)', req('PUT', f'lgv/{LID}/m/{rs(16, AZ)}', 'hacker')[0], 401)
+check('פרטיות: זיוף מספר הליגות (pub/stats)', req('PUT', 'pub/stats/leagues', 0)[0], 401)
 check('עזיבת ליגה', req('DELETE', f'acct/{B}/leagues/{LID}')[0], 200)
 
 print('--- מנהל')
@@ -167,7 +178,7 @@ st, a = req('GET', f'acct/{A}')
 check('יתרה סופית של A נכונה (500−50−10 = 440)', (a or {}).get('wallet', {}).get('bal'), 440)
 
 # ניקוי
-R.fb('', 'PATCH', {f'acct/{G}': None, f'names/{Gnk}': None, f'rc/{CODES[G]}': None, f'pub/profiles/{Gpid}': None, f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None, f'lgdef/{LID}': None,
+R.fb('', 'PATCH', {f'acct/{G}': None, f'names/{Gnk}': None, f'rc/{CODES[G]}': None, f'pub/profiles/{Gpid}': None, f'acct/{A}': None, f'acct/{B}': None, f'names/{Ank}': None, f'names/{Bnk}': None, f'rc/{CODES[A]}': None, f'rc/{CODES[B]}': None, f'lgdef/{LID}': None, f'lgv/{LID}': None,
                    f'fixtures/{OPEN}': None, f'fixtures/{LOCKED}': None, f'pub/profiles/{Apid}': None, f'pub/profiles/{Bpid}': None, f'pub/revealed/{OPEN}': None})
 print(f"\nסיכום: {sum(ok for ok, _ in results)}/{len(results)} בדיקות עברו")
 sys.exit(0 if all(ok for ok, _ in results) else 1)
