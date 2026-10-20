@@ -123,10 +123,9 @@ try:
         check(pg.locator('#sheet a[href^="https://wa.me/"]').count() == 1, 'מסך הזמנה עם כפתור וואטסאפ'); pg.evaluate('() => closeSheet()')
         # --- פרטיות ליגות: הטלפון מאזין רק לליגה שלו; ליגות אחרות – רק מספר
         lid = pg.evaluate('() => Object.keys(A.leagues).find(l => A.leagues[l].own)'); me = pg.evaluate('() => A.pid')
-        R.fb('', 'PATCH', {f'pub/lg/{lid}': {'n': 'smoke league', 'o': me, 'm': {me: name}, 'at': now}, 'pub/lg/ZZZZZZ': {'n': 'ליגה של אחרים', 'o': 'px', 'm': {'px': 'זר'}}})   # רובוט ישן
-        pg.evaluate(f"() => {{ unsubs['lg_{lid}']&&unsubs['lg_{lid}'](); delete lgSubs['{lid}']; lgStreams(); }}")
-        pg.wait_for_function(f"() => S.lg['{lid}'] && S.lg['{lid}'].n === 'smoke league'", timeout=15000)
-        check(True, 'מעבר: כשאין lgv עדיין – נופל ל-pub/lg של הליגה שלי בלבד')
+        R.fb('', 'PATCH', {f'pub/lg/{lid}': {'n': 'smoke league', 'o': me, 'm': {me: name}, 'at': now}, 'pub/lg/ZZZZZZ': {'n': 'ליגה של אחרים', 'o': 'px', 'm': {'px': 'זר'}}})   # שאריות ישנות
+        pg.evaluate(f"() => {{ unsubs['lg_{lid}']&&unsubs['lg_{lid}'](); delete lgSubs['{lid}']; lgStreams(); }}"); pg.wait_for_timeout(2500)
+        check(pg.evaluate(f"() => !S.lg['{lid}']"), 'האתר לא קורא יותר את pub/lg (רק lgv)')
         R.fb('', 'PATCH', {f'lgv/{lid}': {'n': 'smoke league', 'o': me, 'm': {me: name}, 'at': now, 'rk': {'rk': 2, 'of': 5, 'avg': 640}}, 'pub/stats': {'leagues': 6, 'players': 40}})
         pg.wait_for_function(f"() => S.lg['{lid}'] && S.lg['{lid}'].rk && S.stats && S.stats.leagues === 6", timeout=15000)
         check(pg.evaluate("() => Object.keys(S.lg).length === 1 && !S.lg.ZZZZZZ"), 'פרטיות: בטלפון יש רק את הליגה שלי (לא של אחרים)')
