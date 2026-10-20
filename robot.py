@@ -454,6 +454,19 @@ def admin_tick(accts):
             fb(f'adminView/{k}', 'PATCH', {'users': users, 'reqs': rq}); published['av' + k] = sig
         fb(f'adminView/{k}/robot', 'PUT', now_ms())
 
+_last_backup = [0]
+def trigger_backup():
+    """הגיבוי של GitHub לפי שעון מתעכב לפעמים בשעות – הרובוט (שרץ כל הזמן) מפעיל אותו בעצמו כל שעה."""
+    tok_gh = os.environ.get('GITHUB_TOKEN')
+    if not tok_gh or time.time() - _last_backup[0] < 3600: return
+    _last_backup[0] = time.time()
+    try:
+        req = urllib.request.Request('https://api.github.com/repos/gilzir49-wq/bet-it/actions/workflows/backup.yml/dispatches', method='POST',
+                                     data=json.dumps({'ref': 'master'}).encode(),
+                                     headers={'Authorization': 'Bearer ' + tok_gh, 'Accept': 'application/vnd.github+json'})
+        urllib.request.urlopen(req, timeout=20); print('backup triggered', flush=True)
+    except Exception as ex: print('backup trigger failed:', ex, flush=True)
+
 def heal_codes(accts):
     """קוד כניסה תמיד מצביע לחשבון הנכון (תיקון עצמי אם משהו השתבש, למשל אחרי שחזור)."""
     rcmap = fb('rc') or {}
@@ -495,6 +508,7 @@ if __name__ == '__main__':
             admin_tick(accts)
             leagues_tick(accts)
             cleanup_names(accts)
+            trigger_backup()
             if int(time.time()) % 300 < POLL: heal_codes(accts)   # כל ~5 דקות
             fb('pub/meta/robotAt', 'PUT', now_ms())
             print(datetime.datetime.now(IL).strftime('%d.%m %H:%M:%S'), ' · '.join(msg) or 'ok', flush=True)

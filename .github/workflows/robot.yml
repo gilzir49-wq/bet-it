@@ -6,6 +6,9 @@ on:
 concurrency:
   group: bux-bet-robot
   cancel-in-progress: false
+permissions:
+  contents: read
+  actions: write          # כדי שהרובוט יפעיל את הגיבוי כל שעה בעצמו
 jobs:
   robot:
     runs-on: ubuntu-latest
@@ -16,3 +19,4 @@ jobs:
       - run: python3 robot.py
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
