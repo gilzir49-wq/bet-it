@@ -390,7 +390,7 @@ def leagues_tick(accts):
         fb('', 'PATCH', dict(list(dead.items())[i:i + 500]))
     out = {k: v for k, v in out.items() if v['o']}
     sig = json.dumps(out, sort_keys=True)
-    if published.get('lg') != sig: fb('pub/lg', 'PUT', out or None); published['lg'] = sig      # מעבר: לקוח ישן עוד קורא את זה (יימחק ב-PR הבא)
+    if not published.get('lg_gone'): fb('pub/lg', 'DELETE'); published['lg_gone'] = True     # פרטיות: הרשימה הציבורית של כל הליגות נמחקה (פעם בהפעלה)
     # פרטיות: כל ליגה בנתיב משלה lgv/<קוד> (קריא רק למי שיודע את הקוד), ולכולם רק מספרים
     V = {r['pid']: r['v'] for r in json.loads(published.get('standings') or '{}').get('rows', [])}
     rk = sorted(((lid, len(L['m']), sum(V.get(p, 0) for p in L['m']) / max(1, len(L['m']))) for lid, L in out.items() if len(L['m']) >= 2), key=lambda x: (-x[2], -x[1], x[0]))

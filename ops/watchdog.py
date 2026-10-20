@@ -17,6 +17,12 @@ try:
     urllib.request.urlopen(DB + '/acct.json', timeout=20); problems.append('🚨 חוקי האבטחה פתוחים – אפשר לקרוא חשבונות!')
 except urllib.error.HTTPError as e:
     if e.code != 401: problems.append(f'בדיקת אבטחה החזירה {e.code}')
+try:   # פרטיות ליגות: הרשימה הציבורית של כל הליגות חייבת להישאר ריקה (קריאה בלבד)
+    if json.loads(get(DB + '/pub/lg.json?shallow=true')[1] or 'null'): problems.append('🚨 דליפת פרטיות: pub/lg חזר – רשימת כל הליגות פתוחה לכולם')
+    urllib.request.urlopen(DB + '/lgv.json?shallow=true', timeout=20); problems.append('🚨 דליפת פרטיות: אפשר לקרוא את רשימת כל הליגות (lgv)')
+except urllib.error.HTTPError as e:
+    if e.code != 401: problems.append(f'בדיקת פרטיות ליגות החזירה {e.code}')
+except Exception as e: problems.append(f'בדיקת פרטיות ליגות נכשלה: {e}')
 # תקיפה עצמית חיה (קריאה/כתיבה שחייבות להיחסם – לא משאירות שום דבר במסד)
 def denied(method, path, body=None):
     try:

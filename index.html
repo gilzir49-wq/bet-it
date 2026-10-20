@@ -685,8 +685,7 @@ const lgSubs={};
 function lgStreams(){ const want=new Set(Object.keys((A&&A.leagues)||{}));
   Object.keys(lgSubs).forEach(l=>{ if(!want.has(l)){ if(unsubs['lg_'+l]){ unsubs['lg_'+l](); delete unsubs['lg_'+l]; } delete lgSubs[l]; delete S.lg[l]; } });
   want.forEach(l=>{ if(lgSubs[l]) return; lgSubs[l]=1;
-    stream('lg_'+l,`lgv/${l}`, v=>{ if(v&&v.m){ S.lg[l]=v; if(tab==='table'&&!sheetSt) render(); return; }
-      readOnce(`pub/lg/${l}`).then(x=>{ if(x&&lgSubs[l]&&!(S.lg[l]&&S.lg[l].rk!==undefined)){ S.lg[l]=x; if(tab==='table'&&!sheetSt) render(); } }).catch(()=>{}); });   // מעבר: רובוט ישן עוד לא כתב lgv
+    stream('lg_'+l,`lgv/${l}`, v=>{ if(v&&v.m) S.lg[l]=v; else delete S.lg[l]; if(tab==='table'&&!sheetSt) render(); });
   }); }
 const otherLeagues = () => Math.max(0, ((S.stats&&S.stats.leagues)||0) - myLeagues().length);
 async function readOnce(path){ const F=await fbReady; return Promise.race([F.get(F.ref(F.db,path)).then(s=>s.val()), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]); }
