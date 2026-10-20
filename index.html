@@ -556,6 +556,7 @@ const LEAGUES = {
   isr2:{ n:'ליגה לאומית',  f:'🇮🇱' },
   eng: { n:'פרמייר ליג',   f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
   ita: { n:'סרייה A',      f:'🇮🇹' },
+  ucl: { n:'ליגת האלופות', f:'🏆' },
 };
 const HE = {   // שמות קבוצות בעברית (מה שלא מופיע כאן – יוצג באנגלית)
   'Maccabi Haifa':'מכבי חיפה','Maccabi Tel Aviv':'מכבי תל אביב','Hapoel Tel Aviv':'הפועל תל אביב','Hapoel Beer Sheva':'הפועל באר שבע',
@@ -574,6 +575,11 @@ const HE = {   // שמות קבוצות בעברית (מה שלא מופיע כ�
   'Burnley':'ברנלי','Leicester City':'לסטר','Southampton':"סאות'המפטון",
   'Inter':'אינטר','Lazio':'לאציו','AS Roma':'רומא','AC Milan':'מילאן','Como 1907':'קומו','Frosinone':'פרוזינונה','Cagliari':'קליארי','Juventus':'יובנטוס',
   'Napoli':'נאפולי','Atalanta':'אטלנטה','Lecce':"לצ'ה",'Sassuolo':'סאסואולו','Monza':'מונצה','Torino':'טורינו','Bologna':'בולוניה','Parma':'פארמה',
+  'Real Madrid':'ריאל מדריד','Barcelona':'ברצלונה','Atletico Madrid':'אתלטיקו מדריד','Bayern Munich':'באיירן מינכן','Borussia Dortmund':'דורטמונד',
+  'Bayer Leverkusen':'לברקוזן','RB Leipzig':'לייפציג','Eintracht Frankfurt':'איינטרכט פרנקפורט','Paris Saint-Germain':'פ.ס.ז׳','PSG':'פ.ס.ז׳','Monaco':'מונאקו','Marseille':'מרסיי',
+  'Benfica':'בנפיקה','FC Porto':'פורטו','Sporting CP':'ספורטינג ליסבון','Ajax':'אייאקס','PSV Eindhoven':'איינדהובן','Club Brugge':'קלאב ברוז׳','Celtic':'סלטיק',
+  'Galatasaray':'גלאטסראיי','Fenerbahçe':'פנרבחצ׳ה','Slavia Prague':'סלביה פראג','Olympiacos':'אולימפיאקוס','Villarreal':'ויאריאל','Athletic Bilbao':'אתלטיק בילבאו',
+  'FC Copenhagen':'קופנהגן','Bodø/Glimt':'בודו גלימט','Union St.-Gilloise':'יוניון סן ז׳ילואז','Qarabag':'קרבאח','Kairat':'קאיראט','Pafos':'פאפוס','Juventus':'יובנטוס',
   'Udinese':'אודינזה','Genoa':"ג'נואה",'Fiorentina':'פיורנטינה','Venezia':'ונציה','Empoli':'אמפולי','Verona':'ורונה','Hellas Verona':'ורונה','Pisa':'פיזה','Cremonese':'קרמונזה',
 };
 const ADS = [];   // בלי פרסומות כרגע
@@ -771,7 +777,7 @@ function renderTop(){
   if(a) animateBal(a.value); else shownBal=null;
 }
 // ===== כרטיס משחק – לפי העיצוב =====
-const LGCODE={isr1:'IL',isr2:'IL',eng:'EN',ita:'IT'};
+const LGCODE={isr1:'IL',isr2:'IL',eng:'EN',ita:'IT',ucl:'CL'};
 const hueOf=t=>{ let h=0; for(const c of String(t)) h=(h*31+c.charCodeAt(0))%360; return h; };
 function crest(img,name){ return `<span class="crest">${img?`<img src="https://lsm-static-prod.livescore.com/medium/${esc(img)}" alt="" loading="lazy" onerror="this.replaceWith(document.createTextNode('${esc(he(name).slice(0,2))}'))">`:`<span style="color:hsl(${hueOf(name)} 70% 70%)">${esc(he(name).slice(0,2))}</span>`}</span>`; }
 // סיכויי 1/X/2 בזמן אמת (לפי התוצאה, הדקה וצפי השערים)

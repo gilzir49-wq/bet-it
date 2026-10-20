@@ -11,7 +11,8 @@ DB = os.environ.get('DB_URL', 'https://buxbet-il-default-rtdb.europe-west1.fireb
 IL = ZoneInfo('Asia/Jerusalem')
 LS = 'https://prod-public-api.livescore.com/v1/api/app'
 LEAGUES = {'isr1': ('israel', 'premier-league'), 'isr2': ('israel', 'liga-leumit'),
-           'eng': ('england', 'premier-league'), 'ita': ('italy', 'serie-a')}
+           'eng': ('england', 'premier-league'), 'ita': ('italy', 'serie-a'),
+           'ucl': ('champions-league', 'league-stage')}   # ליגת האלופות
 DAYS_AHEAD = 7   # משחקים לשבוע קדימה
 REFRESH_EVERY = 600
 POLL = 20
