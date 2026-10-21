@@ -4,10 +4,11 @@ DB = 'https://buxbet-il-default-rtdb.europe-west1.firebasedatabase.app'
 problems = []
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'watchdog'}), timeout=20) as r: return r.status, r.read().decode()
-try:
-    st, body = get('https://bet-it.web.app/')
-    if st != 200 or 'BET-IT' not in body: problems.append('האתר bet-it.web.app לא עולה כמו שצריך')
-except Exception as e: problems.append(f'האתר לא זמין: {e}')
+for site in ('https://bet-it.co.il/', 'https://bet-it.web.app/'):   # הכתובת הראשית + הישנה (שמעבירה אליה)
+    try:
+        st, body = get(site)
+        if st != 200 or 'BET-IT' not in body: problems.append(f'האתר {site} לא עולה כמו שצריך')
+    except Exception as e: problems.append(f'האתר {site} לא זמין: {e}')
 try:
     ra = json.loads(get(DB + '/pub/meta/robotAt.json')[1] or '0') or 0
     age = (time.time() * 1000 - ra) / 60000

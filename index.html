@@ -11,8 +11,8 @@
 <meta property="og:site_name" content="BET-IT">
 <meta property="og:title" content="BET-IT – משחק הניחושים של החבר׳ה">
 <meta property="og:description" content="מהמרים על הכדורגל בז׳יטונים וירטואליים – בלי כסף אמיתי. ליגת העל, לאומית, אנגליה ואיטליה ⚽">
-<meta property="og:url" content="https://bet-it.web.app/">
-<meta property="og:image" content="https://bet-it.web.app/og.png">
+<meta property="og:url" content="https://bet-it.co.il/">
+<meta property="og:image" content="https://bet-it.co.il/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="icons/icon-192.png">
@@ -663,10 +663,11 @@ const RCA='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // בלי O/0/I/1 – לא מת�
 const fmtRc = c => c? c.match(/.{1,4}/g).join('-') : '';
 const nkOf = name => name.toLowerCase().replace(/ /g,'');
 
-// מעבר לכתובת הקבועה bet-it.web.app – מעבירים איתנו את מפתח המכשיר (בחלק של הכתובת שלא נשלח לשום שרת)
+// מעבר לכתובת הקבועה bet-it.co.il – מעבירים איתנו את מפתח המכשיר (בחלק של הכתובת שלא נשלח לשום שרת).
+// הכתובות הישנות (github.io, bet-it.web.app) ממשיכות לעבוד ופשוט מעבירות לכאן; המפתח נשאר גם בישנה (העתקה, לא העברה).
 (function migrateHost(){
-  const NEW='https://bet-it.web.app';
-  if(location.hostname.endsWith('github.io')){
+  const NEW='https://bet-it.co.il';
+  if(location.hostname.endsWith('github.io')||location.hostname==='bet-it.co.il'||location.hostname==='bet-it.firebaseapp.com'){
     const p=new URLSearchParams(); ['bb_sec','bb_ak','bb_pending','bb_tab'].forEach(k=>{ const v=lsGet(k); if(v) p.set(k,v); });
     const adm=/\/admin\/?$/.test(location.pathname)||/[?&]admin=1/.test(location.search);
     const h=location.hash.replace(/^#/,''); location.replace(NEW+(adm?'/?admin=1':'/')+'#'+(h?h+'&':'')+'mig='+encodeURIComponent(p.toString()));
@@ -683,7 +684,7 @@ const nkOf = name => name.toLowerCase().replace(/ /g,'');
 let SEC = lsGet('bb_sec');
 let PENDING = lsGet('bb_pending');      // בקשת שחזור שממתינה לאישור מנהל
 let AK = lsGet('bb_ak');
-// לינק כניסה אישי bet-it.web.app/#code=XXXX – החלק אחרי # לא נשלח לשום שרת ולא ב-Referer; מוחקים אותו מהכתובת מיד
+// לינק כניסה אישי bet-it.co.il/#code=XXXX – החלק אחרי # לא נשלח לשום שרת ולא ב-Referer; מוחקים אותו מהכתובת מיד
 function grabCode(){ const m=location.hash.match(/(?:^#|&)code=([^&]*)/); if(!m) return null;
   const rest=location.hash.replace(/^#/,'').split('&').filter(x=>x&&!x.startsWith('code=')).join('&');
   history.replaceState(null,'',location.pathname+location.search+(rest?'#'+rest:'')); try{ return decodeURIComponent(m[1]); }catch(e){ return m[1]; } }
@@ -1228,7 +1229,7 @@ function viewAch(){
 function setScope(x){ tblScope=x; lsSet('bb_scope',x); render(); }
 
 // ================= ליגות חברים: יצירה, הזמנה, הצטרפות, ניהול =================
-const APP_URL='https://bet-it.web.app';
+const APP_URL='https://bet-it.co.il';
 function sheet(html){ sheetSt={custom:true}; const sh=document.getElementById('sheet'); sh.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:-8px"><button class="sclose" aria-label="סגירה" onclick="closeSheet()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`+html;
   sh.classList.add('show'); document.getElementById('sheetBg').classList.add('show'); }
 function leagueMenu(){
@@ -1309,7 +1310,7 @@ async function makeCard(o){
     T(fit(o.sub||'',`500 44px ${HB}`,W-300),W-150,1300,`500 44px ${HB}`,'#8E97B5');
     T(fit(o.match||'',`900 54px ${HB}`,W-300),W-150,1400,`900 54px ${HB}`,'#F2F4FA');
     T(o.big||'',W-150,1500,`900 52px ${HB}`,'#3BE38B');
-    T(o.foot||'bet-it.web.app',W-90,1800,`700 42px ${HB}`,INK);
+    T(o.foot||'bet-it.co.il',W-90,1800,`700 42px ${HB}`,INK);
   } else if(kind==='big'){
     x.fillStyle='#0A1A12'; x.fillRect(0,0,W,H);
     conf([[W-130,300,32,52,25,LIME],[160,460,32,52,-30,'#A97BFF'],[450,200,32,32,0,'#FFC94D'],[W-200,H-380,30,48,60,'#3BE38B'],[260,H-520,26,44,-15,'#FF5A6A']]);
@@ -1318,7 +1319,7 @@ async function makeCard(o){
     T(o.big||'',W-90,1200,`900 300px ${HB}`,'#3BE38B','ltr','right');
     T(fit(o.sub||'',`700 60px ${HB}`,W-180),W-90,1320,`700 60px ${HB}`,'#F2F4FA');
     if(o.jk){ x.fillStyle='rgba(169,123,255,.2)'; const w=300; rr(W-90-w,1380,w,84,42); x.fill(); T('ג׳וקר כפול',W-90-w/2,1438,`900 46px ${HB}`,'#C3A3FF','rtl','center'); }
-    T(o.foot||'חושב שאתה יותר טוב? bet-it.web.app',W-90,1800,`700 42px ${HB}`,'#8FE6B5');
+    T(o.foot||'חושב שאתה יותר טוב? bet-it.co.il',W-90,1800,`700 42px ${HB}`,'#8FE6B5');
   } else if(kind==='lead'){
     const g=x.createRadialGradient(W/2,H*.3,40,W/2,H*.3,W); g.addColorStop(0,'#24305F'); g.addColorStop(.7,'#070A14'); x.fillStyle=g; x.fillRect(0,0,W,H);
     logo(W-90-260,90,80);
@@ -1329,7 +1330,7 @@ async function makeCard(o){
     T(fit(o.sub||'',`500 54px ${HB}`,W-180),W/2,1500,`500 54px ${HB}`,'#B9C0D8','rtl','center');
     const pills=o.pills||[]; x.font=`700 44px ${HB}`; const ws=pills.map(p=>x.measureText(p).width+70), tw=ws.reduce((a,b)=>a+b,0)+(pills.length-1)*24; let px=W/2+tw/2;
     pills.forEach((p,i)=>{ x.fillStyle='#161C33'; rr(px-ws[i],1560,ws[i],84,42); x.fill(); T(p,px-35,1617,`700 44px ${HB}`,'#F2F4FA'); px-=ws[i]+24; });
-    T(fit(o.foot||'bet-it.web.app',`700 44px ${HB}`,W-180),W/2,1820,`700 44px ${HB}`,'#8E97B5','rtl','center');
+    T(fit(o.foot||'bet-it.co.il',`700 44px ${HB}`,W-180),W/2,1820,`700 44px ${HB}`,'#8E97B5','rtl','center');
   } else {   // table – 1080×1080 לוואטסאפ
     x.fillStyle='#070A14'; x.fillRect(0,0,W,H); x.strokeStyle='#1C2340'; x.lineWidth=3; rr(2,2,W-4,H-4,56); x.stroke();
     T(o.title1||'הטבלה של',W-80,170,`700 120px ${K}`,'#F2F4FA'); T(o.title2||'השבוע',W-80,275,`700 120px ${K}`,'#F2F4FA');
@@ -1343,7 +1344,7 @@ async function makeCard(o){
       if(r.pen) T(fit(r.pen,`700 32px ${HB}`,560),W-200,y+rh/2+38,`700 32px ${HB}`,'#FF8A96');
       T(r.v,110,y+rh/2+10,`900 50px ${HB}`,r.neg?'#FF5A6A':'#3BE38B','ltr','left');
       y+=rh; });
-    T(fit(o.foot||'bet-it.web.app',`700 36px ${HB}`,W-160),W/2,H-40,`700 36px ${HB}`,'#8E97B5','rtl','center');
+    T(fit(o.foot||'bet-it.co.il',`700 36px ${HB}`,W-160),W/2,H-40,`700 36px ${HB}`,'#8E97B5','rtl','center');
   }
   return await new Promise(r=>c.toBlob(r,'image/png'));
 }
@@ -1484,7 +1485,7 @@ async function saveCodeImg(code){
   x.direction='rtl'; x.textAlign='right'; x.fillStyle='#B9C0D8'; x.font='700 54px Heebo, Arial'; x.fillText('קוד הכניסה שלי ל-BET-IT',990,420);
   x.direction='ltr'; x.textAlign='center'; x.fillStyle='#C6F432'; x.font='900 120px Heebo, Arial'; x.fillText(code,540,600);
   x.direction='rtl'; x.textAlign='right'; x.fillStyle='#FF8A96'; x.font='700 44px Heebo, Arial'; x.fillText('לא לשתף! מי שיש לו את הקוד משחק בשמך',990,800);
-  x.fillStyle='#8E97B5'; x.font='700 40px Heebo, Arial'; x.fillText('bet-it.web.app',990,980);
+  x.fillStyle='#8E97B5'; x.font='700 40px Heebo, Arial'; x.fillText('bet-it.co.il',990,980);
   const blob=await new Promise(r=>c.toBlob(r,'image/png')), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bet-it-code.png'; a.click();
   toast('התמונה נשמרה 📸 – שמור אותה במקום פרטי',true,null,3000);
 }
