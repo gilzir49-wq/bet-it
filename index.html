@@ -708,14 +708,23 @@ const weekLabel = wk => { const a=dkToDate(wk), b=dkToDate(addDays(wk,6)); retur
 const FBV='10.12.5';
 // אם ה-SDK של Firebase לא עלה תוך 6 שניות (דפדפן בתוך וואטסאפ/אינסטגרם, חוסם פרסומות שחוסם את gstatic) –
 // עוברים לקריאה ישירה (REST) עם ריענון כל 30 שניות, וגם הכתיבות עוברות ב-REST. אף פעם לא נתקעים על "טוען".
-let REST_MODE=false;
+let REST_MODE=false, everConnected=false;
 const fbReady=(async()=>{
+  // בסשן הזה החיבור החי כבר נכשל (למשל תקרת חיבורים) – ישר למצב REST
+  let restNow=false; try{ restNow=sessionStorage.getItem('bb_rest')==='1'; }catch(e){}
+  if(restNow){ await new Promise(r=>setTimeout(r,0)); REST_MODE=true; restStart(); return null; }   // אחרי שכל הסקריפט נטען
   try{
     const [appM,dbM]=await Promise.race([Promise.all([import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-app.js`),import(`https://www.gstatic.com/firebasejs/${FBV}/firebase-database.js`)]),
                                          new Promise((_,rej)=>setTimeout(()=>rej(new Error('sdk timeout')),6000))]);
     const app=appM.initializeApp({databaseURL:DB});
     const db=dbM.getDatabase(app);
-    dbM.onValue(dbM.ref(db,'.info/connected'), s=>{ connected=!!s.val(); renderTop(); });
+    dbM.onValue(dbM.ref(db,'.info/connected'), s=>{ connected=!!s.val(); if(connected) everConnected=true; renderTop(); });
+    // תקרת חיבורים / חסימה: ה-SDK עלה אבל לא מתחבר תוך 15 שניות (ויש אינטרנט) → פעם אחת עוברים ל-REST
+    setTimeout(()=>{ if(!everConnected && navigator.onLine && !document.hidden){ try{ sessionStorage.setItem('bb_rest','1'); }catch(e){} location.reload(); } },15000);
+    // לשונית ברקע יותר מדקה – מתנתקים כדי לא לתפוס חיבור; חוזרים מיד כשחוזרים ללשונית
+    let idleT=null;
+    document.addEventListener('visibilitychange',()=>{ clearTimeout(idleT);
+      if(document.hidden) idleT=setTimeout(()=>dbM.goOffline(db),60000); else dbM.goOnline(db); });
     return {...dbM, db};
   }catch(e){ console.warn('Firebase SDK blocked/slow – REST mode', e&&e.message); REST_MODE=true; restStart(); return null; }
 })();
@@ -833,7 +842,7 @@ function animateBal(to){
   (function step(t){ const k=Math.min(1,(t-t0)/900), v=from+(to-from)*(1-Math.pow(1-k,3)); shownBal=v;
     const n=document.getElementById('balV'); if(n) n.textContent=fmt(v); if(k<1) balAnim=requestAnimationFrame(step); else shownBal=to; })(t0);
 }
-function restBanner(){ return REST_MODE?`<div class="restb" id="restBanner">📶 חיבור מוגבל בדפדפן הזה – מתעדכן כל 30 שניות. <a href="#" onclick="location.reload();return false">נסה שוב</a></div>`:''; }
+function restBanner(){ return REST_MODE?`<div class="restb" id="restBanner">📶 חיבור מוגבל בדפדפן הזה – מתעדכן כל 30 שניות. <a href="#" onclick="try{sessionStorage.removeItem('bb_rest')}catch(e){}location.reload();return false">נסה שוב</a></div>`:''; }
 function renderTop(){
   const a=account(), bank=bankNow();
   const cd=document.getElementById('cdot'); if(cd) cd.className=connected?'on':'';
