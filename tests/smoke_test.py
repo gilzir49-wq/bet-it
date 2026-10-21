@@ -63,6 +63,13 @@ OTHER_RC = ''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in r
 R.fb('', 'PATCH', {f'names/{OTHER_NAME}': OTHER_PID, f'rc/{OTHER_RC}': OTHER_SEC, f'acct/{OTHER_SEC}': {'name': OTHER_NAME, 'nk': OTHER_NAME, 'pid': OTHER_PID, 'rc': OTHER_RC, 'joined': now, 'wallet': {'bal': 500, 'op': 'init'}}})
 dlg = []
 fails = []
+# בדיקה סטטית: הכתובת הראשית לעולם לא מעבירה לעצמה (לולאת הפניות = אתר מת)
+import re as _re
+_src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'index.html'), encoding='utf-8').read()
+_m = _re.search(r"function migrateHost\(\)\{\n  const NEW='https://([^']+)';\n  if\((.*)\)\{", _src)
+assert _m and f"'{_m.group(1)}'" not in _m.group(2) and "'bet-it.web.app'" in _m.group(2), 'migrateHost: לולאת הפניה או שהכתובת הישנה לא מעבירה'
+print('✓ migrateHost: הכתובת הישנה מעבירה, החדשה לא מעבירה לעצמה')
+
 def check(cond, msg):
     print(('✅ ' if cond else '❌ ') + msg, flush=True)
     if not cond: fails.append(msg)

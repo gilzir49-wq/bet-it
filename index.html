@@ -667,7 +667,7 @@ const nkOf = name => name.toLowerCase().replace(/ /g,'');
 // הכתובות הישנות (github.io, bet-it.web.app) ממשיכות לעבוד ופשוט מעבירות לכאן; המפתח נשאר גם בישנה (העתקה, לא העברה).
 (function migrateHost(){
   const NEW='https://bet-it.co.il';
-  if(location.hostname.endsWith('github.io')||location.hostname==='bet-it.co.il'||location.hostname==='bet-it.firebaseapp.com'){
+  if(location.hostname.endsWith('github.io')||location.hostname==='bet-it.web.app'||location.hostname==='bet-it.firebaseapp.com'){
     const p=new URLSearchParams(); ['bb_sec','bb_ak','bb_pending','bb_tab'].forEach(k=>{ const v=lsGet(k); if(v) p.set(k,v); });
     const adm=/\/admin\/?$/.test(location.pathname)||/[?&]admin=1/.test(location.search);
     const h=location.hash.replace(/^#/,''); location.replace(NEW+(adm?'/?admin=1':'/')+'#'+(h?h+'&':'')+'mig='+encodeURIComponent(p.toString()));
