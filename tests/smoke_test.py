@@ -83,7 +83,7 @@ try:
         check(pg.evaluate("() => { const f=document.getElementById('pmForm'); return !!f && f.querySelector('[autocomplete=username]').value===A.name && f.querySelector('[autocomplete=new-password]').value===A.rc; }"), 'טופס למנהל הסיסמאות (שם + קוד)')
         pg.click('#final .btn.sec')
         pg.evaluate("() => { setScope('all'); go('table'); }")
-        check(pg.locator('#firstGuess').count() == 1 and 'הניחוש הראשון שלך' in pg.locator('.natc').first.inner_text(), 'ארצית: מי שעוד לא ניחש – בטבלה + "יאללה, הניחוש הראשון שלך ←"')
+        check(pg.locator('#firstGuess').count() == 1 and 'עוד לא ניחשת' in pg.locator('.mys').first.inner_text(), 'ארצית: מי שעוד לא ניחש – "עוד לא ניחשת" + כפתור לניחוש הראשון')
         pg.evaluate("() => go('games')")
         extra = [ctx.new_page() for _ in range(3)]                 # עוד 3 לשוניות פתוחות – השמירה חייבת לעבוד
         for x in extra: x.goto('http://127.0.0.1:8765/index.html')
@@ -101,9 +101,9 @@ try:
             {'pid': me0, 'n': name, 'pf': 40, 'won': 3, 'dn': 4, 'nb': 5, 'rk': 1, 'pp': 2}, {'pid': 'pzzzzzzzzzzzz1', 'n': 'זר', 'pf': -10, 'won': 1, 'dn': 2, 'nb': 2, 'rk': 2, 'pp': 1}]})
         pg.wait_for_function('() => S.standings && S.standings.rows && S.standings.rows.some(r => r.pf === 40)', timeout=15000)
         pg.evaluate('() => { tblLive=false; render(); }'); txt = pg.locator('#app').inner_text()   # הבדיקה הזו – על הדירוג הרשמי
-        check('75%' in txt and 'מתוך 4' in txt and '+40' in txt, 'טבלה: רווח כולל (+40) ו"75% מתוך 4"')
+        check('3/4 פגעו' in txt and '+40' in txt and 'אתה' in pg.locator('.lbd .r.me').inner_text(), 'טבלה: רווח כולל (+40), "3/4 פגעו" ותג "אתה"')
         check('עודכן לאחרונה' in pg.locator('#tblInfo').inner_text() and 'שבועית' not in txt, 'טבלה: "עודכן לאחרונה", בלי טבלה שבועית')
-        check(pg.locator('.natc .mv').first.inner_text().strip().startswith('▲'), 'חץ: עלית מקום מאתמול')
+        check(pg.locator('.lbd .r.me .rk i').first.inner_text().strip().startswith('▲'), 'חץ: עלית מקום מאתמול')
         R.fb('pub/standings', 'PUT', ST0); pg.evaluate("() => { tblLive=null; go('games'); }")
         sec, a = acct(); check(a and a['wallet']['bal'] == 450 and len(a.get('bets') or {}) == 1, 'ההימור קיים בשרת')
         pg.reload(); pg.wait_for_function('() => (typeof A!=="undefined" && A) && A.wallet && Object.keys(A.bets||{}).length === 1', timeout=20000)
